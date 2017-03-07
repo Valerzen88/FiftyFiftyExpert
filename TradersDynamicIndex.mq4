@@ -1,6 +1,7 @@
 //+------------------------------------------------------------------+
 //|                                    Traders Dynamic Index.mq4     |
-//|                                    Copyright © 2006, Dean Malone |
+//|                                    Copyright © 2006, Dean Malone | 
+//|                                    Edit: 2017, Valeri Balachnnin |
 //|                                    www.compassfx.com             |
 //+------------------------------------------------------------------+
 
@@ -92,19 +93,21 @@
 #property indicator_separate_window
 
 extern int RSI_Period=13;         //8-25
-extern int RSI_Price=PRICE_WEIGHTED;           //0-6
+extern int RSI_Price=MODE_SMA;           //0-6
 extern int Volatility_Band=34;    //20-40
 extern int RSI_Price_Line = 2;
 extern int RSI_Price_Type=MODE_SMA;      //0-3
 extern int Trade_Signal_Line=7;
 extern int Trade_Signal_Type=MODE_SMA;   //0-3
-extern bool UseAlerts=false;
+extern bool UseAlerts=true;
 extern double LotSize=0.05;
 extern int CentMultiplicator=9;
 
 double RSIBuf[],UpZone[],MdZone[],DnZone[],MaBuf[],MbBuf[];
 double CrossPosStart,CrossPosEnd;
 int CountPoints=0;
+int OldTimestamp=0;
+int currTimeStamp=0;
 
 int AlertPlayedonBar=0;
 //+------------------------------------------------------------------+
@@ -133,6 +136,7 @@ int init()
    SetIndexLabel(3,"VB Low");
    SetIndexLabel(4,"RSI Price Line");
    SetIndexLabel(5,"Trade Signal Line");
+   SetIndexLabel(6,NULL);
 
    SetLevelValue(0,50);
    SetLevelValue(1,68);
@@ -174,33 +178,24 @@ int start()
    int filehandle = 0;
    string currBid=DoubleToString(Bid,Digits);
    string currAsk=DoubleToString(Ask,Digits);
-   string CrossPosStartStr = DoubleToString(CrossPosStart,Digits);
-//int    str_size;
-//string str;
+   string CrossPosStartStr=DoubleToString(CrossPosStart,Digits);
+
    if((MbBuf[0]>MdZone[0]) && (MbBuf[1]<=MdZone[1]) && (UseAlerts==true) && (AlertPlayedonBar!=Bars))
      {
-      //if(CrossPosStart==0) CrossPosStart=Ask;
       StringReplace(currAsk,".","");
       StringReplace(CrossPosStartStr,".","");
-      Alert("Bullish cross to SELL at "+currAsk+" from BUY "+CrossPosStartStr);
-      if(CrossPosStart > 0) CountPoints=CountPoints+(StringToInteger(currAsk)-StringToInteger(CrossPosStartStr));
-      //CountPoints = StrToInteger(DoubleToStr(CountPoints,5)) + StrToInteger(DoubleToStr(Ask+CrossPosStart,5));
-      //if (CountPoints > 0.0) CountPoints = CountPoints + (CrossPosStart-Ask);
+      Alert("Bullish cross to BUY at "+currAsk+" from SELL "+CrossPosStartStr);
+      if(CrossPosStart>0) CountPoints=CountPoints+(StringToInteger(currAsk)-StringToInteger(CrossPosStartStr));
       ResetLastError();
-      filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ, " ");
+      filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
       Print("CountPoints: "+CountPoints+";Sum: "+CountPoints*LotSize*100*CentMultiplicator/100/10+"€");
       if(filehandle!=INVALID_HANDLE)
         {
-/* while(!FileIsEnding(filehandle))
-           {
-            //--- find out how many symbols are used for writing the time 
-            str_size=FileReadInteger(filehandle,INT_VALUE);
-            //--- read the string 
-            str=FileReadString(filehandle,str_size);
-           }*/
-         FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"BUY",DoubleToString(Ask,Digits),SYMBOL_SPREAD);
+         currTimeStamp=TimeCurrent();
+         if(OldTimestamp==0) OldTimestamp=currTimeStamp;
+         FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"BUY",DoubleToString(Ask,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
          FileClose(filehandle);
-         //Print("FileOpen OK");
+         OldTimestamp=currTimeStamp;
         }
       else Print("Operation FileOpen failed, error ",GetLastError());
       CrossPosEnd=CrossPosStart;
@@ -211,38 +206,28 @@ int start()
      }
    if((MbBuf[0]<MdZone[0]) && (MbBuf[1]>=MdZone[1]) && (UseAlerts==true) && (AlertPlayedonBar!=Bars))
      {
-      //if(CrossPosStart==0) CrossPosStart=Bid;
       StringReplace(currBid,".","");
       StringReplace(CrossPosStartStr,".","");
-      Alert("Bearish cross to BUY at "+currBid+" from SELL "+CrossPosStartStr);
-      if(CrossPosStart > 0) CountPoints=CountPoints+(StringToInteger(CrossPosStartStr)-StringToInteger(currBid));
-      //CountPoints = StrToInteger(DoubleToStr(CountPoints,5)) + StrToInteger(DoubleToStr(Bid-CrossPosStart,5));
-      //if (CountPoints > 0.0) CountPoints = CountPoints + (Bid-CrossPosStart);
+      Alert("Bearish cross to SELL at "+currBid+" from BUY "+CrossPosStartStr);
+      if(CrossPosStart>0) CountPoints=CountPoints+(StringToInteger(CrossPosStartStr)-StringToInteger(currBid));
       ResetLastError();
       filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
       Print("CountPoints: "+CountPoints+";Sum: "+CountPoints*LotSize*100*CentMultiplicator/100/10+"€");
       if(filehandle!=INVALID_HANDLE)
         {
-         if(filehandle!=INVALID_HANDLE)
-           {
-/*while(!FileIsEnding(filehandle))
-              {
-               //--- find out how many symbols are used for writing the time 
-               str_size=FileReadInteger(filehandle,INT_VALUE);
-               //--- read the string 
-               str=str+FileReadString(filehandle,str_size);
-              }*/
-            FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"SELL",DoubleToString(Bid,Digits),SYMBOL_SPREAD);
-            FileClose(filehandle);
-            //Print("FileOpen OK");
-           }
-         else Print("Operation FileOpen failed, error ",GetLastError());
-         CrossPosEnd=CrossPosStart;
-         CrossPosStart=Bid;
-         count_signals++;
-         PlaySound("alert.wav");
-         AlertPlayedonBar=Bars;
+         currTimeStamp=TimeCurrent();
+         if(OldTimestamp==0) OldTimestamp=currTimeStamp;
+         FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"SELL",DoubleToString(Bid,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
+         FileClose(filehandle);
+         OldTimestamp=currTimeStamp;
         }
+      else Print("Operation FileOpen failed, error ",GetLastError());
+      CrossPosEnd=CrossPosStart;
+      CrossPosStart=Bid;
+      count_signals++;
+      PlaySound("alert.wav");
+      AlertPlayedonBar=Bars;
+
      }
 
 //----
