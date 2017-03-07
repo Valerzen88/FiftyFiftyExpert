@@ -161,8 +161,11 @@ int start()
       MA=0;
       for(int x=i; x<i+Volatility_Band; x++)
         {
-         RSI[x-i]=RSIBuf[x];
-         MA+=RSIBuf[x]/Volatility_Band;
+         if(x<ArraySize(RSIBuf) && x-i<ArraySize(RSI)) 
+           {
+            RSI[x-i]=RSIBuf[x];
+            MA+=RSIBuf[x]/Volatility_Band;
+           }
         }
       UpZone[i] = (MA + (1.6185 * StDev(RSI,Volatility_Band)));
       DnZone[i] = (MA - (1.6185 * StDev(RSI,Volatility_Band)));
