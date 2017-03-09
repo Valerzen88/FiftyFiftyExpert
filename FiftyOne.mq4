@@ -49,7 +49,7 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
-   ArrayResize(arr,6);
+   ArrayResize(arr,7);
    double iVal=iCustom(Symbol(),Period(),"TDI",13,MODE_SMA,34,2,MODE_SMA,7,MODE_SMA,true,LotSize,6,0);
    ResetLastError();
    str="";
@@ -105,7 +105,7 @@ void OnTick()
 
       if(totalOrders==0)
         {
-         Print("Total Orders = 0");
+         //Print("Total Orders = 0");
          if(StringLen(arr[0])>0)
            {
             ticket=OrderSend(Symbol(),direction,LotSize,pricedir,3,0,0,arr[0],MagicNumber,0,Blue);
@@ -123,17 +123,16 @@ void OnTick()
          if(b)
            {
             if(OrderSymbol()!=Symbol() || OrderMagicNumber()!=MagicNumber) continue;
-            if(OrderSymbol()==Symbol())
+            if(OrderSymbol()==Symbol() && StringLen(arr[0]) > 0)
               {
                //check StringCompare for if
-               Print(OrderComment());
-               Print(arr[0]);
-               Print(OrderComment()==arr[0]);
-               if(OrderComment()!=arr[0])
+               //Print(OrderComment());
+               //Print(arr[0]);
+               //Print(StringToInteger(OrderComment())!=StringToInteger(arr[0]));
+               if(StringToInteger(OrderComment())!=StringToInteger(arr[0]))
                  {
-                  if(ticket>0) oldTicket=ticket;
                   ticket=OrderSend(Symbol(),direction,LotSize,pricedir,3,0,0,arr[0],MagicNumber,0,Blue);
-                  bool closedOrder;
+                  bool closedOrder = false;
 
                   for(int pos10=0;pos10<totalOrders;pos10++)
                     {
@@ -144,17 +143,21 @@ void OnTick()
                         if(OrderSymbol()==Symbol())
                           {
                            //check StringCompare for if
-                           Print(OrderComment());
+                           /*Print(OrderComment());
                            Print(arr[5]);
-                           Print(OrderComment()==arr[5]);
-                           if(OrderComment()==arr[5] && oldTicket>0)
+                           Print(OrderComment()==arr[5]);*/
+                           if(StringToInteger(OrderComment())==StringToInteger(arr[5]))
                              {
-                              closedOrder=OrderClose(oldTicket,LotSize,closepricedir,3,Red);
-                              if(closedOrder) Print("OrderClose "+IntegerToString(oldTicket)+" closed successfully");
+                             while(closedOrder != true)
+                               {
+                                closedOrder=OrderClose(OrderTicket(),LotSize,closepricedir,10,Red);
+                               }
+                              
+                              if(closedOrder) Print("OrderClose "+IntegerToString(OrderTicket())+" closed successfully");
                               else
                                 {
-                                 Print("OrderClose "+IntegerToString(oldTicket)+" failed to close with error#",GetLastError());
-                                 bool closedOrder2=OrderClose(oldTicket,LotSize,closepricedir,3,Red);
+                                 Print("OrderClose "+IntegerToString(OrderTicket())+" failed to close with error#",GetLastError());
+                                 //bool closedOrder2=OrderClose(OrderTicket(),LotSize,closepricedir,3,Red);
                                 }
                              }
                           }
