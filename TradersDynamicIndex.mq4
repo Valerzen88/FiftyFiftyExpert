@@ -90,6 +90,7 @@
 #property indicator_color4 MediumBlue
 #property indicator_color5 Green
 #property indicator_color6 Red
+#property indicator_color7 Aqua
 #property indicator_separate_window
 
 extern int RSI_Period=13;         //8-25
@@ -98,16 +99,19 @@ extern int Volatility_Band=34;    //20-40
 extern int RSI_Price_Line = 2;
 extern int RSI_Price_Type=MODE_SMA;      //0-3
 extern int Trade_Signal_Line=7;
+extern int Trade_Signal_Line2=18;
 extern int Trade_Signal_Type=MODE_SMA;   //0-3
 extern bool UseAlerts=true;
 extern double LotSize=0.05;
 extern int CentMultiplicator=9;
+extern bool WriteToFile=false;
 
-double RSIBuf[],UpZone[],MdZone[],DnZone[],MaBuf[],MbBuf[];
+double RSIBuf[],UpZone[],MdZone[],DnZone[],MaBuf[],MbBuf[],McBuf[];
 double CrossPosStart,CrossPosEnd;
 int CountPoints=0;
 int OldTimestamp=0;
 int currTimeStamp=0;
+int count_signals=0;
 
 int AlertPlayedonBar=0;
 //+------------------------------------------------------------------+
@@ -122,6 +126,7 @@ int init()
    SetIndexBuffer(3,DnZone);
    SetIndexBuffer(4,MaBuf);
    SetIndexBuffer(5,MbBuf);
+   SetIndexBuffer(6,McBuf);
 
    SetIndexStyle(0,DRAW_NONE);
    SetIndexStyle(1,DRAW_LINE);
@@ -129,6 +134,7 @@ int init()
    SetIndexStyle(3,DRAW_LINE);
    SetIndexStyle(4,DRAW_LINE,0,2);
    SetIndexStyle(5,DRAW_LINE,0,2);
+   SetIndexStyle(6,DRAW_LINE,2,0);
 
    SetIndexLabel(0,NULL);
    SetIndexLabel(1,"VB High");
@@ -136,7 +142,7 @@ int init()
    SetIndexLabel(3,"VB Low");
    SetIndexLabel(4,"RSI Price Line");
    SetIndexLabel(5,"Trade Signal Line");
-   SetIndexLabel(6,NULL);
+   SetIndexLabel(6,"Trade Signal2 Line");
 
    SetLevelValue(0,50);
    SetLevelValue(1,68);
@@ -150,18 +156,18 @@ int init()
 //+------------------------------------------------------------------+
 int start()
   {
-   int count_signals=0;
+   OldTimestamp=0;
    double MA,RSI[];
    ArrayResize(RSI,Volatility_Band);
    int counted_bars=IndicatorCounted();
-   int limit= Bars-counted_bars-1;
+   int limit=Bars-counted_bars-1;
    for(int i=limit; i>=0; i--)
      {
       RSIBuf[i]=(iRSI(NULL,0,RSI_Period,RSI_Price,i));
       MA=0;
       for(int x=i; x<i+Volatility_Band; x++)
         {
-         if(x<ArraySize(RSIBuf) && x-i<ArraySize(RSI)) 
+         if(x<ArraySize(RSIBuf) && x-i<ArraySize(RSI))
            {
             RSI[x-i]=RSIBuf[x];
             MA+=RSIBuf[x]/Volatility_Band;
@@ -175,10 +181,14 @@ int start()
      {
       MaBuf[i] = (iMAOnArray(RSIBuf,0,RSI_Price_Line,0,RSI_Price_Type,i));
       MbBuf[i] = (iMAOnArray(RSIBuf,0,Trade_Signal_Line,0,Trade_Signal_Type,i));
+      McBuf[i] = (iMAOnArray(RSIBuf,0,Trade_Signal_Line2,0,Trade_Signal_Type,i));
      }
-   string terminal_data_path=TerminalInfoString(TERMINAL_DATA_PATH);
-   string filename="TradeSignal.csv";
-   int filehandle = 0;
+   if(WriteToFile)
+     {
+      string terminal_data_path=TerminalInfoString(TERMINAL_DATA_PATH);
+      string filename="TradeSignal.csv";
+      int filehandle = 0;
+     }
    string currBid=DoubleToString(Bid,Digits);
    string currAsk=DoubleToString(Ask,Digits);
    string CrossPosStartStr=DoubleToString(CrossPosStart,Digits);
@@ -187,23 +197,34 @@ int start()
      {
       StringReplace(currAsk,".","");
       StringReplace(CrossPosStartStr,".","");
-      Alert("Bullish cross to BUY at "+currAsk+" from SELL "+CrossPosStartStr);
+      Alert("Bullish cross to BUY ("+Symbol()+") at "+DoubleToStr(StringToDouble(currAsk)/MathPow(10.0,Digits))+" from SELL "+DoubleToStr(StringToDouble(CrossPosStartStr)/(MathPow(10.0,Digits))));
       if(CrossPosStart>0) CountPoints=CountPoints+(StringToInteger(currAsk)-StringToInteger(CrossPosStartStr));
-      ResetLastError();
-      filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
-      Print("CountPoints: "+CountPoints+";Sum: "+CountPoints*LotSize*100*CentMultiplicator/100/10+"€");
-      if(filehandle!=INVALID_HANDLE)
+
+      if(Digits>2)
         {
-         currTimeStamp=TimeCurrent();
-         if(OldTimestamp==0) OldTimestamp=currTimeStamp;
-         FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"BUY",DoubleToString(Ask,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
-         FileClose(filehandle);
-         OldTimestamp=currTimeStamp;
+         Print("CountPoints: "+CountPoints+";Sum: "+CountPoints*LotSize*100*CentMultiplicator/100/10+"€");
         }
-      else Print("Operation FileOpen failed, error ",GetLastError());
+      else
+        {
+         Print("CountPoints: "+DoubleToStr(StringToDouble(CountPoints)/MathPow(10.0,Digits))+";Sum: "+StringToDouble(CountPoints)/(MathPow(10.0,Digits))*LotSize*100*CentMultiplicator/100/10+"€");
+        }
+      if(WriteToFile)
+        {
+         ResetLastError();
+         filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
+         if(filehandle!=INVALID_HANDLE)
+           {
+            currTimeStamp=TimeCurrent();
+            count_signals= count_signals+1;
+            if(OldTimestamp==0) OldTimestamp=currTimeStamp;
+            FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"BUY",DoubleToString(Ask,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
+            FileClose(filehandle);
+            OldTimestamp=currTimeStamp;
+           }
+         else Print("Operation FileOpen failed, error ",GetLastError());
+        }
       CrossPosEnd=CrossPosStart;
       CrossPosStart=Ask;
-      count_signals++;
       PlaySound("alert.wav");
       AlertPlayedonBar=Bars;
      }
@@ -211,23 +232,33 @@ int start()
      {
       StringReplace(currBid,".","");
       StringReplace(CrossPosStartStr,".","");
-      Alert("Bearish cross to SELL at "+currBid+" from BUY "+CrossPosStartStr);
+      Alert("Bearish cross to SELL ("+Symbol()+") at "+DoubleToStr(StringToDouble(currBid)/(MathPow(10.0,Digits)))+" from BUY "+DoubleToStr(StringToDouble(CrossPosStartStr)/(MathPow(10.0,Digits))));
       if(CrossPosStart>0) CountPoints=CountPoints+(StringToInteger(CrossPosStartStr)-StringToInteger(currBid));
-      ResetLastError();
-      filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
-      Print("CountPoints: "+CountPoints+";Sum: "+CountPoints*LotSize*100*CentMultiplicator/100/10+"€");
-      if(filehandle!=INVALID_HANDLE)
+      if(Digits>2)
         {
-         currTimeStamp=TimeCurrent();
-         if(OldTimestamp==0) OldTimestamp=currTimeStamp;
-         FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"SELL",DoubleToString(Bid,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
-         FileClose(filehandle);
-         OldTimestamp=currTimeStamp;
+         Print("CountPoints: "+CountPoints+";Sum: "+CountPoints*LotSize*100*CentMultiplicator/100/10+"€");
         }
-      else Print("Operation FileOpen failed, error ",GetLastError());
+      else
+        {
+         Print("CountPoints: "+DoubleToStr(StringToDouble(CountPoints)/MathPow(10.0,Digits))+";Sum: "+StringToDouble(CountPoints)/(MathPow(10.0,Digits))*LotSize*100*CentMultiplicator/100/10+"€");
+        }
+      if(WriteToFile)
+        {
+         ResetLastError();
+         filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
+         if(filehandle!=INVALID_HANDLE)
+           {
+            currTimeStamp=TimeCurrent();
+            count_signals= count_signals+1;
+            if(OldTimestamp==0) OldTimestamp=currTimeStamp;
+            FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"SELL",DoubleToString(Bid,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
+            FileClose(filehandle);
+            OldTimestamp=currTimeStamp;
+           }
+         else Print("Operation FileOpen failed, error ",GetLastError());
+        }
       CrossPosEnd=CrossPosStart;
       CrossPosStart=Bid;
-      count_signals++;
       PlaySound("alert.wav");
       AlertPlayedonBar=Bars;
 
@@ -243,7 +274,15 @@ void OnDeinit(const int reason)
   {
 //--- The first way to get the uninitialization reason code 
    Print(__FUNCTION__,"_Uninitalization reason code = ",reason);
-   Print("CountPoints: "+CountPoints);
+   if(Digits>2)
+     {
+      Print("CountPoints: "+CountPoints);
+     }
+   else
+     {
+      Print("CountPoints: "+DoubleToStr(StringToDouble(CountPoints)/(MathPow(10.0,Digits))));
+     }
+
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -252,7 +291,7 @@ double OnTester()
   {
 //---
    double ret=0.0;
-   Print("CountPoints: "+CountPoints);
+   Print("CountPoints: "+DoubleToStr(StringToDouble(CountPoints)/(MathPow(10.0,Digits))));
 //---
 
 //---
