@@ -18,17 +18,17 @@ extern int      DistanceStep=150;
 extern int      MagicNumber=3537;
 
 int RSI_Period=13;         //8-25
-int RSI_Price=0;           //0-6
+int RSI_Price=5;           //0-6
 int Volatility_Band=34;    //20-40
 int RSI_Price_Line=2;
 int RSI_Price_Type=MODE_SMA;      //0-3
 int Trade_Signal_Line=7;
 int Trade_Signal_Line2=18;
 int Trade_Signal_Type=MODE_SMA;   //0-3
-int Slippage=3,MaxOrders=3,BreakEven=0,TrailingStep=100;
+int Slippage=3,MaxOrders=2,BreakEven=0,TrailingStep=100;
 bool AddPositions=false;
-int RSI_Top_Value=70;
-int RSI_Down_Value=30;
+int RSI_Top_Value=65;
+int RSI_Down_Value=35;
 double TP=750,SL=0;
 double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
@@ -73,14 +73,14 @@ void OnTick()
       double TDIDown=iCustom(Symbol(),0,IndicatorName,RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
       double TDIB3=iCustom(Symbol(),0,IndicatorName,RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
 
-     // if((TDIRed>TDIGreen) && (TDIRedPlusOne<=TDIGreenPlusOne))BUY=true;
-     // if((TDIRed<TDIGreen) && (TDIRedPlusOne>=TDIGreenPlusOne))SELL=true;
-      if (TDIGreen > RSI_Top_Value) SELL=true;
-      if (TDIGreen < RSI_Down_Value) BUY=true;
+      // if((TDIRed>TDIGreen) && (TDIRedPlusOne<=TDIGreenPlusOne))BUY=true;
+      // if((TDIRed<TDIGreen) && (TDIRedPlusOne>=TDIGreenPlusOne))SELL=true;
+      if(TDIGreen > RSI_Top_Value && TDIRed > TDIGreen) SELL=true;
+      if(TDIGreen < RSI_Down_Value && TDIRed < TDIGreen) BUY=true;
 /*if(TDIRedPlusOne<=TDIGreenPlusOne)BUY=true;
       if(TDIGreen<65 && TDIGreen<TDIRed)SELL=true;*/
 /*if(TDIGreen-TDIRed<6){Print("NO Exit !");}*/
-    /*  if(TDIGreen-TDIRed>=6){Print("Change of Trend: If you have SELL Position(s),Check Exit Rules!");}
+/*  if(TDIGreen-TDIRed>=6){Print("Change of Trend: If you have SELL Position(s),Check Exit Rules!");}
       if(TDIRed-TDIGreen>=6){Print("Change of Trend: If you have BUY Position(s),Check Exit Rules!");}*/
 
       TempTDIGreen=TDIGreen;
@@ -115,6 +115,7 @@ void OnTick()
 //conditions to close positions
    if(SellFlag>0){CloseBuy=1;}
    if(BuyFlag>0){CloseSell=1;}
+   
    for(cnt=0;cnt<OrdersTotal();cnt++)
      {
       OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES);
@@ -123,7 +124,7 @@ void OnTick()
          if(CloseBuy==1)
            {
             OrderClose(OrderTicket(),OrderLots(),Bid,Slippage,Red);
-            CurrentProfit(0.0,TempTDIGreen);
+            CurrentProfit(0,TempTDIGreen);
            }
         }
       if(OrderType()==OP_SELL && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber) || MagicNumber==0))
@@ -131,7 +132,7 @@ void OnTick()
          if(CloseSell==1)
            {
             OrderClose(OrderTicket(),OrderLots(),Ask,Slippage,Red);
-            CurrentProfit(0.0,TempTDIGreen);
+            CurrentProfit(0,TempTDIGreen);
            }
         }
      }
@@ -142,6 +143,7 @@ void OnTick()
       if(OS==1 && TempTDIGreen>RSI_Top_Value)
         {
          if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
+         
          TicketNr=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
         }
       if(OB==1 && TempTDIGreen<RSI_Down_Value)
@@ -150,18 +152,20 @@ void OnTick()
          TicketNr=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
         }
      }
-   for(int j=0;j<OrdersTotal();j++){if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+   for(int j=0;j<OrdersTotal();j++)
      {
-      if(OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber) || MagicNumber==0))
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-         TrP();CurrentProfit(OrderProfit(),TempTDIGreen);
+         if(OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber) || MagicNumber==0))
+           {
+            TrP();CurrentProfit(OrderProfit(),TempTDIGreen);
+           }
         }
      }
-  }
 
 //not enough money message to continue the martingale
-if(TicketNr<0 && GetLastError()==134){err=1;Print("NOT ENOGUGHT MONEY!!");}
-}
+   if(TicketNr<0 && GetLastError()==134){err=1;Print("NOT ENOGUGHT MONEY!!");}
+  }
 //+------------------------------------------------------------------+
 //| Timer function                                                   |
 //+------------------------------------------------------------------+
@@ -205,7 +209,8 @@ void TrP()
    int BE=BreakEven;int TS=DistanceStep;double pb,pa,pp;pp=MarketInfo(OrderSymbol(),MODE_POINT);
    if(OrderType()==OP_BUY)
      {
-      pb=MarketInfo(OrderSymbol(),MODE_BID);if(BE>0)
+      pb=MarketInfo(OrderSymbol(),MODE_BID);
+      if(BE>0)
         {
          if((pb-OrderOpenPrice())>BE*pp)
            {
@@ -260,19 +265,22 @@ void ModSL(double ldSL)
   }
 //+------------------------------------------------------------------+
 
-void CurrentProfit(double CurProfit, double TempTDIGreen)
-{
-   ObjectCreate("CurProfit", OBJ_LABEL, 0, 0, 0);
-   if (CurProfit > 0.0){ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11, "Verdana", clrLime);
-   }else{ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11, "Verdana", clrOrangeRed);}
-   ObjectSet("CurProfit", OBJPROP_CORNER, 0);
-   ObjectSet("CurProfit", OBJPROP_XDISTANCE, 5);
-   ObjectSet("CurProfit", OBJPROP_YDISTANCE, 20);
-   
-   ObjectCreate("TempTDIGreen", OBJ_LABEL, 0, 0, 0);
-   ObjectSetText("TempTDIGreen","RSI Value: "+DoubleToString(TempTDIGreen,2),11, "Verdana", clrGold);
-   ObjectSet("TempTDIGreen", OBJPROP_CORNER, 0);
-   ObjectSet("TempTDIGreen", OBJPROP_XDISTANCE, 5);
-   ObjectSet("TempTDIGreen", OBJPROP_YDISTANCE, 50);
-}
+void CurrentProfit(double CurProfit,double TempTDIGreen)
+  {
+   ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
+   if(CurProfit>=0.0)
+     {
+      ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
+        }else{ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+     }
+   ObjectSet("CurProfit",OBJPROP_CORNER,0);
+   ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
+   ObjectSet("CurProfit",OBJPROP_YDISTANCE,20);
+
+   ObjectCreate("TempTDIGreen",OBJ_LABEL,0,0,0);
+   ObjectSetText("TempTDIGreen","RSI Value: "+DoubleToString(TempTDIGreen,2),11,"Calibri",clrGold);
+   ObjectSet("TempTDIGreen",OBJPROP_CORNER,0);
+   ObjectSet("TempTDIGreen",OBJPROP_XDISTANCE,5);
+   ObjectSet("TempTDIGreen",OBJPROP_YDISTANCE,50);
+  }
 //+------------------------------------------------------------------+
