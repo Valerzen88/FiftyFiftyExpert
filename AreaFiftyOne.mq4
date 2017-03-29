@@ -351,10 +351,10 @@ void CurrentProfit(double CurProfit,double TempTDIGreen)
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
    ObjectSet("CurProfit",OBJPROP_YDISTANCE,20);
 
-   ObjectCreate("TempTDIGreen",OBJ_LABEL,0,0,0);
+  /* ObjectCreate("TempTDIGreen",OBJ_LABEL,0,0,0);
    ObjectSetText("TempTDIGreen","RSI Value: "+DoubleToString(TempTDIGreen,2),11,"Calibri",clrGold);
    ObjectSet("TempTDIGreen",OBJPROP_CORNER,0);
    ObjectSet("TempTDIGreen",OBJPROP_XDISTANCE,5);
-   ObjectSet("TempTDIGreen",OBJPROP_YDISTANCE,50);
+   ObjectSet("TempTDIGreen",OBJPROP_YDISTANCE,50);*/
   }
 //+------------------------------------------------------------------+
