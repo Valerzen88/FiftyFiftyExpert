@@ -12,7 +12,6 @@
 extern double   LotSize=0.01;
 extern bool     LotAutoSize=true;
 extern int      RiskPercent=50;
-extern int      PendingDistance=250;
 extern int      SLDistance=150;
 extern int      DistanceStep=150;
 extern int      MagicNumber=3537;
@@ -168,7 +167,7 @@ void OnTick()
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY) && OrderSymbol()==Symbol() && 
       (TicketNrPending > 0 || TicketNrPending2 > 0) &&
-      (OrderMagicNumber()==MagicNumber) && TicketNr>0 && OrderTicket()==TicketNr)
+      (OrderMagicNumber()==MagicNumber || MagicNumber==0) && TicketNr>0 && OrderTicket()==TicketNr)
         {
          bool found=false,found2=false;
          for(int cnt0=0;cnt0<OrdersHistoryTotal();cnt0++)
@@ -194,15 +193,33 @@ void OnTick()
         {
          if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
          TicketNr=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
-         TicketNrPending=OrderSend(Symbol(),OP_SELLLIMIT,NormalizeDouble(LotSize*0.625,Digits),Bid+375*Point,Slippage,SLI,Bid,EAName+"P1S",MagicNumber,0,Red);
-         TicketNrPending2=OrderSend(Symbol(),OP_SELLLIMIT,NormalizeDouble(LotSize*0.250,Digits),Bid+750*Point,Slippage,SLI,Bid,EAName+"P2S",MagicNumber,0,Red);
+         //if(TicketNr==-1)OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);
+         
+         double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
+         if (TempPendingLotSize < MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=LotSize;
+         TicketNrPending=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,SLI,Bid,EAName+"P1S",MagicNumber,0,Red);
+         //if(TicketNrPending==-1)OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,SLI,Bid,EAName+"P1S",MagicNumber,0,Red);
+         
+         double TempPendingLotSize2=NormalizeDouble(LotSize*0.250,Digits);
+         if (TempPendingLotSize2 < MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=LotSize;
+         TicketNrPending2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP*Point,Slippage,SLI,Bid,EAName+"P2S",MagicNumber,0,Red);
+        // if(TicketNrPending2==-1)OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP*Point,Slippage,SLI,Bid,EAName+"P2S",MagicNumber,0,Red);
         }
       if(OB==1 && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5)
         {
          if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
          TicketNr=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
-         TicketNrPending=OrderSend(Symbol(),OP_BUYLIMIT,NormalizeDouble(LotSize*0.625,Digits),Bid-375*Point,Slippage,SLI,Bid,EAName+"P1B",MagicNumber,0,Red);
-         TicketNrPending2=OrderSend(Symbol(),OP_BUYLIMIT,NormalizeDouble(LotSize*0.250,Digits),Bid-750*Point,Slippage,SLI,Bid,EAName+"P2B",MagicNumber,0,Red);
+         //if(TicketNr==-1)OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);
+         
+         TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
+         if (TempPendingLotSize < MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=LotSize;
+         TicketNrPending=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Bid-TP/2*Point,Slippage,SLI,Bid,EAName+"P1B",MagicNumber,0,Red);
+         //if(TicketNrPending==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Bid-TP/2*Point,Slippage,SLI,Bid,EAName+"P1B",MagicNumber,0,Red);
+         
+         TempPendingLotSize2=NormalizeDouble(LotSize*0.250,Digits);
+         if (TempPendingLotSize2 < MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=LotSize;
+         TicketNrPending2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Bid-TP*Point,Slippage,SLI,Bid,EAName+"P2B",MagicNumber,0,Red);
+         //if(TicketNrPending2==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Bid-TP*Point,Slippage,SLI,Bid,EAName+"P2B",MagicNumber,0,Red);
         }
      }
    double TempProfit=0;
