@@ -22,7 +22,7 @@ extern int      MagicNumber=3537;
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
 int Volatility_Band=34;    //20-40
-int RSI_Price_Line=2;
+int RSI_Price_Line=0;
 int RSI_Price_Type=MODE_SMA;      //0-3
 int Trade_Signal_Line=7;
 int Trade_Signal_Line2=18;
@@ -221,7 +221,7 @@ TempTDIGreen=TDIGreen;
         }
      }*/
 
-   /*for(cnt=0;cnt<OrdersHistoryTotal();cnt++)
+   for(cnt=0;cnt<OrdersHistoryTotal();cnt++)
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY) && OrderSymbol()==Symbol() && 
          (TicketNrPending>0 || TicketNrPending2>0) && 
@@ -242,7 +242,7 @@ TempTDIGreen=TDIGreen;
          if(found2==false)if(!OrderDelete(TicketNrPending2,clrNONE))OrderDelete(TicketNrPending2,clrNONE);
          if(found2==false)TicketNrPending2=0;
         }
-     }*/
+     }
 
 //open position
    if((AddP() && AddPositions && OP<=MaxOrders) || (OP==0 && !AddPositions))
@@ -395,17 +395,6 @@ void CurrentProfit(double CurProfit)
    ObjectSet("CurProfit",OBJPROP_CORNER,0);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
    ObjectSet("CurProfit",OBJPROP_YDISTANCE,20);
-  }
-//+------------------------------------------------------------------+
-//| Custom indicator iteration function                              |
-//+------------------------------------------------------------------+
-int OnCalculate(const int rates_total,
-                const int prev_calculated,
-                const int begin,
-                const double &price[])
-  {
-//--- return value of prev_calculated for next call
-   return(rates_total);
   }
 //+------------------------------------------------------------------+
 //| GetRelativeProgramPath                                           |
