@@ -30,8 +30,8 @@ int Trade_Signal_Type=MODE_SMA;   //0-3
 int Slippage=3,MaxOrders=3,BreakEven=0;
 int TicketNrPending=0,TicketNrPending2=0,TicketNr=0;
 bool AddPositions=false;
-double RSI_Top_Value=65;
-double RSI_Down_Value=35;
+double RSI_Top_Value=68;
+double RSI_Down_Value=32;
 double TP=750,SL=0;
 double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
@@ -103,35 +103,7 @@ void OnTick()
 
       //if((SELL==false && BUY ==false) && (TDIRed>TDIGreen) && (TDIRedPlusOne<=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)BUY=true;
       //if((SELL==false && BUY ==false) && (TDIRed<TDIGreen) && (TDIRedPlusOne>=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)SELL=true;
-      /*if(SELL==false && BUY==false)
-        {
-         if((TDIGreen-TDIRed)>=3.5)
-           {
-           Print(TDIGreen);
-           Print(TDIRed);
-            string TSRed=DoubleToStr(TDIRed);
-            string TSGreen=DoubleToStr(TDIGreen);
-            string TSYellow=DoubleToStr(TDIYellow);
-            StringReplace(TSRed,".","");
-            StringReplace(TSGreen,".","");
-            StringReplace(TSYellow,".","");
-            int TRed=StrToInteger(TSRed);
-            int TGreen=StrToInteger(TSGreen);
-            int TYellow=StrToInteger(TSYellow);
-            Print(TGreen>RSI_Top_Value);
-            Print(TRed>TGreen);
-            if(TDIGreen<TRed && TGreen>65 && TGreen>TYellow)
-              {
-               TempTDIGreen=TDIGreen;TempTDIRed=TDIRed;
-               SELL=true;SellFlag=1;break;
-              }
-            if(TGreen>TRed && TGreen<35 && TGreen<TYellow) 
-              {
-               TempTDIGreen=TDIGreen;TempTDIRed=TDIRed;
-               BUY=true;BuyFlag=1;break;
-              }
-           }
-        }*/
+ 
 
 /*if(TDIGreen-TDIRed<6){Print("NO Exit !");}*/
 /*  if(TDIGreen-TDIRed>=6){Print("Change of Trend: If you have SELL Position(s),Check Exit Rules!");}
@@ -164,7 +136,7 @@ TempTDIGreen=TDIGreen;
       //+------------------------------------------------------------------+
      {
       OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES);
-      if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber) || MagicNumber==0))
+      if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
         {
          OP=OP+1;
          if(OrderType()==OP_SELL)OSC=OSC+1;
@@ -225,7 +197,7 @@ TempTDIGreen=TDIGreen;
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY) && OrderSymbol()==Symbol() && 
          (TicketNrPending>0 || TicketNrPending2>0) && 
-         (OrderMagicNumber()==MagicNumber || MagicNumber==0) && TicketNr>0 && OrderTicket()==TicketNr)
+         (OrderMagicNumber()==MagicNumber) && TicketNr>0 && OrderTicket()==TicketNr)
         {
          bool found=false,found2=false;
          for(int cnt0=0;cnt0<OrdersHistoryTotal();cnt0++)
@@ -286,7 +258,7 @@ TempTDIGreen=TDIGreen;
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-         if(OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber) || MagicNumber==0))
+         if(OrderSymbol()==Symbol() && (OrderMagicNumber()==MagicNumber))
            {
             TrP();
             TempProfit=TempProfit+OrderProfit();
@@ -315,7 +287,7 @@ bool AddP()
    int _num=0; int _ot=0;
    for(int j=0;j<OrdersTotal();j++)
      {
-      if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol() && OrderType()<3 && ((OrderMagicNumber()==MagicNumber) || MagicNumber==0))
+      if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol() && OrderType()<3 && (OrderMagicNumber()==MagicNumber))
         {
          _num++;if(OrderOpenTime()>_ot) _ot=OrderOpenTime();
         }
