@@ -1,23 +1,29 @@
 //+------------------------------------------------------------------+
 //|                                                 AreaFiftyOne.mq4 |
 //|                                                           VBApps |
-//|                         http://dax-trading-group.de/AreaFiftyOne |
+//|                                                 http://vbapps.co |
 //+------------------------------------------------------------------+
-#property copyright "VBApps, 2017"
-#property link      "http://dax-trading-group.de/AreaFiftyOne"
-#property version   "1.0"
+
+#property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
+#property link      "http://vbapps.co"
+#property version   "1.1"
 #property description "Trades on oversold or overbought market till the next signal."
 #property strict
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 
+#define HEXCHAR_TO_DECCHAR(h)  (h<=57 ? (h-48) : (h-55))
+
 //--- input parameters
 extern double   LotSize=0.01;
 extern bool     LotAutoSize=true;
 extern int      RiskPercent=50;
-extern int      TrailingStep=150;
-extern int      DistanceStep=150;
+extern int      TrailingStep=50;
+extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
+extern int      TakeProfit=750;
+extern int      StopLoss=550;
+extern string   Licence="1F038D55F0BC3648B93112B3E26D4F23A5794A1C2EB0FC14";
 
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
@@ -31,12 +37,14 @@ int Slippage=3,MaxOrders=3,BreakEven=0;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 bool AddPositions=false;
-double TP=750,SL=550;
+double TP=TakeProfit,SL=StopLoss;
 double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
-double CurrBid=0;
-double CurrAsk=0;
+/*licence*/
+bool trial_lic=false;
+datetime expiryDate=D'2017.04.27 00:00';
+/*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
 int WrongDirectionBuyTicketNr=0,WrongDirectionSellTicketNr=0;
 int handle_ind;
@@ -46,25 +54,51 @@ int handle_ind;
 int OnInit()
   {
 //---
-   datetime expiryDate=D'2017.04.21 00:00';
-   if(TimeCurrent()>expiryDate)
+   if(trial_lic)
      {
-      Alert("Expired copy. Please contact vendor.");
-      return(INIT_FAILED);
-        } else {
-      ObjectCreate("TrailVersion",OBJ_LABEL,0,0,0);
-      ObjectSetText("TrailVersion","End of a trial period: "+expiryDate,11,"Calibri",clrAqua);
-      ObjectSet("TrailVersion",OBJPROP_CORNER,0);
-      ObjectSet("TrailVersion",OBJPROP_XDISTANCE,5);
-      ObjectSet("TrailVersion",OBJPROP_YDISTANCE,20);
+      if(TimeCurrent()>expiryDate)
+        {
+         Alert("Expired copy. Please contact vendor.");
+         return(INIT_FAILED);
+           } else {
+         ObjectCreate("TrialVersion",OBJ_LABEL,0,0,0);
+         ObjectSetText("TrialVersion","End of a trial period: "+TimeToStr(expiryDate),11,"Calibri",clrAqua);
+         ObjectSet("TrialVersion",OBJPROP_CORNER,0);
+         ObjectSet("TrialVersion",OBJPROP_XDISTANCE,5);
+         ObjectSet("TrialVersion",OBJPROP_YDISTANCE,20);
+        }
      }
-   string path=GetRelativeProgramPath();
-   handle_ind=iCustom(Symbol(),0,path+"::Indicators\\"+IndicatorName+".ex4",0,0);
+   uchar src[56],dst[],key[];
+   string keystr="OneFiftyArea";
+   if(StringLen(Licence)>0) 
+     {
+      HexToArray(Licence,src);
+      StringToCharArray(keystr,key);
+      int res=CryptDecode(CRYPT_DES,src,key,dst);
+      if(res>0)
+        {
+        string result[]; 
+        int k=StringSplit(CharArrayToString(dst),StringGetCharacter(";",0),result);
+        for(int i=0;i<k;i++) 
+        { 
+         PrintFormat("result[%d]=%s",i,result[i]); 
+        }
+         //--- print decoded data
+         PrintFormat("Decoded data: size=%d, string='%s'",ArraySize(dst),CharArrayToString(dst));
+        }
+      else
+         Print("Error in CryptDecode. Error code=",GetLastError());
+        } else {
+      Alert("Please add licence key to parameters!");
+      return(INIT_FAILED);
+     }
+   handle_ind=iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
    if(handle_ind==INVALID_HANDLE)
      {
       Print("Expert: iCustom call: Error code=",GetLastError());
       return(INIT_FAILED);
      }
+/*else {PrintFormat("Indicator: iCustom value=%f",handle_ind);}*/
 //---
    return(INIT_SUCCEEDED);
   }
@@ -73,7 +107,7 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-
+   ObjectsDeleteAll();
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -84,14 +118,13 @@ void OnTick()
    int limit=1,err=0,BuyFlag=0,SellFlag=0;
    bool BUY=false,SELL=false;
    double TempTDIGreen=0,TempTDIRed=0;
-   string path=GetRelativeProgramPath();
    for(int i=1;i<=limit;i++)
      {
       //double TDIGreenPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
-      double TDIGreen=iCustom(Symbol(),0,path+"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
-      double TDIYellow=iCustom(Symbol(),0,path+"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
+      double TDIGreen=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
+      double TDIYellow=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
       //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
-      double TDIRed=iCustom(Symbol(),0,path+"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
+      double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
       // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
       // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
       // double TDIB3=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
@@ -151,12 +184,14 @@ TempTDIGreen=TDIGreen;
       //|                                                                  |
       //+------------------------------------------------------------------+
      {
-      OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES);
-      if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
-         OP=OP+1;
-         if(OrderType()==OP_SELL)OSC=OSC+1;
-         if(OrderType()==OP_BUY)OBC=OBC+1;
+         if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+           {
+            OP=OP+1;
+            if(OrderType()==OP_SELL)OSC=OSC+1;
+            if(OrderType()==OP_BUY)OBC=OBC+1;
+           }
         }
      }
    if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
@@ -219,57 +254,72 @@ TempTDIGreen=TDIGreen;
          for(int cnt0=0;cnt0<OrdersHistoryTotal();cnt0++)
            {
             if(WrongDirectionSellTicketNr>0 && WrongDirectionSellTicketNr==OrderTicket()){WrongDirectionSell=false;WrongDirectionSellTicketNr=0;}
-            if(WrongDirectionBuyTicketNr>0 && WrongDirectionBuyTicketNr==OrderTicket()){WrongDirectionBuy=false;WrongDirectionBuyTicketNr=0;}
+            if(WrongDirectionBuyTicketNr>0  &&  WrongDirectionBuyTicketNr==OrderTicket()){WrongDirectionBuy=false;WrongDirectionBuyTicketNr=0;}
             if(OrderTicket()==TicketNrPendingSell) {foundS1=true;}
             if(OrderTicket()==TicketNrPendingSell2) {foundS2=true;}
             if(OrderTicket()==TicketNrPendingBuy) {foundB1=true;}
             if(OrderTicket()==TicketNrPendingBuy2) {foundB2=true;}
-            if(foundS1==false && OrderTicket()==TicketNrSell && TicketNrPendingSell>0){if(!OrderDelete(TicketNrPendingSell,clrNONE)){OrderDelete(TicketNrPendingSell,clrNONE);}};
+            if(foundS1==false && OrderTicket()==TicketNrSell && TicketNrPendingSell>0)
+              {if(!OrderDelete(TicketNrPendingSell,clrNONE)){bool delS;delS=OrderDelete(TicketNrPendingSell,clrNONE);}};
             if(foundS1==false && OrderTicket()==TicketNrSell && TicketNrPendingSell>0){TicketNrPendingSell=0;}
-            if(foundS2==false && OrderTicket()==TicketNrSell && TicketNrPendingSell2>0){if(!OrderDelete(TicketNrPendingSell2,clrNONE)){OrderDelete(TicketNrPendingSell2,clrNONE);}}
+            if(foundS2==false && OrderTicket()==TicketNrSell && TicketNrPendingSell2>0)
+              {if(!OrderDelete(TicketNrPendingSell2,clrNONE)){bool delS2;delS2=OrderDelete(TicketNrPendingSell2,clrNONE);}}
             if(foundS2==false && OrderTicket()==TicketNrSell && TicketNrPendingSell2>0){TicketNrPendingSell2=0;}
-            if(foundB1==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy>0){if(!OrderDelete(TicketNrPendingBuy,clrNONE)){OrderDelete(TicketNrPendingBuy,clrNONE);}}
+            if(foundB1==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy>0)
+              {if(!OrderDelete(TicketNrPendingBuy,clrNONE)){bool delB;delB=OrderDelete(TicketNrPendingBuy,clrNONE);}}
             if(foundB1==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy>0){TicketNrPendingBuy=0;}
-            if(foundB2==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy2>0){if(!OrderDelete(TicketNrPendingBuy2,clrNONE)){OrderDelete(TicketNrPendingBuy2,clrNONE);}}
+            if(foundB2==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy2>0)
+              {if(!OrderDelete(TicketNrPendingBuy2,clrNONE)){bool delB2;delB2=OrderDelete(TicketNrPendingBuy2,clrNONE);}}
             if(foundB2==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy2>0){TicketNrPendingBuy2=0;}
            }
         }
      }
-     
+
    for(cnt=0;cnt<OrdersTotal();cnt++)
      {
-      OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES);
-      if((OrderType()==OP_BUY || OrderType()==OP_SELL) && (OrderSymbol()==Symbol()) && (OrderMagicNumber()==MagicNumber) && 
-         ((TicketNrPendingSell>0 || (TicketNrPendingSell>0 && TicketNrPendingSell2>0)) || 
-         (TicketNrPendingBuy>0 || (TicketNrPendingBuy>0 && TicketNrPendingBuy2>0))) && (TicketNrBuy>0 || TicketNrSell>0))
+      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
-         double pp= MarketInfo(OrderSymbol(),MODE_POINT);
-         for(int c=0;c<OrdersTotal();c++)
+         if((OrderType()==OP_BUY || OrderType()==OP_SELL) && (OrderSymbol()==Symbol()) && (OrderMagicNumber()==MagicNumber) && 
+            ((TicketNrPendingSell>0 || (TicketNrPendingSell>0 && TicketNrPendingSell2>0)) || 
+            (TicketNrPendingBuy>0 || (TicketNrPendingBuy>0 && TicketNrPendingBuy2>0))) && (TicketNrBuy>0 || TicketNrSell>0))
            {
-            OrderSelect(c,SELECT_BY_POS,MODE_TRADES);
-            if((OrderTicket()==TicketNrPendingSell && OrderType()==OP_SELL) || (OrderTicket()==TicketNrPendingSell2 && OrderType()==OP_SELL))
+            for(int c=0;c<OrdersTotal();c++)
               {
-               double TempTP=OrderTakeProfit();
-               if(TicketNrSell>0){bool fm;fm=OrderModify(TicketNrSell,OrderOpenPrice(),0*pp,TempTP,0,CLR_NONE);}
-               if(TicketNrPendingSell>0){bool fm1;fm1=OrderModify(TicketNrPendingSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-               if(TicketNrPendingSell2>0){bool fm2;fm2=OrderModify(TicketNrPendingSell2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-               WrongDirectionSell=true;
-               WrongDirectionSellTicketNr=TicketNrSell;
-               break;
+               if(OrderSelect(c,SELECT_BY_POS,MODE_TRADES)==true)
+                 {
+                  double TempTP=NormalizeDouble(OrderTakeProfit(),Digits);
+                  if((OrderTicket()==TicketNrPendingSell && OrderType()==OP_SELL) || (OrderTicket()==TicketNrPendingSell2 && OrderType()==OP_SELL))
+                    {
+                     if((TicketNrSell>0) && (OrderSelect(TicketNrSell,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
+                       {bool fm;fm=OrderModify(TicketNrSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                     if((TicketNrPendingSell>0) && (OrderSelect(TicketNrPendingSell,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
+                       {bool fm1;fm1=OrderModify(TicketNrPendingSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                     if((TicketNrPendingSell2>0) && (OrderSelect(TicketNrPendingSell2,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
+                       {bool fm2;fm2=OrderModify(TicketNrPendingSell2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                     WrongDirectionSell=true;
+                     WrongDirectionSellTicketNr=TicketNrSell;
+                     break;
+                    }
+                 }
               }
-           }
-         for(int f=0;f<OrdersTotal();f++)
-           {
-            OrderSelect(f,SELECT_BY_POS,MODE_TRADES);
-            if((OrderTicket()==TicketNrPendingBuy && OrderType()==OP_BUY) || (OrderTicket()==TicketNrPendingBuy2 && OrderType()==OP_BUY))
+            for(int f=0;f<OrdersTotal();f++)
               {
-               double TempTP=OrderTakeProfit();
-               if(TicketNrBuy>0){bool fm;fm=OrderModify(TicketNrBuy,OrderOpenPrice(),0*pp,TempTP,0,CLR_NONE);}
-               if(TicketNrPendingBuy>0){bool fm1;fm1=OrderModify(TicketNrPendingBuy,OrderOpenPrice(),0*pp,TempTP,0,CLR_NONE);}
-               if(TicketNrPendingBuy2>0){bool fm2;fm2=OrderModify(TicketNrPendingBuy2,OrderOpenPrice(),0*pp,TempTP,0,CLR_NONE);}
-               WrongDirectionBuy=true;
-               WrongDirectionBuyTicketNr=TicketNrBuy;
-               break;
+               if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES)==true)
+                 {
+                  double TempTP=NormalizeDouble(OrderTakeProfit(),Digits);
+                  if((OrderTicket()==TicketNrPendingBuy && OrderType()==OP_BUY) || (OrderTicket()==TicketNrPendingBuy2 && OrderType()==OP_BUY))
+                    {
+                     if((TicketNrBuy>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
+                       {bool fm;fm=OrderModify(TicketNrBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                     if((TicketNrPendingBuy>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
+                       {bool fm1;fm1=OrderModify(TicketNrPendingBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                     if((TicketNrPendingBuy2>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
+                       {bool fm2;fm2=OrderModify(TicketNrPendingBuy2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                     WrongDirectionBuy=true;
+                     WrongDirectionBuyTicketNr=TicketNrBuy;
+                     break;
+                    }
+                 }
               }
            }
         }
@@ -313,12 +363,12 @@ TempTDIGreen=TDIGreen;
 
          double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
          if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy==0)TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Bid-TP/2*Point,Slippage,SLI,Bid,EAName+"P1B",MagicNumber,0,Red);
+         if(TicketNrPendingBuy==0)TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,SLI,Ask,EAName+"P1B",MagicNumber,0,Red);
          //if(TicketNrPending==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Bid-TP/2*Point,Slippage,SLI,Bid,EAName+"P1B",MagicNumber,0,Red);
 
          double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
          if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy2==0)TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Bid-TP*Point,Slippage,SLI,Bid,EAName+"P2B",MagicNumber,0,Red);
+         if(TicketNrPendingBuy2==0)TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP*Point,Slippage,SLI,Ask,EAName+"P2B",MagicNumber,0,Red);
          //if(TicketNrPending2==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Bid-TP*Point,Slippage,SLI,Bid,EAName+"P2B",MagicNumber,0,Red);
         }
      }
@@ -437,45 +487,71 @@ void CurrentProfit(double CurProfit)
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,0);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
-   ObjectSet("CurProfit",OBJPROP_YDISTANCE,50);
+   ObjectSet("CurProfit",OBJPROP_YDISTANCE,40);
+   if(trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
-//| GetRelativeProgramPath                                           |
+
 //+------------------------------------------------------------------+
-string GetRelativeProgramPath()
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool HexToArray(string str,uchar &arr[])
   {
-   int pos2;
-//--- get the absolute path to the application
-   string path=MQLInfoString(MQL_PROGRAM_PATH);
-//--- find the position of "\MQL4\" substring
-   int    pos=StringFind(path,"\\MQL4\\");
-//--- substring not found - error
-   if(pos<0)
-      return(NULL);
-//--- skip "\MQL4" directory
-   pos+=5;
-//--- skip extra '\' symbols
-   while(StringGetCharacter(path,pos+1)=='\\')
-      pos++;
-//--- if this is a resource, return the path relative to MQL5 directory
-   if(StringFind(path,"::",pos)>=0)
-      return(StringSubstr(path,pos));
-//--- find a separator for the first MQL5 subdirectory (for example, MQL5\Indicators)
-//--- if not found, return the path relative to MQL5 directory
-   if((pos2=StringFind(path,"\\",pos+1))<0)
-      return(StringSubstr(path,pos));
-//--- return the path relative to the subdirectory (for example, MQL5\Indicators)
-   return(StringSubstr(path,pos2+1));
+   int strcount = StringLen(str);
+   int arrcount = ArraySize(arr);
+   if(arrcount < strcount / 2) return false;
+
+   uchar tc[];
+   StringToCharArray(str,tc);
+
+   int i=0, j=0;
+   for(i=0; i<strcount; i+=2)
+     {
+      uchar tmpchr=(HEXCHAR_TO_DECCHAR(tc[i])<<4)+HEXCHAR_TO_DECCHAR(tc[i+1]);
+      arr[j]=tmpchr;
+      j++;
+     }
+
+   return true;
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
 //+------------------------------------------------------------------+
-//| Custom indicator iteration function                              |
-//+------------------------------------------------------------------+
-int OnCalculate(const int rates_total,
-                const int prev_calculated,
-                const int begin,
-                const double &price[])
+uchar HexToDecimal(string hex)
   {
-//--- return value of prev_calculated for next call
-   return(rates_total);
+// assumes hex is 1 character
+   if(!StringCompare(hex,"0"))
+      return 0;
+   if(!StringCompare(hex,"1"))
+      return 1;
+   if(!StringCompare(hex,"2"))
+      return 2;
+   if(!StringCompare(hex,"3"))
+      return 3;
+   if(!StringCompare(hex,"4"))
+      return 4;
+   if(!StringCompare(hex,"5"))
+      return 5;
+   if(!StringCompare(hex,"6"))
+      return 6;
+   if(!StringCompare(hex,"7"))
+      return 7;
+   if(!StringCompare(hex,"8"))
+      return 8;
+   if(!StringCompare(hex,"9"))
+      return 9;
+   if(!StringCompare(hex,"A"))
+      return 10;
+   if(!StringCompare(hex,"B"))
+      return 11;
+   if(!StringCompare(hex,"C"))
+      return 12;
+   if(!StringCompare(hex,"D"))
+      return 13;
+   if(!StringCompare(hex,"E"))
+      return 14;
+   if(!StringCompare(hex,"F"))
+      return 15;
+   return 0;
   }
+//+------------------------------------------------------------------+
