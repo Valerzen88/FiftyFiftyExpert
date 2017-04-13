@@ -12,6 +12,8 @@
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 
+//#include <mql4-http.mqh>
+
 #define HEXCHAR_TO_DECCHAR(h)  (h<=57 ? (h-48) : (h-55))
 
 //--- input parameters
@@ -22,8 +24,8 @@ extern int      TrailingStep=50;
 extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
 extern int      TakeProfit=750;
-extern int      StopLoss=550;
-extern string   Licence="1F038D55F0BC3648B93112B3E26D4F23A5794A1C2EB0FC14";
+extern int      StopLoss=0;
+//extern string   Licence="1F038D55F0BC3648B93112B3E26D4F23A5794A1C2EB0FC14";
 
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
@@ -33,7 +35,7 @@ int RSI_Price_Type=MODE_SMA;      //0-3
 int Trade_Signal_Line=7;
 int Trade_Signal_Line2=18;
 int Trade_Signal_Type=MODE_SMA;   //0-3
-int Slippage=3,MaxOrders=3,BreakEven=0;
+int Slippage=3,MaxOrders=6,BreakEven=0;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 bool AddPositions=false;
@@ -65,33 +67,32 @@ int OnInit()
          ObjectSetText("TrialVersion","End of a trial period: "+TimeToStr(expiryDate),11,"Calibri",clrAqua);
          ObjectSet("TrialVersion",OBJPROP_CORNER,0);
          ObjectSet("TrialVersion",OBJPROP_XDISTANCE,5);
-         ObjectSet("TrialVersion",OBJPROP_YDISTANCE,20);
+         ObjectSet("TrialVersion",OBJPROP_YDISTANCE,5);
         }
      }
-   uchar src[56],dst[],key[];
+//Print(getComputerName());
+/* uchar src[56],dst[],key[];
    string keystr="OneFiftyArea";
-   if(StringLen(Licence)>0) 
+   if(StringLen(Licence)>0)
      {
       HexToArray(Licence,src);
       StringToCharArray(keystr,key);
       int res=CryptDecode(CRYPT_DES,src,key,dst);
       if(res>0)
         {
-        string result[]; 
-        int k=StringSplit(CharArrayToString(dst),StringGetCharacter(";",0),result);
-        for(int i=0;i<k;i++) 
-        { 
-         PrintFormat("result[%d]=%s",i,result[i]); 
-        }
-         //--- print decoded data
-         PrintFormat("Decoded data: size=%d, string='%s'",ArraySize(dst),CharArrayToString(dst));
+         string result[];
+         int k=StringSplit(CharArrayToString(dst),StringGetCharacter(";",0),result);
+         for(int i=0;i<k;i++)
+           {
+            PrintFormat("result[%d]=%s",i,result[i]);
+           }
         }
       else
          Print("Error in CryptDecode. Error code=",GetLastError());
         } else {
       Alert("Please add licence key to parameters!");
       return(INIT_FAILED);
-     }
+     }*/
    handle_ind=iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
    if(handle_ind==INVALID_HANDLE)
      {
@@ -259,70 +260,72 @@ TempTDIGreen=TDIGreen;
             if(OrderTicket()==TicketNrPendingSell2) {foundS2=true;}
             if(OrderTicket()==TicketNrPendingBuy) {foundB1=true;}
             if(OrderTicket()==TicketNrPendingBuy2) {foundB2=true;}
-            if(foundS1==false && OrderTicket()==TicketNrSell && TicketNrPendingSell>0)
-              {if(!OrderDelete(TicketNrPendingSell,clrNONE)){bool delS;delS=OrderDelete(TicketNrPendingSell,clrNONE);}};
-            if(foundS1==false && OrderTicket()==TicketNrSell && TicketNrPendingSell>0){TicketNrPendingSell=0;}
-            if(foundS2==false && OrderTicket()==TicketNrSell && TicketNrPendingSell2>0)
-              {if(!OrderDelete(TicketNrPendingSell2,clrNONE)){bool delS2;delS2=OrderDelete(TicketNrPendingSell2,clrNONE);}}
-            if(foundS2==false && OrderTicket()==TicketNrSell && TicketNrPendingSell2>0){TicketNrPendingSell2=0;}
-            if(foundB1==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy>0)
-              {if(!OrderDelete(TicketNrPendingBuy,clrNONE)){bool delB;delB=OrderDelete(TicketNrPendingBuy,clrNONE);}}
-            if(foundB1==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy>0){TicketNrPendingBuy=0;}
-            if(foundB2==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy2>0)
-              {if(!OrderDelete(TicketNrPendingBuy2,clrNONE)){bool delB2;delB2=OrderDelete(TicketNrPendingBuy2,clrNONE);}}
-            if(foundB2==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy2>0){TicketNrPendingBuy2=0;}
+
+            if(foundS1==false && OrderTicket()==TicketNrSell && TicketNrPendingSell>0
+               && getTicketCurrentType(TicketNrPendingSell)>-1 && getTicketCurrentType(TicketNrPendingSell)==3)
+              {if(OrderDelete(TicketNrPendingSell,clrNONE)){/*bool delS;delS=OrderDelete(TicketNrPendingSell,clrNONE);*/TicketNrPendingSell=0;}};
+
+            if(foundS2==false && OrderTicket()==TicketNrSell && TicketNrPendingSell2>0
+               && getTicketCurrentType(TicketNrPendingSell2)>-1 && getTicketCurrentType(TicketNrPendingSell2)==3)
+              {if(OrderDelete(TicketNrPendingSell2,clrNONE)){/*bool delS2;delS2=OrderDelete(TicketNrPendingSell2,clrNONE);*/TicketNrPendingSell2=0;}}
+
+            if(foundB1==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy>0
+               && getTicketCurrentType(TicketNrPendingBuy)>-1 && getTicketCurrentType(TicketNrPendingBuy)==2)
+              {if(OrderDelete(TicketNrPendingBuy,clrNONE)){/*bool delB;delB=OrderDelete(TicketNrPendingBuy,clrNONE);*/TicketNrPendingBuy=0;}}
+
+            if(foundB2==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy2>0
+               && getTicketCurrentType(TicketNrPendingBuy2)>-1 && getTicketCurrentType(TicketNrPendingBuy2)==2)
+              {if(OrderDelete(TicketNrPendingBuy2,clrNONE)){/*bool delB2;delB2=OrderDelete(TicketNrPendingBuy2,clrNONE);*/TicketNrPendingBuy2=0;}}
            }
         }
      }
 
    for(cnt=0;cnt<OrdersTotal();cnt++)
      {
-      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
+      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true && (OrderType()==OP_BUY || OrderType()==OP_SELL) && (OrderSymbol()==Symbol()) && (OrderMagicNumber()==MagicNumber) && 
+         ((TicketNrPendingSell>0 || (TicketNrPendingSell>0 && TicketNrPendingSell2>0)) || 
+         (TicketNrPendingBuy>0 || (TicketNrPendingBuy>0 && TicketNrPendingBuy2>0))) && (TicketNrBuy>0 || TicketNrSell>0))
         {
-         if((OrderType()==OP_BUY || OrderType()==OP_SELL) && (OrderSymbol()==Symbol()) && (OrderMagicNumber()==MagicNumber) && 
-            ((TicketNrPendingSell>0 || (TicketNrPendingSell>0 && TicketNrPendingSell2>0)) || 
-            (TicketNrPendingBuy>0 || (TicketNrPendingBuy>0 && TicketNrPendingBuy2>0))) && (TicketNrBuy>0 || TicketNrSell>0))
+         for(int c=0;c<OrdersTotal();c++)
            {
-            for(int c=0;c<OrdersTotal();c++)
+            if(OrderSelect(c,SELECT_BY_POS,MODE_TRADES)==true)
               {
-               if(OrderSelect(c,SELECT_BY_POS,MODE_TRADES)==true)
+               double TempTP=NormalizeDouble(OrderTakeProfit(),Digits);
+               if((OrderTicket()==TicketNrPendingSell && OrderType()==OP_SELL) || (OrderTicket()==TicketNrPendingSell2 && OrderType()==OP_SELL))
                  {
-                  double TempTP=NormalizeDouble(OrderTakeProfit(),Digits);
-                  if((OrderTicket()==TicketNrPendingSell && OrderType()==OP_SELL) || (OrderTicket()==TicketNrPendingSell2 && OrderType()==OP_SELL))
-                    {
-                     if((TicketNrSell>0) && (OrderSelect(TicketNrSell,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
-                       {bool fm;fm=OrderModify(TicketNrSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                     if((TicketNrPendingSell>0) && (OrderSelect(TicketNrPendingSell,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
-                       {bool fm1;fm1=OrderModify(TicketNrPendingSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                     if((TicketNrPendingSell2>0) && (OrderSelect(TicketNrPendingSell2,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
-                       {bool fm2;fm2=OrderModify(TicketNrPendingSell2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                     WrongDirectionSell=true;
-                     WrongDirectionSellTicketNr=TicketNrSell;
-                     break;
-                    }
+                  if((TicketNrSell>0) && (OrderSelect(TicketNrSell,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+                    {bool fm;fm=OrderModify(TicketNrSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                  if((TicketNrPendingSell>0) && (OrderSelect(TicketNrPendingSell,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+                    {bool fm1;fm1=OrderModify(TicketNrPendingSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                  if((TicketNrPendingSell2>0) && (OrderSelect(TicketNrPendingSell2,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+                    {bool fm2;fm2=OrderModify(TicketNrPendingSell2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                  WrongDirectionSell=true;
+                  WrongDirectionSellTicketNr=TicketNrSell;
+                  break;
                  }
               }
-            for(int f=0;f<OrdersTotal();f++)
+           }
+         for(int f=0;f<OrdersTotal();f++)
+           {
+            if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES)==true)
               {
-               if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES)==true)
+               double TempTP=NormalizeDouble(OrderTakeProfit(),Digits);
+               if((OrderTicket()==TicketNrPendingBuy && OrderType()==OP_BUY) || (OrderTicket()==TicketNrPendingBuy2 && OrderType()==OP_BUY))
                  {
-                  double TempTP=NormalizeDouble(OrderTakeProfit(),Digits);
-                  if((OrderTicket()==TicketNrPendingBuy && OrderType()==OP_BUY) || (OrderTicket()==TicketNrPendingBuy2 && OrderType()==OP_BUY))
-                    {
-                     if((TicketNrBuy>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
-                       {bool fm;fm=OrderModify(TicketNrBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                     if((TicketNrPendingBuy>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
-                       {bool fm1;fm1=OrderModify(TicketNrPendingBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                     if((TicketNrPendingBuy2>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET)==true) && TempTP!=OrderTakeProfit())
-                       {bool fm2;fm2=OrderModify(TicketNrPendingBuy2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                     WrongDirectionBuy=true;
-                     WrongDirectionBuyTicketNr=TicketNrBuy;
-                     break;
-                    }
+                  if((TicketNrBuy>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+                    {bool fm;fm=OrderModify(TicketNrBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                  if((TicketNrPendingBuy>0) && (OrderSelect(TicketNrPendingBuy,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+                    {bool fm1;fm1=OrderModify(TicketNrPendingBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                  if((TicketNrPendingBuy2>0) && (OrderSelect(TicketNrPendingBuy2,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+                    {bool fm2;fm2=OrderModify(TicketNrPendingBuy2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                  WrongDirectionBuy=true;
+                  WrongDirectionBuyTicketNr=TicketNrBuy;
+                  break;
                  }
               }
            }
         }
+
      }
 
 /*for(cnt=0;cnt<OrdersTotal();cnt++)
@@ -339,23 +342,23 @@ TempTDIGreen=TDIGreen;
    if((AddP() && AddPositions && OP<=MaxOrders) || (OP<=MaxOrders && !AddPositions))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
-      if(OS==1 && OSC==0)
+      if(OS==1 && OSC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
          TicketNrSell=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
          //if(TicketNr==-1)OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);
          double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
          if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingSell==0)TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,SLI,Bid,EAName+"P1S",MagicNumber,0,Red);
+         if(TicketNrPendingSell==0)TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);
          //if(TicketNrPending==-1)OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,SLI,Bid,EAName+"P1S",MagicNumber,0,Red);
 
          double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
          if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingSell2==0)TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP*Point,Slippage,SLI,Bid,EAName+"P2S",MagicNumber,0,Red);
+         if(TicketNrPendingSell2==0)TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);
          // if(TicketNrPending2==-1)OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP*Point,Slippage,SLI,Bid,EAName+"P2S",MagicNumber,0,Red);
         }
       // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
-      if(OB==1 && OBC==0)
+      if(OB==1 && OBC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
          TicketNrBuy=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
@@ -363,12 +366,12 @@ TempTDIGreen=TDIGreen;
 
          double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
          if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy==0)TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,SLI,Ask,EAName+"P1B",MagicNumber,0,Red);
+         if(TicketNrPendingBuy==0)TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);
          //if(TicketNrPending==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Bid-TP/2*Point,Slippage,SLI,Bid,EAName+"P1B",MagicNumber,0,Red);
 
          double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
          if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy2==0)TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP*Point,Slippage,SLI,Ask,EAName+"P2B",MagicNumber,0,Red);
+         if(TicketNrPendingBuy2==0)TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);
          //if(TicketNrPending2==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Bid-TP*Point,Slippage,SLI,Bid,EAName+"P2B",MagicNumber,0,Red);
         }
      }
@@ -487,15 +490,30 @@ void CurrentProfit(double CurProfit)
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,0);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
-   ObjectSet("CurProfit",OBJPROP_YDISTANCE,40);
+   ObjectSet("CurProfit",OBJPROP_YDISTANCE,30);
+
+   ObjectCreate("MagicNumber",OBJ_LABEL,0,0,0);
+   ObjectSetText("MagicNumber","MagicNumber: "+IntegerToString(MagicNumber),11,"Calibri",clrMediumVioletRed);
+   ObjectSet("MagicNumber",OBJPROP_CORNER,0);
+   ObjectSet("MagicNumber",OBJPROP_XDISTANCE,5);
+   ObjectSet("MagicNumber",OBJPROP_YDISTANCE,45);
    if(trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
+int getTicketCurrentType(int TicketNr)
+  {
+   int res=-1;
 
+   if(OrderSelect(TicketNr,SELECT_BY_TICKET,MODE_TRADES))
+     {
+      res=OrderType();
+     }
+   return res;
+  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-bool HexToArray(string str,uchar &arr[])
+/*bool HexToArray(string str,uchar &arr[])
   {
    int strcount = StringLen(str);
    int arrcount = ArraySize(arr);
@@ -513,11 +531,11 @@ bool HexToArray(string str,uchar &arr[])
      }
 
    return true;
-  }
+  }*/
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-uchar HexToDecimal(string hex)
+/*uchar HexToDecimal(string hex)
   {
 // assumes hex is 1 character
    if(!StringCompare(hex,"0"))
@@ -553,5 +571,5 @@ uchar HexToDecimal(string hex)
    if(!StringCompare(hex,"F"))
       return 15;
    return 0;
-  }
+  }*/
 //+------------------------------------------------------------------+
