@@ -8,7 +8,7 @@ Neben der Fixen-Lot-Funktionalität wurde der dynamische Lotgrößenberechnung i
 
 Dieser Handelsroboter benutzt einen eigenen Indikator.
 
-Die Einstellungen sind für das Handeln auf EURUSD, NZDUSD und AUDUSD optimiert. 
+Die Einstellungen sind für das Handeln auf EURUSD, NZDUSD und GBPUSD optimiert. 
 
 Zeiteinheiten: M30 bis H4
 
@@ -38,7 +38,7 @@ In addition to fix-lot-functionality a dynamic size calculation of a lot was imp
  
 This trading robot uses its own integrated indicator.
  
-The settings are optimized for handling on EURUSD, NZDUSD  and AUDUSD.
+The settings are optimized for handling on EURUSD, NZDUSD  and GBPUSD.
  
 Time units are: M30 to H4
 
@@ -65,7 +65,7 @@ RU:
 
 В дополнение к фиксированому размеру позиции, в программе можно использовать динамический размер позиции. Размер рассчитывается на основе имеющейся свободной маржи и рычага счета.
 
-Прекрасно работает на EURUSD, NZDUSD и AUDUSD на таймфреймах от 30Мин до 4H
+Прекрасно работает на EURUSD, NZDUSD и GBPUSD на таймфреймах от 30Мин до 4H
 
 Пожалуйста, будьте благоразумны в выборе процента риска и проверьте эти значения для своего брокера!!! Результаты могут быть разными, из-за сперда или другой спецификации вашего брокера!
 
