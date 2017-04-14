@@ -6,26 +6,21 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.1"
+#property version   "1.3"
 #property description "Trades on oversold or overbought market till the next signal."
 #property strict
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 
-//#include <mql4-http.mqh>
-
-#define HEXCHAR_TO_DECCHAR(h)  (h<=57 ? (h-48) : (h-55))
-
 //--- input parameters
 extern double   LotSize=0.01;
 extern bool     LotAutoSize=true;
-extern int      RiskPercent=50;
+extern int      LotRiskPercent=50;
 extern int      TrailingStep=50;
 extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
-//extern string   Licence="1F038D55F0BC3648B93112B3E26D4F23A5794A1C2EB0FC14";
 
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
@@ -44,8 +39,8 @@ double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 /*licence*/
-bool trial_lic=false;
-datetime expiryDate=D'2017.04.27 00:00';
+bool trial_lic=true;
+datetime expiryDate=D'2017.04.29 00:00';
 /*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
 int WrongDirectionBuyTicketNr=0,WrongDirectionSellTicketNr=0;
@@ -65,41 +60,18 @@ int OnInit()
            } else {
          ObjectCreate("TrialVersion",OBJ_LABEL,0,0,0);
          ObjectSetText("TrialVersion","End of a trial period: "+TimeToStr(expiryDate),11,"Calibri",clrAqua);
-         ObjectSet("TrialVersion",OBJPROP_CORNER,0);
+         ObjectSet("TrialVersion",OBJPROP_CORNER,1);
          ObjectSet("TrialVersion",OBJPROP_XDISTANCE,5);
-         ObjectSet("TrialVersion",OBJPROP_YDISTANCE,5);
+         ObjectSet("TrialVersion",OBJPROP_YDISTANCE,15);
         }
      }
-//Print(getComputerName());
-/* uchar src[56],dst[],key[];
-   string keystr="OneFiftyArea";
-   if(StringLen(Licence)>0)
-     {
-      HexToArray(Licence,src);
-      StringToCharArray(keystr,key);
-      int res=CryptDecode(CRYPT_DES,src,key,dst);
-      if(res>0)
-        {
-         string result[];
-         int k=StringSplit(CharArrayToString(dst),StringGetCharacter(";",0),result);
-         for(int i=0;i<k;i++)
-           {
-            PrintFormat("result[%d]=%s",i,result[i]);
-           }
-        }
-      else
-         Print("Error in CryptDecode. Error code=",GetLastError());
-        } else {
-      Alert("Please add licence key to parameters!");
-      return(INIT_FAILED);
-     }*/
+
    handle_ind=iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
    if(handle_ind==INVALID_HANDLE)
      {
       Print("Expert: iCustom call: Error code=",GetLastError());
       return(INIT_FAILED);
      }
-/*else {PrintFormat("Indicator: iCustom value=%f",handle_ind);}*/
 //---
    return(INIT_SUCCEEDED);
   }
@@ -118,7 +90,7 @@ void OnTick()
 //---
    int limit=1,err=0,BuyFlag=0,SellFlag=0;
    bool BUY=false,SELL=false;
-   double TempTDIGreen=0,TempTDIRed=0;
+//double TempTDIGreen=0,TempTDIRed=0;
    for(int i=1;i<=limit;i++)
      {
       //double TDIGreenPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
@@ -167,11 +139,11 @@ TempTDIGreen=TDIGreen;
    if(LotAutoSize)
      {
       int Faktor=100;
-      if(RiskPercent<0.1 || RiskPercent>100){Comment("Invalid Risk Value.");}
+      if(LotRiskPercent<0.1 || LotRiskPercent>100){Comment("Invalid Risk Value.");}
       else
         {
          if(Digits<3){Faktor=10;}else{Faktor=100;}
-         LotSize=MathFloor((AccountFreeMargin()*AccountLeverage()*RiskPercent*Point*Faktor)/(Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*
+         LotSize=MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/(Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*
                            MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT);
          if(LotSize<MarketInfo(Symbol(),MODE_MINLOT)) LotSize=MarketInfo(Symbol(),MODE_MINLOT);
         }
@@ -261,21 +233,37 @@ TempTDIGreen=TDIGreen;
             if(OrderTicket()==TicketNrPendingBuy) {foundB1=true;}
             if(OrderTicket()==TicketNrPendingBuy2) {foundB2=true;}
 
-            if(foundS1==false && OrderTicket()==TicketNrSell && TicketNrPendingSell>0
-               && getTicketCurrentType(TicketNrPendingSell)>-1 && getTicketCurrentType(TicketNrPendingSell)==3)
-              {if(OrderDelete(TicketNrPendingSell,clrNONE)){/*bool delS;delS=OrderDelete(TicketNrPendingSell,clrNONE);*/TicketNrPendingSell=0;}};
+            if(OrderTicket()==TicketNrSell)
+              {
+               if(foundS1==false && TicketNrPendingSell>0
+                  && getTicketCurrentType(TicketNrPendingSell)>-1 && getTicketCurrentType(TicketNrPendingSell)==3)
+                 {
+                  bool delS1; delS1=OrderDelete(TicketNrPendingSell);
+                  if(delS1==false){bool delS11;delS11=OrderDelete(TicketNrPendingSell);TicketNrPendingSell=0;}else{TicketNrPendingSell=0;}
+                 }
+               if(foundS2==false && TicketNrPendingSell2>0
+                  && getTicketCurrentType(TicketNrPendingSell2)>-1 && getTicketCurrentType(TicketNrPendingSell2)==3)
+                 {
+                  bool delS2; delS2=OrderDelete(TicketNrPendingSell2);
+                  if(delS2==false){bool delS21;delS21=OrderDelete(TicketNrPendingSell2);TicketNrPendingSell2=0;}else{TicketNrPendingSell2=0;}
+                 }
+              }
+            if(OrderTicket()==TicketNrBuy)
+              {
+               if(foundB1==false && TicketNrPendingBuy>0
+                  && getTicketCurrentType(TicketNrPendingBuy)>-1 && getTicketCurrentType(TicketNrPendingBuy)==2)
+                 {
+                  bool delB1; delB1=OrderDelete(TicketNrPendingBuy);
+                  if(delB1==false){bool delB11;delB11=OrderDelete(TicketNrPendingBuy);TicketNrPendingBuy=0;}else{TicketNrPendingBuy=0;}
+                 }
 
-            if(foundS2==false && OrderTicket()==TicketNrSell && TicketNrPendingSell2>0
-               && getTicketCurrentType(TicketNrPendingSell2)>-1 && getTicketCurrentType(TicketNrPendingSell2)==3)
-              {if(OrderDelete(TicketNrPendingSell2,clrNONE)){/*bool delS2;delS2=OrderDelete(TicketNrPendingSell2,clrNONE);*/TicketNrPendingSell2=0;}}
-
-            if(foundB1==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy>0
-               && getTicketCurrentType(TicketNrPendingBuy)>-1 && getTicketCurrentType(TicketNrPendingBuy)==2)
-              {if(OrderDelete(TicketNrPendingBuy,clrNONE)){/*bool delB;delB=OrderDelete(TicketNrPendingBuy,clrNONE);*/TicketNrPendingBuy=0;}}
-
-            if(foundB2==false && OrderTicket()==TicketNrBuy && TicketNrPendingBuy2>0
-               && getTicketCurrentType(TicketNrPendingBuy2)>-1 && getTicketCurrentType(TicketNrPendingBuy2)==2)
-              {if(OrderDelete(TicketNrPendingBuy2,clrNONE)){/*bool delB2;delB2=OrderDelete(TicketNrPendingBuy2,clrNONE);*/TicketNrPendingBuy2=0;}}
+               if(foundB2==false && TicketNrPendingBuy2>0
+                  && getTicketCurrentType(TicketNrPendingBuy2)>-1 && getTicketCurrentType(TicketNrPendingBuy2)==2)
+                 {
+                  bool delB2; delB2=OrderDelete(TicketNrPendingBuy2);
+                  if(delB2==false){bool delB21;delB21=OrderDelete(TicketNrPendingBuy2);TicketNrPendingBuy2=0;}else{TicketNrPendingBuy2=0;}
+                 }
+              }
            }
         }
      }
@@ -295,10 +283,10 @@ TempTDIGreen=TDIGreen;
                  {
                   if((TicketNrSell>0) && (OrderSelect(TicketNrSell,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
                     {bool fm;fm=OrderModify(TicketNrSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                  if((TicketNrPendingSell>0) && (OrderSelect(TicketNrPendingSell,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+/*if((TicketNrPendingSell>0) && (OrderSelect(TicketNrPendingSell,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
                     {bool fm1;fm1=OrderModify(TicketNrPendingSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
                   if((TicketNrPendingSell2>0) && (OrderSelect(TicketNrPendingSell2,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
-                    {bool fm2;fm2=OrderModify(TicketNrPendingSell2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                    {bool fm2;fm2=OrderModify(TicketNrPendingSell2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}*/
                   WrongDirectionSell=true;
                   WrongDirectionSellTicketNr=TicketNrSell;
                   break;
@@ -314,10 +302,10 @@ TempTDIGreen=TDIGreen;
                  {
                   if((TicketNrBuy>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
                     {bool fm;fm=OrderModify(TicketNrBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
-                  if((TicketNrPendingBuy>0) && (OrderSelect(TicketNrPendingBuy,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
+/* if((TicketNrPendingBuy>0) && (OrderSelect(TicketNrPendingBuy,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
                     {bool fm1;fm1=OrderModify(TicketNrPendingBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
                   if((TicketNrPendingBuy2>0) && (OrderSelect(TicketNrPendingBuy2,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
-                    {bool fm2;fm2=OrderModify(TicketNrPendingBuy2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                    {bool fm2;fm2=OrderModify(TicketNrPendingBuy2,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}*/
                   WrongDirectionBuy=true;
                   WrongDirectionBuyTicketNr=TicketNrBuy;
                   break;
@@ -325,20 +313,10 @@ TempTDIGreen=TDIGreen;
               }
            }
         }
-
      }
 
-/*for(cnt=0;cnt<OrdersTotal();cnt++)
-     {
-      OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES);
-       if((OrderType()==OP_BUY || OrderType()==OP_SELL) && (OrderSymbol()==Symbol()) && (OrderMagicNumber()==MagicNumber) && 
-         ((TicketNrPendingSell>0 || (TicketNrPendingSell>0 && TicketNrPendingSell2>0)) || 
-         (TicketNrPendingBuy>0 || (TicketNrPendingBuy>0 && TicketNrPendingBuy2>0))) && (TicketNrBuy>0 || TicketNrSell>0)) {
-         
-         }
-      }*/
-
 //open position
+// 
    if((AddP() && AddPositions && OP<=MaxOrders) || (OP<=MaxOrders && !AddPositions))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
@@ -346,33 +324,40 @@ TempTDIGreen=TDIGreen;
         {
          if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
          TicketNrSell=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
-         //if(TicketNr==-1)OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);
+
          double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
          if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingSell==0)TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);
-         //if(TicketNrPending==-1)OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,SLI,Bid,EAName+"P1S",MagicNumber,0,Red);
+         if(TicketNrPendingSell>0 && OrderSelect(TicketNrPendingSell,SELECT_BY_POS)==true && OrderType()==3)
+           {if(OrderType()==3){bool delS=OrderDelete(TicketNrPendingSell);}TicketNrPendingSell=0;}
+         if(TicketNrPendingSell==0)
+           {TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);}
 
          double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
          if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingSell2==0)TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);
-         // if(TicketNrPending2==-1)OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP*Point,Slippage,SLI,Bid,EAName+"P2S",MagicNumber,0,Red);
+         if(TicketNrPendingSell2>0 && OrderSelect(TicketNrPendingSell2,SELECT_BY_POS)==true)
+           {if(OrderType()==3){bool delS2=OrderDelete(TicketNrPendingSell2);}TicketNrPendingSell2=0;}
+         if(TicketNrPendingSell2==0)
+           {TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);}
         }
       // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
       if(OB==1 && OBC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
          TicketNrBuy=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
-         //if(TicketNr==-1)OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);
 
          double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
          if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy==0)TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);
-         //if(TicketNrPending==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Bid-TP/2*Point,Slippage,SLI,Bid,EAName+"P1B",MagicNumber,0,Red);
+         if(TicketNrPendingBuy>0 && OrderSelect(TicketNrPendingBuy,SELECT_BY_POS)==true)
+           {if(OrderType()==2){bool delB=OrderDelete(TicketNrPendingBuy);}TicketNrPendingBuy=0;}
+         if(TicketNrPendingBuy==0)
+           {TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);}
 
          double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
          if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy2==0)TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);
-         //if(TicketNrPending2==-1)OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Bid-TP*Point,Slippage,SLI,Bid,EAName+"P2B",MagicNumber,0,Red);
+         if(TicketNrPendingBuy2>0 && OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS)==true && OrderType()==2)
+           {if(OrderType()==2){bool delB2=OrderDelete(TicketNrPendingBuy2);}TicketNrPendingBuy2=0;}
+         if(TicketNrPendingBuy2==0)
+           {TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);}
         }
      }
    double TempProfit=0;
@@ -488,88 +473,37 @@ void CurrentProfit(double CurProfit)
       ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
         }else{ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
      }
-   ObjectSet("CurProfit",OBJPROP_CORNER,0);
+   ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
    ObjectSet("CurProfit",OBJPROP_YDISTANCE,30);
 
    ObjectCreate("MagicNumber",OBJ_LABEL,0,0,0);
    ObjectSetText("MagicNumber","MagicNumber: "+IntegerToString(MagicNumber),11,"Calibri",clrMediumVioletRed);
-   ObjectSet("MagicNumber",OBJPROP_CORNER,0);
+   ObjectSet("MagicNumber",OBJPROP_CORNER,1);
    ObjectSet("MagicNumber",OBJPROP_XDISTANCE,5);
    ObjectSet("MagicNumber",OBJPROP_YDISTANCE,45);
+
+   ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
+   ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(NormalizeDouble(LotSize,2)),11,"Calibri",clrLightYellow);
+   ObjectSet("NextLotSize",OBJPROP_CORNER,1);
+   ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
+   ObjectSet("NextLotSize",OBJPROP_YDISTANCE,60);
+
+   ObjectCreate("EAName",OBJ_LABEL,0,0,0);
+   ObjectSetText("EAName","EAName: "+EAName,11,"Calibri",clrGold);
+   ObjectSet("EAName",OBJPROP_CORNER,1);
+   ObjectSet("EAName",OBJPROP_XDISTANCE,5);
+   ObjectSet("EAName",OBJPROP_YDISTANCE,75);
    if(trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
 int getTicketCurrentType(int TicketNr)
   {
    int res=-1;
-
    if(OrderSelect(TicketNr,SELECT_BY_TICKET,MODE_TRADES))
      {
       res=OrderType();
      }
    return res;
   }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-/*bool HexToArray(string str,uchar &arr[])
-  {
-   int strcount = StringLen(str);
-   int arrcount = ArraySize(arr);
-   if(arrcount < strcount / 2) return false;
-
-   uchar tc[];
-   StringToCharArray(str,tc);
-
-   int i=0, j=0;
-   for(i=0; i<strcount; i+=2)
-     {
-      uchar tmpchr=(HEXCHAR_TO_DECCHAR(tc[i])<<4)+HEXCHAR_TO_DECCHAR(tc[i+1]);
-      arr[j]=tmpchr;
-      j++;
-     }
-
-   return true;
-  }*/
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-/*uchar HexToDecimal(string hex)
-  {
-// assumes hex is 1 character
-   if(!StringCompare(hex,"0"))
-      return 0;
-   if(!StringCompare(hex,"1"))
-      return 1;
-   if(!StringCompare(hex,"2"))
-      return 2;
-   if(!StringCompare(hex,"3"))
-      return 3;
-   if(!StringCompare(hex,"4"))
-      return 4;
-   if(!StringCompare(hex,"5"))
-      return 5;
-   if(!StringCompare(hex,"6"))
-      return 6;
-   if(!StringCompare(hex,"7"))
-      return 7;
-   if(!StringCompare(hex,"8"))
-      return 8;
-   if(!StringCompare(hex,"9"))
-      return 9;
-   if(!StringCompare(hex,"A"))
-      return 10;
-   if(!StringCompare(hex,"B"))
-      return 11;
-   if(!StringCompare(hex,"C"))
-      return 12;
-   if(!StringCompare(hex,"D"))
-      return 13;
-   if(!StringCompare(hex,"E"))
-      return 14;
-   if(!StringCompare(hex,"F"))
-      return 15;
-   return 0;
-  }*/
 //+------------------------------------------------------------------+
