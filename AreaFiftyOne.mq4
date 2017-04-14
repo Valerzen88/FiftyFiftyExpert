@@ -135,6 +135,7 @@ TempTDIGreen=TDIGreen;
       if(BUY==true){BuyFlag=1;break;}
       if(SELL==true){SellFlag=1;break;}
      }
+     
 //risk management
    if(LotAutoSize)
      {
