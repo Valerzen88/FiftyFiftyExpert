@@ -6,17 +6,22 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.5"
+#property version   "1.6"
 #property description "Trades on oversold or overbought market till the next signal."
 #property strict
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 
+#define SLIPPAGE              5
+#define NO_ERROR              1
+#define AT_LEAST_ONE_FAILED   2
+
 //--- input parameters
 extern double   LotSize=0.01;
 extern bool     LotAutoSize=true;
 extern int      LotRiskPercent=50;
-extern int      MoneyRiskInPercent=32;
+extern int      MoneyRiskInPercent=0;
+extern bool     AllowPendings=true;
 extern int      TrailingStep=50;
 extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
@@ -165,20 +170,12 @@ TempTDIGreen=TDIGreen;
         }
      }
    CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
-   if(MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent) 
+   if(MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
      {
-      for(int j=0;j<OrdersTotal();j++)
+      while(CloseAll()==AT_LEAST_ONE_FAILED)
         {
-         if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
-           {
-            if(OrderSymbol()==Symbol() && (OrderMagicNumber()==MagicNumber))
-              {
-               if(OrderType()==3){bool delP = OrderDelete(OrderTicket());}
-               if(OrderType()==2){bool delP = OrderDelete(OrderTicket());}
-               if(OrderType()==0){bool delO = OrderClose(OrderTicket(),OrderLots(),Bid,Slippage,clrRed);}
-               if(OrderType()==1){bool delO = OrderClose(OrderTicket(),OrderLots(),Ask,Slippage,clrRed);}
-              }
-           }
+         Sleep(1000);
+         Alert("Order close failed - retrying error#: ",GetLastError());
         }
      }
 
@@ -356,48 +353,52 @@ TempTDIGreen=TDIGreen;
         {
          if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
          TicketNrSell=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
+         if(AllowPendings)
+           {
+            double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
+            if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
+            if(TicketNrPendingSell>0 && OrderSelect(TicketNrPendingSell,SELECT_BY_POS))
+              {if(OrderType()==3){bool delS=OrderDelete(TicketNrPendingSell);}TicketNrPendingSell=0;}
+            else if(!OrderSelect(TicketNrPendingSell,SELECT_BY_POS) && TicketNrPendingSell>0)
+              {TicketNrPendingSell=0;}
+            if(TicketNrPendingSell==0)
+              {TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);}
 
-         double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
-         if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingSell>0 && OrderSelect(TicketNrPendingSell,SELECT_BY_POS))
-           {if(OrderType()==3){bool delS=OrderDelete(TicketNrPendingSell);}TicketNrPendingSell=0;}
-         else if(!OrderSelect(TicketNrPendingSell,SELECT_BY_POS) && TicketNrPendingSell>0)
-           {TicketNrPendingSell=0;}
-         if(TicketNrPendingSell==0)
-           {TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);}
-
-         double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
-         if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingSell2>0 && OrderSelect(TicketNrPendingSell2,SELECT_BY_POS))
-           {if(OrderType()==3){bool delS2=OrderDelete(TicketNrPendingSell2);}TicketNrPendingSell2=0;}
-         else if(!OrderSelect(TicketNrPendingSell2,SELECT_BY_POS) && TicketNrPendingSell2>0)
-           {TicketNrPendingSell2=0;}
-         if(TicketNrPendingSell2==0)
-           {TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);}
+            double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
+            if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
+            if(TicketNrPendingSell2>0 && OrderSelect(TicketNrPendingSell2,SELECT_BY_POS))
+              {if(OrderType()==3){bool delS2=OrderDelete(TicketNrPendingSell2);}TicketNrPendingSell2=0;}
+            else if(!OrderSelect(TicketNrPendingSell2,SELECT_BY_POS) && TicketNrPendingSell2>0)
+              {TicketNrPendingSell2=0;}
+            if(TicketNrPendingSell2==0)
+              {TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);}
+           }
         }
       // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
       if(OB==1 && OBC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
          TicketNrBuy=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
+         if(AllowPendings)
+           {
+            double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
+            if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
+            if(TicketNrPendingBuy>0 && OrderSelect(TicketNrPendingBuy,SELECT_BY_POS))
+              {if(OrderType()==2){bool delB=OrderDelete(TicketNrPendingBuy);}TicketNrPendingBuy=0;}
+            else if(!OrderSelect(TicketNrPendingBuy,SELECT_BY_POS) && TicketNrPendingBuy>0)
+              {TicketNrPendingBuy=0;}
+            if(TicketNrPendingBuy==0)
+              {TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);}
 
-         double TempPendingLotSize=NormalizeDouble(LotSize*0.625,Digits);
-         if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy>0 && OrderSelect(TicketNrPendingBuy,SELECT_BY_POS))
-           {if(OrderType()==2){bool delB=OrderDelete(TicketNrPendingBuy);}TicketNrPendingBuy=0;}
-         else if(!OrderSelect(TicketNrPendingBuy,SELECT_BY_POS) && TicketNrPendingBuy>0)
-           {TicketNrPendingBuy=0;}
-         if(TicketNrPendingBuy==0)
-           {TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);}
-
-         double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
-         if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-         if(TicketNrPendingBuy2>0 && OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && OrderType()==2)
-           {if(OrderType()==2){bool delB2=OrderDelete(TicketNrPendingBuy2);}TicketNrPendingBuy2=0;}
-         else if(!OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && TicketNrPendingBuy2>0)
-           {TicketNrPendingBuy2=0;}
-         if(TicketNrPendingBuy2==0)
-           {TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);}
+            double TempPendingLotSize2=NormalizeDouble(LotSize*0.5,Digits);
+            if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
+            if(TicketNrPendingBuy2>0 && OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && OrderType()==2)
+              {if(OrderType()==2){bool delB2=OrderDelete(TicketNrPendingBuy2);}TicketNrPendingBuy2=0;}
+            else if(!OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && TicketNrPendingBuy2>0)
+              {TicketNrPendingBuy2=0;}
+            if(TicketNrPendingBuy2==0)
+              {TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);}
+           }
         }
      }
    double TempProfit=0;
@@ -535,10 +536,10 @@ void CurrentProfit(double CurProfit)
    ObjectSet("EAName",OBJPROP_XDISTANCE,5);
    ObjectSet("EAName",OBJPROP_YDISTANCE,75);
 
-   if(CurrentLoss<0.0) 
+   if(CurrentLoss<0.0)
      {
       ObjectCreate("CurrentLoss",OBJ_LABEL,0,0,0);
-      ObjectSetText("CurrentLoss","Current loss in '%: "+DoubleToString(CurrentLoss,2),11,"Calibri",clrDeepPink);
+      ObjectSetText("CurrentLoss","Current loss in %: "+DoubleToString(CurrentLoss,2),11,"Calibri",clrDeepPink);
       ObjectSet("CurrentLoss",OBJPROP_CORNER,1);
       ObjectSet("CurrentLoss",OBJPROP_XDISTANCE,5);
       ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,90);
@@ -556,5 +557,51 @@ int getTicketCurrentType(int TicketNr)
       res=OrderType();
      }
    return res;
+  }
+//+------------------------------------------------------------------+
+int CloseAll()
+  {
+   bool rv=NO_ERROR;
+   int numOfOrders=OrdersTotal();
+   int FirstOrderType=0;
+
+   for(int index=0; index<OrdersTotal(); index++)
+     {
+      bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
+      if(OrderSymbol()==Symbol() && OrderMagicNumber()==MagicNumber)
+        {
+         FirstOrderType=OrderType();
+         break;
+        }
+     }
+
+   for(int index=numOfOrders-1; index>=0; index--)
+     {
+      bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
+
+      if(OrderSymbol()==Symbol() && OrderMagicNumber()==MagicNumber)
+         switch(OrderType())
+           {
+            case OP_BUY:
+               if(!OrderClose(OrderTicket(),OrderLots(),MarketInfo(OrderSymbol(),MODE_BID),SLIPPAGE,Red))
+               rv=AT_LEAST_ONE_FAILED;
+               break;
+
+            case OP_SELL:
+               if(!OrderClose(OrderTicket(),OrderLots(),MarketInfo(OrderSymbol(),MODE_ASK),SLIPPAGE,Red))
+               rv=AT_LEAST_ONE_FAILED;
+               break;
+
+            case OP_BUYLIMIT:
+            case OP_SELLLIMIT:
+            case OP_BUYSTOP:
+            case OP_SELLSTOP:
+               if(!OrderDelete(OrderTicket()))
+               rv=AT_LEAST_ONE_FAILED;
+               break;
+           }
+     }
+
+   return(rv);
   }
 //+------------------------------------------------------------------+
