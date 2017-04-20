@@ -6,8 +6,8 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.6"
-#property description "Trades on oversold or overbought market till the next signal."
+#property version   "1.7"
+#property description "Trades on oversold or overbought market."
 #property strict
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
@@ -19,7 +19,7 @@
 //--- input parameters
 extern double   LotSize=0.01;
 extern bool     LotAutoSize=true;
-extern int      LotRiskPercent=50;
+extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
 extern bool     AllowPendings=true;
 extern int      TrailingStep=50;
@@ -46,7 +46,7 @@ double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 /*licence*/
-bool trial_lic=true;
+bool trial_lic=false;
 datetime expiryDate=D'2017.05.27 00:00';
 /*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
@@ -152,10 +152,11 @@ TempTDIGreen=TDIGreen;
          if(Digits<3){Faktor=10;}else{Faktor=100;}
          LotSize=MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/(Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*
                            MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT);
-         if(LotSize<MarketInfo(Symbol(),MODE_MINLOT)) LotSize=MarketInfo(Symbol(),MODE_MINLOT);
         }
      }
    if(LotAutoSize==false){LotSize=LotSize;}
+   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT)) LotSize=MarketInfo(Symbol(),MODE_MINLOT);
+   if(LotSize>MarketInfo(Symbol(),MODE_MAXLOT)) LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
 
 //Money Management
    double TempLoss=0;
