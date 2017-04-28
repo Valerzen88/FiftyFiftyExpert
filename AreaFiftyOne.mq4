@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.9"
+#property version   "1.12"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -41,6 +41,7 @@ int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 double LotSizeP1,LotSizeP2;
 bool AddPositions=false;
+int StopLevel=(int)MarketInfo(Symbol(),MODE_STOPLEVEL)*Point()*1.3;
 double CurrentLoss=0;
 double TP=TakeProfit,SL=StopLoss;
 double SLI=0,TPI=0;
@@ -80,7 +81,8 @@ int OnInit()
       Print("Expert: iCustom call: Error code=",GetLastError());
       return(INIT_FAILED);
      }
-     if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2) && (AllowPendings))
+   int MarginMode=(int)MarketInfo(Symbol(),MODE_MARGINCALCMODE);
+   if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (AllowPendings))
      {AllowPendings=false;Print("Pendings are disabled due CFD or Futures.");}
 //---
    return(INIT_SUCCEEDED);
@@ -100,6 +102,9 @@ void OnTick()
 //---
    int limit=1,err=0,BuyFlag=0,SellFlag=0;
    bool BUY=false,SELL=false;
+   if (StopLevel>0) {
+   TrailingStep=TrailingStep+StopLevel;
+   DistanceStep=DistanceStep+StopLevel;}
 //double TempTDIGreen=0,TempTDIRed=0;
    for(int i=1;i<=limit;i++)
      {
@@ -131,35 +136,51 @@ TempTDIGreen=TDIGreen;
      }
 //risk management
    int digits=Digits;
-   double SymbolStep = SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
+   double SymbolStep=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
+   int MarginMode=(int)MarketInfo(Symbol(),MODE_MARGINCALCMODE);
+   bool compareContractSizes=false;
+   if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
+   else {compareContractSizes=false;}
    if(LotAutoSize)
      {
       int Faktor=100;
       if(LotRiskPercent<0.1 || LotRiskPercent>100){Comment("Invalid Risk Value.");}
       else
         {
-         if(getContractProfitCalcMode()==0)
+         if(getContractProfitCalcMode()==0 || (MarginMode==0 && compareContractSizes))
            {
-            LotSize=MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/(Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*
-                              MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT);
+            //Print("Fall1:"+(MarginMode==0 && compareContractSizes));
+            LotSize=MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
+                              (Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT);
+            //Print("LotSize="+LotSize);
             LotSizeP1 = NormalizeDouble(LotSize*0.625,Digits);
             LotSizeP2 = NormalizeDouble(LotSize*0.5,Digits);
            }
-         else if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2) && (Digits<4))
+         else if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false))
            {
+            //Print("Fall2:"+((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false)));
             if(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE)==1){digits=0;}
-            int Splitter = 1000;
+            int Splitter=1000;
             if(getContractProfitCalcMode()==1){Splitter=100000;}
+            if(MarginMode==4 && MarketInfo(Symbol(),MODE_TICKSIZE)==0.001){Splitter=1000000;}
             if(Digits==3){Faktor=1;}
             if(Digits==2){Faktor=10;}
             LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Faktor*Point)/
                                     (Ask*MarketInfo(Symbol(),MODE_TICKSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT)/Splitter,digits);
             LotSizeP1 = MathFloor(NormalizeDouble(LotSize*0.625,digits));
             LotSizeP2 = MathFloor(NormalizeDouble(LotSize*0.5,digits));
-            if(SymbolStep>0) {
-            LotSize=LotSize-MathMod(LotSize,SymbolStep);
-            LotSizeP1 = LotSizeP1-MathMod(LotSizeP1,SymbolStep);
-            LotSizeP2 = LotSizeP2-MathMod(LotSizeP2,SymbolStep);}
+            //Print("LotSize2="+LotSize);
+            if(SymbolStep>0.0)
+              {
+               LotSize=LotSize-MathMod(LotSize,SymbolStep);
+               LotSizeP1=LotSizeP1-MathMod(LotSizeP1,SymbolStep);
+               LotSizeP2=LotSizeP2-MathMod(LotSizeP2,SymbolStep);
+              }
+              } else {
+            Print("Cannot calculate the right auto lot size!");
+            LotSize=MarketInfo(Symbol(),MODE_MINLOT);
+            LotSizeP1=MarketInfo(Symbol(),MODE_MINLOT);
+            LotSizeP2=MarketInfo(Symbol(),MODE_MINLOT);
            }
         }
      }
@@ -169,25 +190,29 @@ TempTDIGreen=TDIGreen;
       LotSize=MarketInfo(Symbol(),MODE_MINLOT);
       LotSizeP1 = NormalizeDouble(LotSize*0.625,digits);
       LotSizeP2 = NormalizeDouble(LotSize*0.5,digits);
-      if(SymbolStep>0) {
-      LotSize=LotSize-MathMod(LotSize,SymbolStep);
-      LotSizeP1 = LotSizeP1-MathMod(LotSizeP1,SymbolStep);
-      LotSizeP2 = LotSizeP2-MathMod(LotSizeP2,SymbolStep);}
+      if(SymbolStep>0.0)
+        {
+         LotSize=LotSize-MathMod(LotSize,SymbolStep);
+         LotSizeP1=LotSizeP1-MathMod(LotSizeP1,SymbolStep);
+         LotSizeP2=LotSizeP2-MathMod(LotSizeP2,SymbolStep);
+        }
      }
    if(LotSize>MarketInfo(Symbol(),MODE_MAXLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
       LotSizeP1=NormalizeDouble(LotSizeP1*0.625,digits);
       LotSizeP2=NormalizeDouble(LotSizeP2*0.5,digits);
-      if(SymbolStep>0) {
-      LotSize=LotSize-MathMod(LotSize,SymbolStep);
-      LotSizeP1 = LotSizeP1-MathMod(LotSizeP1,SymbolStep);
-      LotSizeP2 = LotSizeP2-MathMod(LotSizeP2,SymbolStep);}
+      if(SymbolStep>0.0)
+        {
+         LotSize=LotSize-MathMod(LotSize,SymbolStep);
+         LotSizeP1=LotSizeP1-MathMod(LotSizeP1,SymbolStep);
+         LotSizeP2=LotSizeP2-MathMod(LotSizeP2,SymbolStep);
+        }
      }
-     
-    /* Print("LotSize="+(LotSize-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));
-         Print("LotSize*0,625="+(LotSizeP1-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));
-         Print("LotSize*0,5="+(LotSizeP2-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));*/
+
+/* Print("LotSize="+(LotSize-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));
+      Print("LotSize*0,625="+(LotSizeP1-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));
+      Print("LotSize*0,5="+(LotSizeP2-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));*/
 
 //Money Management
    double TempLoss=0;
@@ -340,7 +365,7 @@ TempTDIGreen=TDIGreen;
                if((OrderTicket()==TicketNrPendingSell && OrderType()==OP_SELL) || (OrderTicket()==TicketNrPendingSell2 && OrderType()==OP_SELL))
                  {
                   if((TicketNrSell>0) && (OrderSelect(TicketNrSell,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
-                    {bool fm;fm=OrderModify(TicketNrSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                    {bool fm;fm=OrderModify(TicketNrSell,OrderOpenPrice(),0,TempTP-MarketInfo(Symbol(),MODE_STOPLEVEL)*1.5*Point(),0,CLR_NONE);Print("OrderModify1sell");}
 /*if((TicketNrPendingSell>0) && (OrderSelect(TicketNrPendingSell,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
                     {bool fm1;fm1=OrderModify(TicketNrPendingSell,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
                   if((TicketNrPendingSell2>0) && (OrderSelect(TicketNrPendingSell2,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
@@ -359,7 +384,7 @@ TempTDIGreen=TDIGreen;
                if((OrderTicket()==TicketNrPendingBuy && OrderType()==OP_BUY) || (OrderTicket()==TicketNrPendingBuy2 && OrderType()==OP_BUY))
                  {
                   if((TicketNrBuy>0) && (OrderSelect(TicketNrBuy,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
-                    {bool fm;fm=OrderModify(TicketNrBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
+                    {bool fm;fm=OrderModify(TicketNrBuy,OrderOpenPrice(),0,TempTP+MarketInfo(Symbol(),MODE_STOPLEVEL)*1.5*Point(),0,CLR_NONE);Print("OrderModify1buy");}
 /* if((TicketNrPendingBuy>0) && (OrderSelect(TicketNrPendingBuy,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
                     {bool fm1;fm1=OrderModify(TicketNrPendingBuy,OrderOpenPrice(),0,TempTP,0,CLR_NONE);}
                   if((TicketNrPendingBuy2>0) && (OrderSelect(TicketNrPendingBuy2,SELECT_BY_TICKET,MODE_TRADES)==true) && TempTP!=OrderTakeProfit())
@@ -382,9 +407,12 @@ TempTDIGreen=TDIGreen;
       if(OS==1 && OSC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
-         if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL)) 
+         if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
            {
             TicketNrSell=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
+            if(TicketNrSell<0)
+              {Alert("OrderSend Error: ",GetLastError());}
+            else{Alert("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
            }
          if(AllowPendings)
            {
@@ -395,7 +423,12 @@ TempTDIGreen=TDIGreen;
             else if(!OrderSelect(TicketNrPendingSell,SELECT_BY_POS) && TicketNrPendingSell>0)
               {TicketNrPendingSell=0;}
             if(TicketNrPendingSell==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_SELL)))
-              {TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);}
+              {
+               TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);
+               if(TicketNrPendingSell<0)
+                 {Alert("OrderSend Error: ",GetLastError());}
+               else{Alert("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell));}
+              }
 
             double TempPendingLotSize2=LotSizeP1;
             if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
@@ -404,7 +437,12 @@ TempTDIGreen=TDIGreen;
             else if(!OrderSelect(TicketNrPendingSell2,SELECT_BY_POS) && TicketNrPendingSell2>0)
               {TicketNrPendingSell2=0;}
             if(TicketNrPendingSell2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_SELL)))
-              {TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);}
+              {
+               TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);
+               if(TicketNrPendingSell2<0)
+                 {Alert("OrderSend Error: ",GetLastError());}
+               else{Alert("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell2));}
+              }
            }
         }
       // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
@@ -412,9 +450,12 @@ TempTDIGreen=TDIGreen;
       if(OB==1 && OBC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
-         if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY)) 
+         if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
            {
             TicketNrBuy=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
+            if(TicketNrBuy<0)
+              {Alert("OrderSend Error: ",GetLastError());}
+            else{Alert("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
            }
          if(AllowPendings)
            {
@@ -425,7 +466,12 @@ TempTDIGreen=TDIGreen;
             else if(!OrderSelect(TicketNrPendingBuy,SELECT_BY_POS) && TicketNrPendingBuy>0)
               {TicketNrPendingBuy=0;}
             if(TicketNrPendingBuy==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_BUY)))
-              {TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);}
+              {
+               TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);
+               if(TicketNrPendingBuy<0)
+                 {Alert("OrderSend Error: ",GetLastError());}
+               else{Alert("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingBuy));}
+              }
 
             double TempPendingLotSize2=LotSizeP2;
             if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
@@ -434,7 +480,12 @@ TempTDIGreen=TDIGreen;
             else if(!OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && TicketNrPendingBuy2>0)
               {TicketNrPendingBuy2=0;}
             if(TicketNrPendingBuy2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_BUY)))
-              {TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);}
+              {
+               TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);
+               if(TicketNrPendingBuy2<0)
+                 {Alert("OrderSend Error: ",GetLastError());}
+               else{Alert("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingBuy2));}
+              }
            }
         }
      }
@@ -680,5 +731,11 @@ bool CheckMoneyForTrade(string symb,double lots,int type)
      }
 //-- die Überprüfung ist erfolgreich gelaufen
    return(true);
+  }
+//+------------------------------------------------------------------+
+bool CompareDoubles(double number1,double number2)
+  {
+   if(NormalizeDouble(number1-number2,5)==0) return(true);
+   else return(false);
   }
 //+------------------------------------------------------------------+
