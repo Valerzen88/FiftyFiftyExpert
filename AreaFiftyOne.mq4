@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.13"
+#property version   "1.14"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -76,15 +76,19 @@ int OnInit()
         }
      }
 
-   handle_ind=iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
+   handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
    if(handle_ind==INVALID_HANDLE)
      {
       Print("Expert: iCustom call: Error code=",GetLastError());
       return(INIT_FAILED);
      }
-   StopLevel=MarketInfo(Symbol(),MODE_STOPLEVEL)*Point()*1.3;
+   bool compareContractSizes=false;
+   if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
+   else {compareContractSizes=false;}
+   StopLevel=(int)(MarketInfo(Symbol(),MODE_STOPLEVEL)*Point()*1.3);
    int MarginMode=(int)MarketInfo(Symbol(),MODE_MARGINCALCMODE);
-   if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (AllowPendings))
+   if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4)
+    && (AllowPendings) && (compareContractSizes==false))
      {AllowPendings=false;Print("Pendings are disabled due CFD or Futures.");}
 //---
    return(INIT_SUCCEEDED);
@@ -337,7 +341,7 @@ TempTDIGreen=TDIGreen;
                   bool delS2; delS2=OrderDelete(TicketNrPendingSell2);
                   if(delS2==false){bool delS21;delS21=OrderDelete(TicketNrPendingSell2);TicketNrPendingSell2=0;}else{TicketNrPendingSell2=0;}
                  }
-               if(foundBWD==false && getTicketCurrentType(TicketNrBuyWD)>-1 && getTicketCurrentType(TicketNrBuyWD)==3) 
+               if(foundBWD==false && getTicketCurrentType(TicketNrBuyWD)>-1 && getTicketCurrentType(TicketNrBuyWD)==3)
                  {
                   bool delB; delB=OrderDelete(TicketNrPendingSell2);
                   if(delB==false){bool delB1;delB1=OrderDelete(TicketNrBuyWD);TicketNrBuyWD=0;}else{TicketNrBuyWD=0;}
@@ -358,7 +362,7 @@ TempTDIGreen=TDIGreen;
                   bool delB2; delB2=OrderDelete(TicketNrPendingBuy2);
                   if(delB2==false){bool delB21;delB21=OrderDelete(TicketNrPendingBuy2);TicketNrPendingBuy2=0;}else{TicketNrPendingBuy2=0;}
                  }
-               if(foundSWD==false && getTicketCurrentType(TicketNrSellWD)>-1 && getTicketCurrentType(TicketNrSellWD)==3) 
+               if(foundSWD==false && getTicketCurrentType(TicketNrSellWD)>-1 && getTicketCurrentType(TicketNrSellWD)==3)
                  {
                   bool delS; delS=OrderDelete(TicketNrPendingSell2);
                   if(delS==false){bool delS1;delS1=OrderDelete(TicketNrSellWD);TicketNrSellWD=0;}else{TicketNrSellWD=0;}
@@ -474,7 +478,7 @@ TempTDIGreen=TDIGreen;
             if(TP==0)TPI=0;else TPI=Ask+(TP*2)*Point;if(SL==0)SLI=0;else SLI=Ask-(SL*2)*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
               {
-               int expiryTime = TimeCurrent()+(1209600);
+               int expiryTime=(int)TimeCurrent()+(1209600);
                TicketNrBuyWD=OrderSend(Symbol(),OP_BUYSTOP,LotSize,Ask+TP*Point,Slippage,SLI,TPI,EAName+"WD_BUY",MagicNumber,expiryTime,Lime);
                if(TicketNrBuyWD<0)
                  {Alert("OrderSend Error: ",GetLastError());}
@@ -557,7 +561,7 @@ TempTDIGreen=TDIGreen;
             if(TP==0)TPI=0;else TPI=Bid-(TP*2)*Point;if(SL==0)SLI=0;else SLI=Bid+(SL*2)*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
               {
-              int expiryTime = TimeCurrent()+(1209600);
+               int expiryTime = (int)TimeCurrent()+(1209600);
                TicketNrSellWD=OrderSend(Symbol(),OP_SELLSTOP,LotSize,Bid-TP*Point,Slippage,SLI,TPI,EAName+"WD_SELL",MagicNumber,expiryTime,Red);
                if(TicketNrSellWD<0)
                  {Alert("OrderSend Error: ",GetLastError());}
@@ -591,7 +595,7 @@ TempTDIGreen=TDIGreen;
 double OnTester()
   {
 //---
-   double ret=0.0;
+   double ret=AccountBalance();
 //---
 //---
    return(ret);
@@ -599,12 +603,12 @@ double OnTester()
 //add positions function
 bool AddP()
   {
-   int _num=0; int _ot=0;
+   int _num=0,_ot=0;
    for(int j=0;j<OrdersTotal();j++)
      {
       if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol() && OrderType()<3 && (OrderMagicNumber()==MagicNumber))
         {
-         _num++;if(OrderOpenTime()>_ot) _ot=OrderOpenTime();
+         _num++;if(OrderOpenTime()>_ot) _ot=(int)OrderOpenTime();
         }
      }
    if(_num==0) return(true);if(_num>0 && ((Time[0]-_ot))>0) return(true);else return(false);
