@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.17"
+#property version   "1.18"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -662,9 +662,6 @@ bool AddP()
 void TrP()
   {
    int BE=BreakEven;int TS=DistanceStep;double pb,pa,pp;pp=MarketInfo(OrderSymbol(),MODE_POINT);
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(OrderType()==OP_BUY)
      {
       pb=MarketInfo(OrderSymbol(),MODE_BID);
@@ -689,9 +686,6 @@ void TrP()
            }
         }
      }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(OrderType()==OP_SELL)
      {
       pa=MarketInfo(OrderSymbol(),MODE_ASK);
@@ -721,6 +715,14 @@ void TrP()
 //stop loss modification function
 void ModSL(double ldSL)
   {
+  double commissions = OrderCommission()+OrderSwap();
+  double commissionsInPips = 0.0;
+  if(commissions<0) {
+   commissionsInPips = MathRound(commissions/(MarketInfo(Symbol(), MODE_TICKVALUE)*10));
+   Print("Commission("+DoubleToStr(commissions)+") in pips(tickvalue:"+DoubleToStr(MarketInfo(Symbol(), MODE_TICKVALUE))+")="+DoubleToString(MathRound(commissions/(MarketInfo(Symbol(), MODE_TICKVALUE)*10))));
+  }
+  if(OrderType()==OP_BUY){ldSL = ldSL+commissionsInPips*Point;}
+  if(OrderType()==OP_SELL){ldSL = ldSL-commissionsInPips*Point;}
    if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit()))
      {
       bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,CLR_NONE);
@@ -732,16 +734,10 @@ void ModSL(double ldSL)
 void CurrentProfit(double CurProfit)
   {
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(CurProfit>=0.0)
      {
       ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
         }else{ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
