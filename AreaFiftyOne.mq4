@@ -21,7 +21,9 @@ extern double   LotSize=0.01;
 extern bool     LotAutoSize=true;
 extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
+extern bool     UseMainIndicator=true;
 extern bool     AllowPendings=false;
+extern bool     AllowStoch=false;
 extern int      TrailingStep=50;
 extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
@@ -126,6 +128,7 @@ void OnTick()
       DistanceStep=DistanceStep+StopLevel;
      }
 //double TempTDIGreen=0,TempTDIRed=0;
+if(UseMainIndicator) {
    for(int i=1;i<=limit;i++)
      {
       //double TDIGreenPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
@@ -152,6 +155,12 @@ TempTDIGreen=TDIGreen;
       TempTDIRed=TDIRed;*/
       //entry conditions
 
+      if(BUY==true){BuyFlag=1;break;}
+      if(SELL==true){SellFlag=1;break;}
+     }
+}
+   if(AllowStoch)
+     {
       sto_main_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,0);
       sto_sign_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_SIGNAL,0);
       sto_main_prev1 = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,1);
@@ -167,7 +176,7 @@ TempTDIGreen=TDIGreen;
               {
                //Print("Buy due Stoch!");
                OrderDueStoch=true;
-               BUY=true;
+               BuyFlag=1;
               }
            }
         }
@@ -180,14 +189,12 @@ TempTDIGreen=TDIGreen;
               {
                //Print("Sell due Stoch!");
                OrderDueStoch=true;
-               SELL=true;
+               SellFlag=1;
               }
            }
         }
-
-      if(BUY==true){BuyFlag=1;break;}
-      if(SELL==true){SellFlag=1;break;}
      }
+
 //risk management
    int digits=Digits;
    double SymbolStep=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
@@ -195,9 +202,7 @@ TempTDIGreen=TDIGreen;
    bool compareContractSizes=false;
    if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
    else {compareContractSizes=false;}
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
    if(LotAutoSize)
      {
       int Faktor=100;
@@ -293,9 +298,6 @@ TempTDIGreen=TDIGreen;
         }
      }
    CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
      {
       while(CloseAll()==AT_LEAST_ONE_FAILED)
@@ -308,9 +310,6 @@ TempTDIGreen=TDIGreen;
 //positions initialization
    int cnt=0,OP=0,OS=0,OB=0,CloseSell=0,OSC=0,OBC=0,CloseBuy=0;OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
@@ -501,7 +500,7 @@ TempTDIGreen=TDIGreen;
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
-      if(OS==1 && OSC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134)))
+      if(OS==1 && (OSC==0 || (OrderDueStoch && AllowStoch)) && (!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
          if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
@@ -525,7 +524,7 @@ TempTDIGreen=TDIGreen;
                TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);
                if(TicketNrPendingSell<0)
                  {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-              // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell));}
+               // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell));}
               }
 
             double TempPendingLotSize2=LotSizeP1;
@@ -552,11 +551,11 @@ TempTDIGreen=TDIGreen;
                //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
               }
            }
-           OrderDueStoch=false;
+         OrderDueStoch=false;
         }
       // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
       // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
-      if(OB==1 && OBC==0 && (!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134)))
+      if(OB==1 && (OBC==0 || (OrderDueStoch && AllowStoch)) && (!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134)))
         {
          if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
          if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
@@ -567,7 +566,7 @@ TempTDIGreen=TDIGreen;
               {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
             //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
            }
-         if(AllowPendings)
+         if(AllowPendings && !OrderDueStoch)
            {
             double TempPendingLotSize=LotSizeP1;
             if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
@@ -604,10 +603,10 @@ TempTDIGreen=TDIGreen;
                TicketNrSellWD=OrderSend(Symbol(),OP_SELLSTOP,LotSize,Bid-TP*Point,Slippage,SLI,TPI,EAName+"WD_SELL",MagicNumber,expiryTime,Red);
                if(TicketNrSellWD<0)
                  {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-              // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSellWD));}
+               // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSellWD));}
               }
            }
-           OrderDueStoch=false;
+         OrderDueStoch=false;
         }
      }
    double TempProfit=0;
