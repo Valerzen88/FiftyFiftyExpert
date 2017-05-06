@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.18"
+#property version   "1.19"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -111,7 +111,7 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   Print("countStochOrders="+IntegerToString(countStochOrders));
+   if(AllowStoch){Print("countStochOrders="+IntegerToString(countStochOrders));}
    ObjectsDeleteAll();
   }
 //+------------------------------------------------------------------+
@@ -129,23 +129,24 @@ void OnTick()
       DistanceStep=DistanceStep+StopLevel;
      }
 //double TempTDIGreen=0,TempTDIRed=0;
-if(UseMainIndicator) {
-   for(int i=1;i<=limit;i++)
+   if(UseMainIndicator)
      {
-      //double TDIGreenPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
-      double TDIGreen=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
-      double TDIYellow=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
-      //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
-      double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
-      // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
-      // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
-      // double TDIB3=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
+      for(int i=1;i<=limit;i++)
+        {
+         //double TDIGreenPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
+         double TDIGreen=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
+         double TDIYellow=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
+         //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
+         double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
+         // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
+         // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
+         // double TDIB3=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
 
-      if((TDIGreen>68) &&(NormalizeDouble(TDIGreen,3)>NormalizeDouble(TDIRed,3)) &&(NormalizeDouble(NormalizeDouble(TDIGreen,3)-NormalizeDouble(TDIRed,3),1)>=3.5)) SELL=true;
-      if((TDIRed<32) && (NormalizeDouble(TDIGreen,3)<NormalizeDouble(TDIRed,3)) && (NormalizeDouble(NormalizeDouble(TDIRed,3)-NormalizeDouble(TDIGreen,3),1)>=3.5)) BUY=true;
+         if((TDIGreen>68) &&(NormalizeDouble(TDIGreen,3)>NormalizeDouble(TDIRed,3)) &&(NormalizeDouble(NormalizeDouble(TDIGreen,3)-NormalizeDouble(TDIRed,3),1)>=3.5)) SELL=true;
+         if((TDIRed<32) && (NormalizeDouble(TDIGreen,3)<NormalizeDouble(TDIRed,3)) && (NormalizeDouble(NormalizeDouble(TDIRed,3)-NormalizeDouble(TDIGreen,3),1)>=3.5)) BUY=true;
 
-      //if((SELL==false && BUY ==false) && (TDIRed>TDIGreen) && (TDIRedPlusOne<=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)BUY=true;
-      //if((SELL==false && BUY ==false) && (TDIRed<TDIGreen) && (TDIRedPlusOne>=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)SELL=true;
+         //if((SELL==false && BUY ==false) && (TDIRed>TDIGreen) && (TDIRedPlusOne<=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)BUY=true;
+         //if((SELL==false && BUY ==false) && (TDIRed<TDIGreen) && (TDIRedPlusOne>=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)SELL=true;
 
 
 /*if(TDIGreen-TDIRed<6){Print("NO Exit !");}*/
@@ -154,12 +155,12 @@ if(UseMainIndicator) {
 /*
 TempTDIGreen=TDIGreen;
       TempTDIRed=TDIRed;*/
-      //entry conditions
+         //entry conditions
 
-      if(BUY==true){BuyFlag=1;break;}
-      if(SELL==true){SellFlag=1;break;}
+         if(BUY==true){BuyFlag=1;break;}
+         if(SELL==true){SellFlag=1;break;}
+        }
      }
-}
    if(AllowStoch)
      {
       sto_main_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,0);
@@ -371,7 +372,7 @@ TempTDIGreen=TDIGreen;
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY) && OrderSymbol()==Symbol() && 
          (TicketNrPendingSell>0 || TicketNrPendingSell2>0 || TicketNrPendingBuy>0 || TicketNrPendingBuy2>0 || TicketNrSellStoch>0 || TicketNrBuyStoch>0) && 
          (OrderMagicNumber()==MagicNumber) && 
-         (OrderTicket()==TicketNrBuy || OrderTicket()==TicketNrSell || OrderTicket()==TicketNrBuyWD || OrderTicket()==TicketNrSellWD 
+         (OrderTicket()==TicketNrBuy || OrderTicket()==TicketNrSell || OrderTicket()==TicketNrBuyWD || OrderTicket()==TicketNrSellWD
          || OrderTicket()==TicketNrSellStoch || OrderTicket()==TicketNrBuyStoch))
         {
          bool foundS1=false,foundS2=false,foundB1=false,foundB2=false,foundSWD=false,foundBWD=false,foundSST=false,foundBST=false;
@@ -497,147 +498,146 @@ TempTDIGreen=TDIGreen;
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
-      if (!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
-      {
-      if (OrderDueStoch && AllowStoch && TicketNrSellStoch==0) {
-         if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
-         if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
-         if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
-           {
-            TicketNrSellStoch=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
-            if(TicketNrSellStoch<0)
-              {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-            //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
-           }
-      }
-      if(OS==1 && OSC==0 && !OrderDueStoch) 
+      if(!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
-         if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
+         if(OrderDueStoch && AllowStoch && TicketNrSellStoch==0)
            {
-            TicketNrSell=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
-            if(TicketNrSell<0)
-              {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-            //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
+            if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
+            if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
+            if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
+              {
+               TicketNrSellStoch=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
+               if(TicketNrSellStoch<0)
+                 {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
+               //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
+              }
            }
-        
-         if(AllowPendings && !OrderDueStoch)
+         if(OS==1 && OSC==0 && !OrderDueStoch)
            {
-            double TempPendingLotSize=LotSizeP1;
-            if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-            if(TicketNrPendingSell>0 && OrderSelect(TicketNrPendingSell,SELECT_BY_POS))
-              {if(OrderType()==3){bool delS=OrderDelete(TicketNrPendingSell);}TicketNrPendingSell=0;}
-            else if(!OrderSelect(TicketNrPendingSell,SELECT_BY_POS) && TicketNrPendingSell>0)
-              {TicketNrPendingSell=0;}
-            if(TicketNrPendingSell==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_SELL)))
+            if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=0;else SLI=Bid+SL*Point;
+            if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
               {
-               TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);
-               if(TicketNrPendingSell<0)
+               TicketNrSell=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
+               if(TicketNrSell<0)
                  {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-               // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell));}
+               //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
               }
 
-            double TempPendingLotSize2=LotSizeP1;
-            if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-            if(TicketNrPendingSell2>0 && OrderSelect(TicketNrPendingSell2,SELECT_BY_POS))
-              {if(OrderType()==3){bool delS2=OrderDelete(TicketNrPendingSell2);}TicketNrPendingSell2=0;}
-            else if(!OrderSelect(TicketNrPendingSell2,SELECT_BY_POS) && TicketNrPendingSell2>0)
-              {TicketNrPendingSell2=0;}
-            if(TicketNrPendingSell2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_SELL)))
+            if(AllowPendings && !OrderDueStoch)
               {
-               TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);
-               if(TicketNrPendingSell2<0)
-                 {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-               else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell2));}
-              }
+               double TempPendingLotSize=LotSizeP1;
+               if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
+               if(TicketNrPendingSell>0 && OrderSelect(TicketNrPendingSell,SELECT_BY_POS))
+                 {if(OrderType()==3){bool delS=OrderDelete(TicketNrPendingSell);}TicketNrPendingSell=0;}
+               else if(!OrderSelect(TicketNrPendingSell,SELECT_BY_POS) && TicketNrPendingSell>0)
+                 {TicketNrPendingSell=0;}
+               if(TicketNrPendingSell==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_SELL)))
+                 {
+                  TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);
+                  if(TicketNrPendingSell<0)
+                    {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
+                  // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell));}
+                 }
 
-            if(TP==0)TPI=0;else TPI=Ask+(TP*2)*Point;if(SL==0)SLI=0;else SLI=Ask-(SL*2)*Point;
-            if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY) && IsNewOrderAllowed())
+               double TempPendingLotSize2=LotSizeP1;
+               if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
+               if(TicketNrPendingSell2>0 && OrderSelect(TicketNrPendingSell2,SELECT_BY_POS))
+                 {if(OrderType()==3){bool delS2=OrderDelete(TicketNrPendingSell2);}TicketNrPendingSell2=0;}
+               else if(!OrderSelect(TicketNrPendingSell2,SELECT_BY_POS) && TicketNrPendingSell2>0)
+                 {TicketNrPendingSell2=0;}
+               if(TicketNrPendingSell2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_SELL)))
+                 {
+                  TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);
+                  if(TicketNrPendingSell2<0)
+                    {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
+                  else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingSell2));}
+                 }
+
+               if(TP==0)TPI=0;else TPI=Ask+(TP*2)*Point;if(SL==0)SLI=0;else SLI=Ask-(SL*2)*Point;
+               if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY) && IsNewOrderAllowed())
+                 {
+                  int expiryTime=(int)TimeCurrent()+(1209600);
+                  TicketNrBuyWD=OrderSend(Symbol(),OP_BUYSTOP,LotSize,Ask+TP*Point,Slippage,SLI,TPI,EAName+"WD_BUY",MagicNumber,expiryTime,Lime);
+                  if(TicketNrBuyWD<0)
+                    {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
+                  //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
+                 }
+              }
+            OrderDueStoch=false;
+           }
+        }
+      // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
+      // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
+      if(!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
+        {
+         if(OrderDueStoch && AllowStoch && TicketNrBuyStoch==0)
+           {
+            if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
+            if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
+            if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
               {
-               int expiryTime=(int)TimeCurrent()+(1209600);
-               TicketNrBuyWD=OrderSend(Symbol(),OP_BUYSTOP,LotSize,Ask+TP*Point,Slippage,SLI,TPI,EAName+"WD_BUY",MagicNumber,expiryTime,Lime);
-               if(TicketNrBuyWD<0)
+               TicketNrBuyStoch=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
+               if(TicketNrBuyStoch<0)
                  {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
                //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
               }
            }
-         OrderDueStoch=false;
-        }
-        }
-      // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
-      // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
-      if (!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
-      {
-      if (OrderDueStoch && AllowStoch && TicketNrBuyStoch==0) {
-         if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
-         if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
-         if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
+         if(OB==1 && OBC==0 && !OrderDueStoch)
            {
-            TicketNrBuyStoch=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
-            if(TicketNrBuyStoch<0)
-              {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-            //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
-           }
-      }
-      if(OB==1 && OBC==0 && !OrderDueStoch)
-        {
-         if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
-         if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
-           {
-            TicketNrBuy=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
-            if(TicketNrBuy<0)
-              {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-            //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
-           }
-         if(AllowPendings && !OrderDueStoch)
-           {
-            double TempPendingLotSize=LotSizeP1;
-            if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
-            if(TicketNrPendingBuy>0 && OrderSelect(TicketNrPendingBuy,SELECT_BY_POS))
-              {if(OrderType()==2){bool delB=OrderDelete(TicketNrPendingBuy);}TicketNrPendingBuy=0;}
-            else if(!OrderSelect(TicketNrPendingBuy,SELECT_BY_POS) && TicketNrPendingBuy>0)
-              {TicketNrPendingBuy=0;}
-            if(TicketNrPendingBuy==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_BUY)))
+            if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=0;else SLI=Ask-SL*Point;
+            if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
               {
-               TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);
-               if(TicketNrPendingBuy<0)
+               TicketNrBuy=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
+               if(TicketNrBuy<0)
                  {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-               //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingBuy));}
+               //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
               }
+            if(AllowPendings && !OrderDueStoch)
+              {
+               double TempPendingLotSize=LotSizeP1;
+               if(TempPendingLotSize<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize=MarketInfo(Symbol(),MODE_MINLOT);
+               if(TicketNrPendingBuy>0 && OrderSelect(TicketNrPendingBuy,SELECT_BY_POS))
+                 {if(OrderType()==2){bool delB=OrderDelete(TicketNrPendingBuy);}TicketNrPendingBuy=0;}
+               else if(!OrderSelect(TicketNrPendingBuy,SELECT_BY_POS) && TicketNrPendingBuy>0)
+                 {TicketNrPendingBuy=0;}
+               if(TicketNrPendingBuy==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_BUY)))
+                 {
+                  TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);
+                  if(TicketNrPendingBuy<0)
+                    {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
+                  //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingBuy));}
+                 }
 
-            double TempPendingLotSize2=LotSizeP2;
-            if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
-            if(TicketNrPendingBuy2>0 && OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && OrderType()==2)
-              {if(OrderType()==2){bool delB2=OrderDelete(TicketNrPendingBuy2);}TicketNrPendingBuy2=0;}
-            else if(!OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && TicketNrPendingBuy2>0)
-              {TicketNrPendingBuy2=0;}
-            if(TicketNrPendingBuy2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_BUY)))
-              {
-               TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);
-               if(TicketNrPendingBuy2<0)
-                 {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-               //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingBuy2));}
-              }
+               double TempPendingLotSize2=LotSizeP2;
+               if(TempPendingLotSize2<MarketInfo(Symbol(),MODE_MINLOT))TempPendingLotSize2=MarketInfo(Symbol(),MODE_MINLOT);
+               if(TicketNrPendingBuy2>0 && OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && OrderType()==2)
+                 {if(OrderType()==2){bool delB2=OrderDelete(TicketNrPendingBuy2);}TicketNrPendingBuy2=0;}
+               else if(!OrderSelect(TicketNrPendingBuy2,SELECT_BY_POS) && TicketNrPendingBuy2>0)
+                 {TicketNrPendingBuy2=0;}
+               if(TicketNrPendingBuy2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_BUY)))
+                 {
+                  TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);
+                  if(TicketNrPendingBuy2<0)
+                    {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
+                  //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrPendingBuy2));}
+                 }
 
-            if(TP==0)TPI=0;else TPI=Bid-(TP*2)*Point;if(SL==0)SLI=0;else SLI=Bid+(SL*2)*Point;
-            if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL) && IsNewOrderAllowed())
-              {
-               int expiryTime=(int)TimeCurrent()+(1209600);
-               TicketNrSellWD=OrderSend(Symbol(),OP_SELLSTOP,LotSize,Bid-TP*Point,Slippage,SLI,TPI,EAName+"WD_SELL",MagicNumber,expiryTime,Red);
-               if(TicketNrSellWD<0)
-                 {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
-               // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSellWD));}
+               if(TP==0)TPI=0;else TPI=Bid-(TP*2)*Point;if(SL==0)SLI=0;else SLI=Bid+(SL*2)*Point;
+               if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL) && IsNewOrderAllowed())
+                 {
+                  int expiryTime=(int)TimeCurrent()+(1209600);
+                  TicketNrSellWD=OrderSend(Symbol(),OP_SELLSTOP,LotSize,Bid-TP*Point,Slippage,SLI,TPI,EAName+"WD_SELL",MagicNumber,expiryTime,Red);
+                  if(TicketNrSellWD<0)
+                    {Print("OrderSend Error: "+IntegerToString(GetLastError()));}
+                  // else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSellWD));}
+                 }
               }
+            OrderDueStoch=false;
            }
-         OrderDueStoch=false;
-        }
         }
      }
    double TempProfit=0;
    for(int j=0;j<OrdersTotal();j++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
@@ -646,7 +646,7 @@ TempTDIGreen=TDIGreen;
             if(WrongDirectionBuy==true && OrderType()==OP_SELL){TrP();}
             else if(WrongDirectionSell==true && OrderType()==OP_BUY){TrP();}
             else if(WrongDirectionBuy==false && WrongDirectionSell==false){TrP();}
-            TempProfit=TempProfit+OrderProfit();
+            TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
            }
         }
      }
@@ -739,15 +739,11 @@ void TrP()
 //stop loss modification function
 void ModSL(double ldSL)
   {
-  double commissions = OrderCommission()+OrderSwap();
-  double commissionsInPips = 0.0;
-  if(commissions<0) {
-   commissionsInPips = MathRound(commissions/(MarketInfo(Symbol(), MODE_TICKVALUE)*10));
-   Print("Commission("+DoubleToStr(commissions)+") in pips(tickvalue:"+DoubleToStr(MarketInfo(Symbol(), MODE_TICKVALUE))+")="+DoubleToString(MathRound(commissions/(MarketInfo(Symbol(), MODE_TICKVALUE)*10))));
-  }
-  if(OrderType()==OP_BUY){ldSL = ldSL+commissionsInPips*Point;}
-  if(OrderType()==OP_SELL){ldSL = ldSL-commissionsInPips*Point;}
-   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit()))
+   double commissions=OrderCommission()+OrderSwap();
+   double commissionsInPips=0.0;
+   commissionsInPips=commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE)*MarketInfo(Symbol(),MODE_TICKSIZE);
+   Print("commissionsInPips="+DoubleToStr(commissionsInPips,5));
+   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL+commissionsInPips,OrderTakeProfit()))
      {
       bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,CLR_NONE);
      }
@@ -784,9 +780,7 @@ void CurrentProfit(double CurProfit)
    ObjectSet("EAName",OBJPROP_CORNER,1);
    ObjectSet("EAName",OBJPROP_XDISTANCE,5);
    ObjectSet("EAName",OBJPROP_YDISTANCE,75);
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
    if(CurrentLoss<0.0)
      {
       ObjectCreate("CurrentLoss",OBJ_LABEL,0,0,0);
@@ -795,9 +789,7 @@ void CurrentProfit(double CurProfit)
       ObjectSet("CurrentLoss",OBJPROP_XDISTANCE,5);
       ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,90);
         } else {ObjectDelete("CurrentLoss");
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      }
 
    if(trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
