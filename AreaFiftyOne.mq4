@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.19"
+#property version   "1.20"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -58,7 +58,7 @@ double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 /*licence*/
-bool trial_lic=true;
+bool trial_lic=false;
 datetime expiryDate=D'2017.05.27 00:00';
 /*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
@@ -293,7 +293,8 @@ TempTDIGreen=TDIGreen;
            }
         }
      }
-   CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
+     if(AccountBalance()>0) {
+   CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);}
    if(MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
      {
       while(CloseAll()==AT_LEAST_ONE_FAILED)
@@ -741,7 +742,8 @@ void ModSL(double ldSL)
   {
    double commissions=OrderCommission()+OrderSwap();
    double commissionsInPips=0.0;
-   commissionsInPips=commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE)*MarketInfo(Symbol(),MODE_TICKSIZE)+MarketInfo(Symbol(),MODE_SPREAD);
+   commissionsInPips=((commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE))
+                        +MarketInfo(Symbol(),MODE_SPREAD))*MarketInfo(Symbol(),MODE_TICKSIZE);
    Print("commissionsInPips="+DoubleToStr(commissionsInPips,5));
    if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL+commissionsInPips,OrderTakeProfit()))
      {
