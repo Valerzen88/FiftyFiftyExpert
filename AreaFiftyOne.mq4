@@ -741,7 +741,7 @@ void ModSL(double ldSL)
   {
    double commissions=OrderCommission()+OrderSwap();
    double commissionsInPips=0.0;
-   commissionsInPips=commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE)*MarketInfo(Symbol(),MODE_TICKSIZE);
+   commissionsInPips=commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE)*MarketInfo(Symbol(),MODE_TICKSIZE)+MarketInfo(Symbol(),MODE_SPREAD);
    Print("commissionsInPips="+DoubleToStr(commissionsInPips,5));
    if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL+commissionsInPips,OrderTakeProfit()))
      {
