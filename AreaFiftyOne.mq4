@@ -58,8 +58,12 @@ double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 /*licence*/
-bool trial_lic=false;
+bool trial_lic=true;
 datetime expiryDate=D'2017.05.27 00:00';
+bool rent_lic=false;
+datetime rentExpiryDate=D'2018.05.12 00:00';
+int rentAccountNumber=87023238;
+string rentBroker="Forex Capital Markets";
 /*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
 int WrongDirectionBuyTicketNr=0,WrongDirectionSellTicketNr=0;
@@ -74,6 +78,8 @@ int countStochOrders=0;
 int OnInit()
   {
 //---
+Print("AccountNumber="+IntegerToString(AccountNumber()));
+Print("AccountCompany="+AccountCompany());
    if(trial_lic)
      {
       if(TimeCurrent()>expiryDate)
@@ -87,6 +93,24 @@ int OnInit()
          ObjectSet("TrialVersion",OBJPROP_XDISTANCE,5);
          ObjectSet("TrialVersion",OBJPROP_YDISTANCE,15);
         }
+     }
+     
+     if(rent_lic) {
+      if(AccountCompany()==rentBroker && AccountNumber()==rentAccountNumber) {
+         if(TimeCurrent()>rentExpiryDate) {
+            Alert("Your license is expired. Please contact us.");
+         } else {
+         ObjectCreate("RentVersion",OBJ_LABEL,0,0,0);
+         ObjectSetText("RentVersion","Your version is valid till: "+TimeToStr(rentExpiryDate),11,"Calibri",clrAqua);
+         ObjectSet("RentVersion",OBJPROP_CORNER,1);
+         ObjectSet("RentVersion",OBJPROP_XDISTANCE,5);
+         ObjectSet("RentVersion",OBJPROP_YDISTANCE,15);
+        
+         }
+      } else {
+         Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and broker="+rentBroker);
+         return(INIT_FAILED);
+      }
      }
 
    handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
@@ -795,6 +819,7 @@ void CurrentProfit(double CurProfit)
      }
 
    if(trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
+   if(rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
 int getTicketCurrentType(int TicketNr)
