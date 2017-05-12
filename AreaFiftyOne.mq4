@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.22"
+#property version   "1.24"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -541,7 +541,7 @@ TempTDIGreen=TDIGreen;
          if(OrderDueStoch && AllowStoch && TicketNrSellStoch==0)
            {
             if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
-            if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=10000*Point*Point;else SLI=Bid+SL*Point;
+            if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
               {
                if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI)) 
@@ -555,7 +555,7 @@ TempTDIGreen=TDIGreen;
            }
          if(OS==1 && OSC==0 && !OrderDueStoch)
            {
-            if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=10000*Point;else SLI=Bid+SL*Point;
+            if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
               {
                if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI)) 
@@ -626,7 +626,7 @@ TempTDIGreen=TDIGreen;
          if(OrderDueStoch && AllowStoch && TicketNrBuyStoch==0)
            {
             if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
-            if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=10000*Point;else SLI=Ask-SL*Point;
+            if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
               {
                if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI)) 
@@ -640,7 +640,7 @@ TempTDIGreen=TDIGreen;
            }
          if(OB==1 && OBC==0 && !OrderDueStoch)
            {
-            if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=10000*Point;else SLI=Ask-SL*Point;
+            if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
               {
                if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI)) 
@@ -687,7 +687,7 @@ TempTDIGreen=TDIGreen;
                     }
                  }
 
-               if(TP==0)TPI=0;else TPI=Bid-(TP*2)*Point;if(SL==0)SLI=10000*Point;else SLI=Bid+(SL*2)*Point;
+               if(TP==0)TPI=0;else TPI=Bid-(TP*2)*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+(SL*2)*Point;
                if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL) && IsNewOrderAllowed())
                  {
                   if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI)) 
@@ -753,7 +753,7 @@ bool AddP()
 //trailing stop and breakeven
 void TrP()
   {
-   int BE=BreakEven;int TS=DistanceStep;double pb,pa,pp;pp=MarketInfo(OrderSymbol(),MODE_POINT)+(MarketInfo(Symbol(),MODE_SPREAD)*MarketInfo(Symbol(),MODE_TICKSIZE));
+   int BE=BreakEven;int TS=DistanceStep;double pb,pa,pp;pp=MarketInfo(OrderSymbol(),MODE_POINT);
    if(OrderType()==OP_BUY)
      {
       pb=MarketInfo(OrderSymbol(),MODE_BID);
@@ -811,7 +811,6 @@ void ModSL(double ldSL)
    double commissionsInPips=0.0;
    commissionsInPips=((commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE))
                       +MarketInfo(Symbol(),MODE_SPREAD))*MarketInfo(Symbol(),MODE_TICKSIZE);
-   Print("commissionsInPips0="+DoubleToStr(commissionsInPips,5));
    if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
    Print("commissionsInPips="+DoubleToStr(commissionsInPips,5));
    if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL+commissionsInPips,OrderTakeProfit()))
