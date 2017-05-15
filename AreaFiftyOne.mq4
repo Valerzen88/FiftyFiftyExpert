@@ -35,7 +35,7 @@ extern int      TrailingStep=50;
 extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
 extern int      TakeProfit=750;
-extern int      StopLoss=10000;
+extern int      StopLoss=0;
 
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
@@ -68,10 +68,10 @@ string IndicatorName="AreaFiftyOneIndicator";
 /*licence*/
 bool trial_lic=false;
 datetime expiryDate=D'2017.05.27 00:00';
-bool rent_lic=false;
+bool rent_lic=true;
 datetime rentExpiryDate=D'2018.05.12 00:00';
-int rentAccountNumber=87023238;
-string rentBroker="Forex Capital Markets";
+int rentAccountNumber=904901;
+string rentCustomerName="Johannes Lasotta";
 /*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
 int WrongDirectionBuyTicketNr=0,WrongDirectionSellTicketNr=0;
@@ -88,6 +88,8 @@ int OnInit()
 //---
    Print("AccountNumber="+IntegerToString(AccountNumber()));
    Print("AccountCompany="+AccountCompany());
+   Print("AccountName=", AccountName());
+   Print("AccountServer=", AccountServer());
    if(trial_lic)
      {
       if(TimeCurrent()>expiryDate)
@@ -105,7 +107,7 @@ int OnInit()
 
    if(rent_lic) 
      {
-      if(AccountCompany()==rentBroker && AccountNumber()==rentAccountNumber) 
+      if(AccountName()==rentCustomerName && AccountNumber()==rentAccountNumber) 
         {
          if(TimeCurrent()>rentExpiryDate) 
            {
@@ -119,7 +121,7 @@ int OnInit()
 
            }
            } else {
-         Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and broker="+rentBroker);
+         Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and servename="+rentCustomerName);
          return(INIT_FAILED);
         }
      }
