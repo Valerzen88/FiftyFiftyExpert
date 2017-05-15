@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.24"
+#property version   "1.25"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -53,7 +53,7 @@ int slowing=6;
 double sto_main_curr,sto_sign_curr,sto_main_prev1,sto_sign_prev1,sto_main_prev2,sto_sign_prev2;
 int ma_method=MODE_SMA;
 int price_field=0;
-int Slippage=3,MaxOrders=6,BreakEven=0;
+int Slippage=3,MaxOrders=6,BreakEven=37;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 double LotSizeP1,LotSizeP2;
@@ -68,7 +68,7 @@ string IndicatorName="AreaFiftyOneIndicator";
 /*licence*/
 bool trial_lic=false;
 datetime expiryDate=D'2017.05.27 00:00';
-bool rent_lic=true;
+bool rent_lic=false;
 datetime rentExpiryDate=D'2018.05.12 00:00';
 int rentAccountNumber=904901;
 string rentCustomerName="Johannes Lasotta";
@@ -755,51 +755,57 @@ bool AddP()
 //trailing stop and breakeven
 void TrP()
   {
-   int BE=BreakEven;int TS=DistanceStep;double pb,pa,pp;pp=MarketInfo(OrderSymbol(),MODE_POINT);
+   int BE=0;int TS=DistanceStep;double pbid,pask,ppoint;ppoint=MarketInfo(OrderSymbol(),MODE_POINT);
+   double commissions=OrderCommission()+OrderSwap();
+   double commissionsInPips=0.0;
+   commissionsInPips=((commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE))
+                      +MarketInfo(Symbol(),MODE_SPREAD))*MarketInfo(Symbol(),MODE_TICKSIZE);
+   if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
+   //Print("commissionsInPips(Ticket="+OrderTicket()+")="+DoubleToStr(commissionsInPips,5));
    if(OrderType()==OP_BUY)
      {
-      pb=MarketInfo(OrderSymbol(),MODE_BID);
+      pbid=MarketInfo(OrderSymbol(),MODE_BID);
       if(BE>0)
         {
-         if((pb-OrderOpenPrice())>BE*pp)
+         if((pbid-OrderOpenPrice())>BE*ppoint)
            {
             if((OrderStopLoss()-OrderOpenPrice())<0)
               {
-               ModSL(OrderOpenPrice()+0*pp);
+               ModSL(OrderOpenPrice()+0*ppoint);
               }
            }
         }
       if(TS>0)
         {
-         if((pb-OrderOpenPrice())>TS*pp)
+         if((pbid-OrderOpenPrice())>TS*ppoint)
            {
-            if(OrderStopLoss()<pb-(TS+TrailingStep-1)*pp)
+            if(OrderStopLoss()<pbid-(TS+TrailingStep-1)*ppoint)
               {
-               ModSL(pb-TS*pp);return;
+               ModSL(pbid-(TS+commissionsInPips)*ppoint);return;
               }
            }
         }
      }
    if(OrderType()==OP_SELL)
      {
-      pa=MarketInfo(OrderSymbol(),MODE_ASK);
+      pask=MarketInfo(OrderSymbol(),MODE_ASK);
       if(BE>0)
         {
-         if((OrderOpenPrice()-pa)>BE*pp)
+         if((OrderOpenPrice()-pask)>BE*ppoint)
            {
             if((OrderOpenPrice()-OrderStopLoss())<0)
               {
-               ModSL(OrderOpenPrice()-0*pp);
+               ModSL(OrderOpenPrice()-(0+commissionsInPips)*ppoint);
               }
            }
         }
       if(TS>0)
         {
-         if(OrderOpenPrice()-pa>TS*pp)
+         if(OrderOpenPrice()-pask>TS*ppoint)
            {
-            if(OrderStopLoss()>pa+(TS+TrailingStep-1)*pp || OrderStopLoss()==0)
+            if(OrderStopLoss()>pask+(TS+TrailingStep-1)*ppoint || OrderStopLoss()==0)
               {
-               ModSL(pa+TS*pp);
+               ModSL(pask+(TS+commissionsInPips)*ppoint);
                return;
               }
            }
@@ -809,13 +815,7 @@ void TrP()
 //stop loss modification function
 void ModSL(double ldSL)
   {
-   double commissions=OrderCommission()+OrderSwap();
-   double commissionsInPips=0.0;
-   commissionsInPips=((commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE))
-                      +MarketInfo(Symbol(),MODE_SPREAD))*MarketInfo(Symbol(),MODE_TICKSIZE);
-   if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
-   Print("commissionsInPips="+DoubleToStr(commissionsInPips,5));
-   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL+commissionsInPips,OrderTakeProfit()))
+   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit()))
      {
       bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,CLR_NONE);
      }
