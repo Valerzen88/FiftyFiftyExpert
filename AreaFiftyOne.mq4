@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.25"
+#property version   "1.26"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -771,7 +771,8 @@ void TrP()
            {
             if((OrderStopLoss()-OrderOpenPrice())<0)
               {
-               ModSL(OrderOpenPrice()+0*ppoint);
+              Print("Fall1");
+               ModSL(OrderOpenPrice()+0*ppoint+commissionsInPips);
               }
            }
         }
@@ -781,7 +782,8 @@ void TrP()
            {
             if(OrderStopLoss()<pbid-(TS+TrailingStep-1)*ppoint)
               {
-               ModSL(pbid-(TS+commissionsInPips)*ppoint);return;
+              Print("Fall2: "+"Ask="+pbid+";TS="+TS+";commissionInPips="+commissionsInPips);
+               ModSL(pbid-(TS*ppoint)+commissionsInPips);return;
               }
            }
         }
@@ -795,7 +797,8 @@ void TrP()
            {
             if((OrderOpenPrice()-OrderStopLoss())<0)
               {
-               ModSL(OrderOpenPrice()-(0+commissionsInPips)*ppoint);
+              Print("Fall3");
+               ModSL(OrderOpenPrice()-0*ppoint-commissionsInPips);
               }
            }
         }
@@ -805,7 +808,8 @@ void TrP()
            {
             if(OrderStopLoss()>pask+(TS+TrailingStep-1)*ppoint || OrderStopLoss()==0)
               {
-               ModSL(pask+(TS+commissionsInPips)*ppoint);
+              Print("Fall4: "+"Ask="+pask+";TS="+TS+";commissionInPips="+commissionsInPips);
+               ModSL(pask+TS*ppoint-commissionsInPips);
                return;
               }
            }
