@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.29"
+#property version   "1.30"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -769,8 +769,12 @@ void TrP()
    int BE=0;int TS=DistanceStep;double pbid,pask,ppoint;ppoint=MarketInfo(OrderSymbol(),MODE_POINT);
    double commissions=OrderCommission()+OrderSwap();
    double commissionsInPips=0.0;
-   commissionsInPips=((commissions/OrderLots()/MarketInfo(Symbol(),MODE_TICKVALUE))*MarketInfo(Symbol(),MODE_TICKSIZE)
-                      +SymbolInfoInteger(Symbol(),SYMBOL_SPREAD)*MarketInfo(Symbol(),MODE_TICKSIZE));
+   double tickValue= MarketInfo(Symbol(),MODE_TICKVALUE);
+   if(Debug) {Print("tickValue="+tickValue);}
+   if (tickValue==0) {tickValue=1.0;}
+   int spread = (Ask - Bid) / Point; 
+   double tickSize = MarketInfo(Symbol(),MODE_TICKSIZE);
+   commissionsInPips=((commissions/OrderLots()/tickValue)*tickSize+spread*tickSize);
    if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
    if(Debug)
      {
