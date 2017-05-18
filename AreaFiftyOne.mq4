@@ -770,11 +770,11 @@ void TrP()
    double commissions=OrderCommission()+OrderSwap();
    double commissionsInPips=0.0;
    double tickValue= MarketInfo(Symbol(),MODE_TICKVALUE);
-   if(Debug) {Print("tickValue="+tickValue);}
+   if(Debug) {Print("tickValue="+DoubleToStr(tickValue,5));}
    if (tickValue==0) {tickValue=1.0;}
-   int spread = (Ask - Bid) / Point; 
+   double spread = Ask - Bid; 
    double tickSize = MarketInfo(Symbol(),MODE_TICKSIZE);
-   commissionsInPips=((commissions/OrderLots()/tickValue)*tickSize+spread*tickSize);
+   commissionsInPips=((commissions/OrderLots()/tickValue)*tickSize+spread);
    if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
    if(Debug)
      {
