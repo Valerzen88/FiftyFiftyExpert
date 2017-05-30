@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "2.00"
+#property version   "2.0"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -32,8 +32,8 @@ extern int      MoneyRiskInPercent=0;
 bool     UseMainIndicator=false;
 extern bool     AllowPendings=false;
 bool     AllowStoch=false;
-extern int      TrailingStep=50;
-extern int      DistanceStep=50;
+extern int      TrailingStep=75;
+extern int      DistanceStep=75;
 extern int      MagicNumber=3537;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
@@ -238,8 +238,8 @@ TempTDIGreen=TDIGreen;
 
       if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
          && (TrendBack>=23))
-         && (TrendBack2>=26)))
-         //|| (Trend<TrendBack && TrendBack>14 && TrendBack2>15))
+         && (TrendBack2>=26))
+         || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
         {
          Print("SellSignal!");
          Print("Trend="+DoubleToStr(Trend));
@@ -248,10 +248,10 @@ TempTDIGreen=TDIGreen;
 
         }
 
-      if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>3)
+      if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
          && (TrendBack<=8)
-         && (TrendBack2<=4)))
-         //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15))
+         && (TrendBack2<=5))
+         || (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
         {
          Print("BuySignal!");
          Print("Trend="+DoubleToStr(Trend));
@@ -936,25 +936,25 @@ void CurrentProfit(double CurProfit)
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
-   ObjectSet("CurProfit",OBJPROP_YDISTANCE,30);
+   ObjectSet("CurProfit",OBJPROP_YDISTANCE,40);
 
    ObjectCreate("MagicNumber",OBJ_LABEL,0,0,0);
    ObjectSetText("MagicNumber","MagicNumber: "+IntegerToString(MagicNumber),11,"Calibri",clrMediumVioletRed);
    ObjectSet("MagicNumber",OBJPROP_CORNER,1);
    ObjectSet("MagicNumber",OBJPROP_XDISTANCE,5);
-   ObjectSet("MagicNumber",OBJPROP_YDISTANCE,45);
+   ObjectSet("MagicNumber",OBJPROP_YDISTANCE,60);
 
    ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
    ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(LotSize,2),11,"Calibri",clrLightYellow);
    ObjectSet("NextLotSize",OBJPROP_CORNER,1);
    ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
-   ObjectSet("NextLotSize",OBJPROP_YDISTANCE,60);
+   ObjectSet("NextLotSize",OBJPROP_YDISTANCE,80);
 
-   ObjectCreate("EAName",OBJ_LABEL,0,0,0);
+/*ObjectCreate("EAName",OBJ_LABEL,0,0,0);
    ObjectSetText("EAName","EAName: "+EAName,11,"Calibri",clrGold);
    ObjectSet("EAName",OBJPROP_CORNER,1);
    ObjectSet("EAName",OBJPROP_XDISTANCE,5);
-   ObjectSet("EAName",OBJPROP_YDISTANCE,75);
+   ObjectSet("EAName",OBJPROP_YDISTANCE,75);*/
 
    if(CurrentLoss<0.0)
      {
@@ -962,7 +962,7 @@ void CurrentProfit(double CurProfit)
       ObjectSetText("CurrentLoss","Current loss in %: "+DoubleToString(CurrentLoss,2),11,"Calibri",clrDeepPink);
       ObjectSet("CurrentLoss",OBJPROP_CORNER,1);
       ObjectSet("CurrentLoss",OBJPROP_XDISTANCE,5);
-      ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,90);
+      ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,100);
         } else {ObjectDelete("CurrentLoss");
 
      }
