@@ -6,11 +6,11 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "1.30"
+#property version   "2.00"
 #property description "Trades on oversold or overbought market."
 #property strict
 
-#resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
+//#resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 #resource "\\Indicators\\AreaFiftyOne_Trend.ex4"
 
 #define SLIPPAGE              5
@@ -56,11 +56,11 @@ int slowing=6;
 double sto_main_curr,sto_sign_curr,sto_main_prev1,sto_sign_prev1,sto_main_prev2,sto_sign_prev2;
 int ma_method=MODE_SMA;
 int price_field=0;
-int Slippage=3,MaxOrders=6,BreakEven=0;
+int Slippage=3,MaxOrders=4,BreakEven=0;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 double LotSizeP1,LotSizeP2;
-bool AddPositions=false;
+bool AddPositions=true;
 int StopLevel=0;
 double StopLevelDouble=MarketInfo(Symbol(),MODE_STOPLEVEL)*Point();
 double CurrentLoss=0;
@@ -132,20 +132,24 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
-
-   handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
-   if(handle_ind==INVALID_HANDLE)
+   if(UseMainIndicator)
      {
-      Print("Expert: iCustom call: Error code=",GetLastError());
-      return(INIT_FAILED);
+      handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
+      if(handle_ind==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
      }
    handle_ind=0;
+
    handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName2+".ex4",0,0);
    if(handle_ind==INVALID_HANDLE)
      {
       Print("Expert: iCustom call2: Error code=",GetLastError());
       return(INIT_FAILED);
      }
+
    bool compareContractSizes=false;
    if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
    else {compareContractSizes=false;}
@@ -226,14 +230,16 @@ TempTDIGreen=TDIGreen;
       double TrendBack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,1),1);
       double TrendBack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,2),1);
       if(Debug)
-      {Print("Trend="+Trend);
-      Print("TrendBack="+TrendBack);
-      Print("TrendBack2="+TrendBack2);}
+        {
+         Print("Trend="+DoubleToStr(Trend));
+         Print("TrendBack="+DoubleToStr(TrendBack));
+         Print("TrendBack2="+DoubleToStr(TrendBack2));
+        }
 
-      if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend==26 || Trend==25)
-         && (TrendBack==25 || TrendBack==27 || TrendBack==28 || TrendBack==29 || TrendBack==30))
-         && (TrendBack2==TrendBack+1 || TrendBack2==TrendBack+2 || TrendBack2==TrendBack+3))
-         || (Trend<TrendBack && TrendBack>14 && TrendBack2>15))
+      if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
+         && (TrendBack>=23))
+         && (TrendBack2>=26)))
+         //|| (Trend<TrendBack && TrendBack>14 && TrendBack2>15))
         {
          Print("SellSignal!");
          Print("Trend="+DoubleToStr(Trend));
@@ -241,10 +247,11 @@ TempTDIGreen=TDIGreen;
          SellFlag=1;
 
         }
-      if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend==5 || Trend==4)
-         && (TrendBack==5 || TrendBack==4 || TrendBack==3 || TrendBack==2 || TrendBack==1))
-         && (TrendBack2==TrendBack-1 || TrendBack2==TrendBack-2 || TrendBack2==TrendBack-3))
-         || (Trend>TrendBack && TrendBack<16 && TrendBack2<15))
+
+      if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>3)
+         && (TrendBack<=8)
+         && (TrendBack2<=4)))
+         //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15))
         {
          Print("BuySignal!");
          Print("Trend="+DoubleToStr(Trend));
@@ -843,13 +850,16 @@ void TrP()
         {
          if((pbid-OrderOpenPrice())>TS*ppoint)
            {
-            if(OrderStopLoss()<pbid-(TS+TrailingStep-1)*ppoint)
+            if(OrderStopLoss()<(pbid-((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3)))
               {
-               if(Debug){Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
-               Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));
-               if(pbid>pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3)) 
+               if((pbid-((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))>OrderOpenPrice())
                  {
-                  ModSL(pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                  if(Debug){Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
+                  Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));
+                  if(pbid>pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
+                    {
+                     ModSL(pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                    }
                  }
                return;
               }
@@ -874,13 +884,16 @@ void TrP()
         {
          if(OrderOpenPrice()-pask>TS*ppoint)
            {
-            if(OrderStopLoss()>pask+(TS+TrailingStep-1)*ppoint || OrderStopLoss()==0)
+            if(OrderStopLoss()>(pask+((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3)) || OrderStopLoss()==0)
               {
-              if(Debug){Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
-                  Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));
-               if(pask<pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3)) 
+               if((pask+((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))<OrderOpenPrice())
                  {
-                  ModSL(pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                  if(Debug){Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
+                  Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));
+                  if(pask<pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
+                    {
+                     ModSL(pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                    }
                  }
                return;
               }
