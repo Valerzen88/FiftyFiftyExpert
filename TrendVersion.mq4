@@ -238,8 +238,8 @@ TempTDIGreen=TDIGreen;
 
       if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
          && (TrendBack>=23))
-         && (TrendBack2>=26))
-         || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
+         && (TrendBack2>=26)))
+        // || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
         {
          Print("SellSignal!");
          Print("Trend="+DoubleToStr(Trend));
@@ -250,8 +250,8 @@ TempTDIGreen=TDIGreen;
 
       if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
          && (TrendBack<=8)
-         && (TrendBack2<=5))
-         || (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
+         && (TrendBack2<=5)))
+         //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
         {
          Print("BuySignal!");
          Print("Trend="+DoubleToStr(Trend));
