@@ -30,7 +30,7 @@ extern bool     LotAutoSize=false;
 extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
 bool     UseMainIndicator=false;
-extern bool     AllowPendings=false;
+bool     AllowPendings=false;
 bool     AllowStoch=false;
 extern int      TrailingStep=75;
 extern int      DistanceStep=75;
@@ -241,9 +241,9 @@ TempTDIGreen=TDIGreen;
          && (TrendBack2>=26)))
         // || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
         {
-         Print("SellSignal!");
+         if(Debug){Print("SellSignal!");
          Print("Trend="+DoubleToStr(Trend));
-         Print("TrendBack="+DoubleToStr(TrendBack));
+         Print("TrendBack="+DoubleToStr(TrendBack));}
          SellFlag=1;
 
         }
@@ -253,9 +253,9 @@ TempTDIGreen=TDIGreen;
          && (TrendBack2<=5)))
          //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
         {
-         Print("BuySignal!");
+         if(Debug){Print("BuySignal!");
          Print("Trend="+DoubleToStr(Trend));
-         Print("TrendBack="+DoubleToStr(TrendBack));
+         Print("TrendBack="+DoubleToStr(TrendBack));}
          BuyFlag=1;
         }
      }
