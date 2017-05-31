@@ -60,7 +60,7 @@ int Slippage=3,MaxOrders=4,BreakEven=0;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 double LotSizeP1,LotSizeP2;
-bool AddPositions=true;
+bool AddPositions=false;
 int StopLevel=0;
 double StopLevelDouble=MarketInfo(Symbol(),MODE_STOPLEVEL)*Point();
 double CurrentLoss=0;
@@ -70,7 +70,7 @@ string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 string IndicatorName2="AreaFiftyOne_Trend";
 /*licence*/
-bool trial_lic=true;
+bool trial_lic=false;
 datetime expiryDate=D'2017.06.02 00:00';
 bool rent_lic=false;
 datetime rentExpiryDate=D'2018.05.12 00:00';
