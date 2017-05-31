@@ -96,7 +96,7 @@ double gd_584;
 double gd_592;
 double g_bars_600 = 0.0;
 
-int init() {
+int OnInit() {  
    IndicatorShortName("AreaFiftyOne_Trend");
    for (g_index_208 = 0; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 0.0;
    for (g_index_208 = 0; g_index_208 < 128; g_index_208++) gda_496[g_index_208] = 0.0;
@@ -111,6 +111,7 @@ int init() {
 
 int start() {
    int li_unused_16;
+   string path=GetRelativeProgramPath();
    int li_12 = key;
    if (li_12 == 34562788) loadJMA();
    else {
@@ -121,8 +122,8 @@ int start() {
             gd_584 = 0;
             gd_592 = 0;
             for (int li_24 = Len; li_24 <= Len + Progression * Sensitivity; li_24 += Progression) {
-               g_icustom_568 = iCustom(NULL, 0, "AreaFiftyOne_Trend", 34562788, li_24, bars, 0, l_index_20);
-               g_icustom_576 = iCustom(NULL, 0, "AreaFiftyOne_Trend", 34562788, li_24, bars, 0, l_index_20 + 1);
+               g_icustom_568 = iCustom(NULL, 0, path, 34562788, li_24, bars, 0, l_index_20);
+               g_icustom_576 = iCustom(NULL, 0, path, 34562788, li_24, bars, 0, l_index_20 + 1);
                if (g_icustom_568 > g_icustom_576) gd_584++;
                else gd_592++;
             }
@@ -604,7 +605,23 @@ int OnCalculate(const int rates_total,
    return(rates_total);
   }
   
- //+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+  {
+//--- The first way to get the uninitialization reason code 
+   Print(__FUNCTION__,"_Uninitalization reason code = ",reason);
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double OnTester()
+  {
+//---
+   double ret=0.0;
+//---
+   return(ret);
+  }  
+  
+//+------------------------------------------------------------------+
 //| GetRelativeProgramPath                                           |
 //+------------------------------------------------------------------+
 string GetRelativeProgramPath()
@@ -631,4 +648,4 @@ string GetRelativeProgramPath()
       return(StringSubstr(path,pos));
 //--- return the path relative to the subdirectory (for example, MQL4\Indicators)
    return(StringSubstr(path,pos2+1));
-  } 
+  }
