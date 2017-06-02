@@ -10,7 +10,7 @@
 #property description "Trades on oversold or overbought market."
 #property strict
 
-//#resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
+#resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 #resource "\\Indicators\\AreaFiftyOne_Trend.ex4"
 
 #define SLIPPAGE              5
@@ -29,9 +29,10 @@ extern double   LotSize=0.01;
 extern bool     LotAutoSize=false;
 extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
-bool     UseMainIndicator=false;
+extern bool     UseRSIBasedIndicator=false;
+extern bool     UseTrendIndicator=true;
 bool     AllowPendings=false;
-bool     AllowStoch=false;
+extern bool     UseStochastikBasedIndicator=false;
 extern int      TrailingStep=75;
 extern int      DistanceStep=75;
 extern int      MagicNumber=3537;
@@ -85,6 +86,17 @@ int handle_ind;
 bool OrderDueStoch=false;
 int countStochOrders=0;
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int OnStart() 
+  {
+   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT)) 
+     {
+      LotSize=MarketInfo(Symbol(),MODE_MINLOT);
+     }
+   return(0);
+  }
+//+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
@@ -96,6 +108,10 @@ int OnInit()
       Print("AccountCompany="+AccountCompany());
       Print("AccountName=",AccountName());
       Print("AccountServer=",AccountServer());
+      Print("MODE_LOTSIZE=",MarketInfo(Symbol(),MODE_LOTSIZE),", Symbol=",Symbol());
+      Print("MODE_MINLOT=",MarketInfo(Symbol(),MODE_MINLOT),", Symbol=",Symbol());
+      Print("MODE_LOTSTEP=",MarketInfo(Symbol(),MODE_LOTSTEP),", Symbol=",Symbol());
+      Print("MODE_MAXLOT=",MarketInfo(Symbol(),MODE_MAXLOT),", Symbol=",Symbol());
      }
    if(trial_lic)
      {
@@ -132,7 +148,7 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
-   if(UseMainIndicator)
+   if(UseRSIBasedIndicator)
      {
       handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
       if(handle_ind==INVALID_HANDLE)
@@ -174,7 +190,7 @@ void OnDeinit(const int reason)
   {
    if(Debug)
      {
-      if(AllowStoch){Print("countStochOrders="+IntegerToString(countStochOrders));}
+      if(UseStochastikBasedIndicator){Print("countStochOrders="+IntegerToString(countStochOrders));}
       Print("StopLevelDouble="+DoubleToStr(StopLevelDouble));
       Print("StopLevel="+IntegerToString(StopLevel));
      }
@@ -190,7 +206,7 @@ void OnTick()
    bool BUY=false,SELL=false;
 
 //double TempTDIGreen=0,TempTDIRed=0;
-   if(UseMainIndicator)
+   if(UseRSIBasedIndicator)
      {
       for(int i=1;i<=limit;i++)
         {
@@ -224,42 +240,51 @@ TempTDIGreen=TDIGreen;
         }
      }
 
-   if(Volume[0]==1)
+   if(UseTrendIndicator) 
      {
-      double Trend=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,0),1);
-      double TrendBack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,1),1);
-      double TrendBack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,2),1);
-      if(Debug)
+      if(Volume[0]==1)
         {
-         Print("Trend="+DoubleToStr(Trend));
-         Print("TrendBack="+DoubleToStr(TrendBack));
-         Print("TrendBack2="+DoubleToStr(TrendBack2));
-        }
+         double Trend=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,0),1);
+         double TrendBack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,1),1);
+         double TrendBack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,2),1);
+         if(Debug)
+           {
+            Print("Trend="+DoubleToStr(Trend));
+            Print("TrendBack="+DoubleToStr(TrendBack));
+            Print("TrendBack2="+DoubleToStr(TrendBack2));
+           }
 
-      if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
-         && (TrendBack>=23))
-         && (TrendBack2>=26)))
-        // || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
-        {
-         if(Debug){Print("SellSignal!");
-         Print("Trend="+DoubleToStr(Trend));
-         Print("TrendBack="+DoubleToStr(TrendBack));}
-         SellFlag=1;
+         if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
+            && (TrendBack>=23))
+            && (TrendBack2>=26)))
+            // || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
+           {
+            if(Debug)
+              {
+               Print("SellSignal!");
+               Print("Trend="+DoubleToStr(Trend));
+               Print("TrendBack="+DoubleToStr(TrendBack));
+              }
+            SellFlag=1;
 
-        }
+           }
 
-      if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
-         && (TrendBack<=8)
-         && (TrendBack2<=5)))
-         //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
-        {
-         if(Debug){Print("BuySignal!");
-         Print("Trend="+DoubleToStr(Trend));
-         Print("TrendBack="+DoubleToStr(TrendBack));}
-         BuyFlag=1;
+         if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
+            && (TrendBack<=8)
+            && (TrendBack2<=5)))
+            //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
+           {
+            if(Debug)
+              {
+               Print("BuySignal!");
+               Print("Trend="+DoubleToStr(Trend));
+               Print("TrendBack="+DoubleToStr(TrendBack));
+              }
+            BuyFlag=1;
+           }
         }
      }
-   if(AllowStoch)
+   if(UseStochastikBasedIndicator)
      {
       sto_main_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,0);
       sto_sign_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_SIGNAL,0);
@@ -338,7 +363,7 @@ TempTDIGreen=TDIGreen;
                LotSizeP1=LotSizeP1-MathMod(LotSizeP1,SymbolStep);
                LotSizeP2=LotSizeP2-MathMod(LotSizeP2,SymbolStep);
               }
-              } else {
+           } else {
             Print("Cannot calculate the right auto lot size!");
             LotSize=MarketInfo(Symbol(),MODE_MINLOT);
             LotSizeP1=MarketInfo(Symbol(),MODE_MINLOT);
@@ -601,7 +626,7 @@ TempTDIGreen=TDIGreen;
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && AllowStoch && TicketNrSellStoch==0)
+         if(OrderDueStoch && UseStochastikBasedIndicator && TicketNrSellStoch==0)
            {
             if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
@@ -686,7 +711,7 @@ TempTDIGreen=TDIGreen;
       // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && AllowStoch && TicketNrBuyStoch==0)
+         if(OrderDueStoch && UseStochastikBasedIndicator && TicketNrBuyStoch==0)
            {
             if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
