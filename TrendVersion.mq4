@@ -32,7 +32,7 @@ extern int      MoneyRiskInPercent=0;
 extern bool     UseRSIBasedIndicator=false;
 extern bool     UseTrendIndicator=true;
 bool     AllowPendings=false;
-extern bool     UseStochastikBasedIndicator=false;
+bool     UseStochastikBasedIndicator=false;
 extern int      TrailingStep=75;
 extern int      DistanceStep=75;
 extern int      MagicNumber=3537;
@@ -88,9 +88,9 @@ int countStochOrders=0;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int OnStart() 
+int OnStart()
   {
-   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT)) 
+   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MINLOT);
      }
@@ -157,15 +157,16 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
-   handle_ind=0;
-
-   handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName2+".ex4",0,0);
-   if(handle_ind==INVALID_HANDLE)
+   if(UseTrendIndicator)
      {
-      Print("Expert: iCustom call2: Error code=",GetLastError());
-      return(INIT_FAILED);
+      handle_ind=0;
+      handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName2+".ex4",0,0);
+      if(handle_ind==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call2: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
      }
-
    bool compareContractSizes=false;
    if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
    else {compareContractSizes=false;}
@@ -240,7 +241,7 @@ TempTDIGreen=TDIGreen;
         }
      }
 
-   if(UseTrendIndicator) 
+   if(UseTrendIndicator)
      {
       if(Volume[0]==1)
         {
@@ -363,7 +364,7 @@ TempTDIGreen=TDIGreen;
                LotSizeP1=LotSizeP1-MathMod(LotSizeP1,SymbolStep);
                LotSizeP2=LotSizeP2-MathMod(LotSizeP2,SymbolStep);
               }
-           } else {
+              } else {
             Print("Cannot calculate the right auto lot size!");
             LotSize=MarketInfo(Symbol(),MODE_MINLOT);
             LotSizeP1=MarketInfo(Symbol(),MODE_MINLOT);
