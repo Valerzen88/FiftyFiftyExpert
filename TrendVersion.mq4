@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "2.0"
+#property version   "2.1"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -33,8 +33,8 @@ extern bool     UseRSIBasedIndicator=false;
 extern bool     UseTrendIndicator=true;
 bool     AllowPendings=false;
 bool     UseStochastikBasedIndicator=false;
-extern int      TrailingStep=75;
-extern int      DistanceStep=75;
+extern int      TrailingStep=50;
+extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
@@ -71,8 +71,8 @@ string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 string IndicatorName2="AreaFiftyOne_Trend";
 /*licence*/
-bool trial_lic=false;
-datetime expiryDate=D'2017.06.02 00:00';
+bool trial_lic=true;
+datetime expiryDate=D'2017.06.17 00:00';
 bool rent_lic=false;
 datetime rentExpiryDate=D'2018.05.12 00:00';
 int rentAccountNumber=904901;
@@ -85,23 +85,23 @@ int TicketNrBuyStoch=0,TicketNrSellStoch=0;
 int handle_ind;
 bool OrderDueStoch=false;
 int countStochOrders=0;
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-int OnStart()
-  {
-   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
-     {
-      LotSize=MarketInfo(Symbol(),MODE_MINLOT);
-     }
-   return(0);
-  }
+int countedDecimals=2;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
 //---
+   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
+     {
+      LotSize=MarketInfo(Symbol(),MODE_MINLOT);
+     }
+   if(LotSize>=MarketInfo(Symbol(),MODE_MAXLOT))
+     {
+      LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
+     }
+   double lotstep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
+   countedDecimals=(int)-MathLog10(lotstep);
    if(Debug)
      {
       Print("AccountNumber="+IntegerToString(AccountNumber()));
@@ -112,6 +112,7 @@ int OnInit()
       Print("MODE_MINLOT=",MarketInfo(Symbol(),MODE_MINLOT),", Symbol=",Symbol());
       Print("MODE_LOTSTEP=",MarketInfo(Symbol(),MODE_LOTSTEP),", Symbol=",Symbol());
       Print("MODE_MAXLOT=",MarketInfo(Symbol(),MODE_MAXLOT),", Symbol=",Symbol());
+      Print("countedDecimals="+IntegerToString(countedDecimals));
      }
    if(trial_lic)
      {
@@ -239,6 +240,7 @@ TempTDIGreen=TDIGreen;
          if(BUY==true){BuyFlag=1;break;}
          if(SELL==true){SellFlag=1;break;}
         }
+      if((SELL || BUY) && Debug) {Print("Got signal from RSI-based indicator!");}
      }
 
    if(UseTrendIndicator)
@@ -283,6 +285,7 @@ TempTDIGreen=TDIGreen;
               }
             BuyFlag=1;
            }
+         if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
         }
      }
    if(UseStochastikBasedIndicator)
@@ -322,7 +325,6 @@ TempTDIGreen=TDIGreen;
      }
 
 //risk management
-   int digits=Digits;
    double SymbolStep=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
    int MarginMode=(int)MarketInfo(Symbol(),MODE_MARGINCALCMODE);
    bool compareContractSizes=false;
@@ -338,25 +340,25 @@ TempTDIGreen=TDIGreen;
          if(getContractProfitCalcMode()==0 || (MarginMode==0 && compareContractSizes))
            {
             //Print("Fall1:"+(MarginMode==0 && compareContractSizes));
-            LotSize=MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
-                              (Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT);
+            LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
+                                    (Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT),countedDecimals);
             //Print("LotSize="+LotSize);
-            LotSizeP1 = NormalizeDouble(LotSize*0.625,Digits);
-            LotSizeP2 = NormalizeDouble(LotSize*0.5,Digits);
+            LotSizeP1 = NormalizeDouble(LotSize*0.625,countedDecimals);
+            LotSizeP2 = NormalizeDouble(LotSize*0.5,countedDecimals);
            }
          else if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false))
            {
             //Print("Fall2:"+((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false)));
-            if(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE)==1){digits=0;}
+            if(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE)==1.0){countedDecimals=0;}
             int Splitter=1000;
             if(getContractProfitCalcMode()==1){Splitter=100000;}
             if(MarginMode==4 && MarketInfo(Symbol(),MODE_TICKSIZE)==0.001){Splitter=1000000;}
             if(Digits==3){Faktor=1;}
             if(Digits==2){Faktor=10;}
             LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Faktor*Point)/
-                                    (Ask*MarketInfo(Symbol(),MODE_TICKSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT)/Splitter,digits);
-            LotSizeP1 = MathFloor(NormalizeDouble(LotSize*0.625,digits));
-            LotSizeP2 = MathFloor(NormalizeDouble(LotSize*0.5,digits));
+                                    (Ask*MarketInfo(Symbol(),MODE_TICKSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT)/Splitter,countedDecimals);
+            LotSizeP1 = MathFloor(NormalizeDouble(LotSize*0.625,countedDecimals));
+            LotSizeP2 = MathFloor(NormalizeDouble(LotSize*0.5,countedDecimals));
             //Print("LotSize2="+LotSize);
             if(SymbolStep>0.0)
               {
@@ -376,33 +378,33 @@ TempTDIGreen=TDIGreen;
    if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MINLOT);
-      LotSizeP1 = NormalizeDouble(LotSize*0.625,digits);
-      LotSizeP2 = NormalizeDouble(LotSize*0.5,digits);
+      LotSizeP1 = NormalizeDouble(LotSize*0.625,countedDecimals);
+      LotSizeP2 = NormalizeDouble(LotSize*0.5,countedDecimals);
       if(SymbolStep>0.0)
         {
-         LotSize=LotSize-MathMod(LotSize,SymbolStep);
-         LotSizeP1=LotSizeP1-MathMod(LotSizeP1,SymbolStep);
-         LotSizeP2=LotSizeP2-MathMod(LotSizeP2,SymbolStep);
+         LotSize=NormalizeDouble(LotSize-MathMod(LotSize,SymbolStep),countedDecimals);
+         LotSizeP1=NormalizeDouble(LotSizeP1-MathMod(LotSizeP1,SymbolStep), countedDecimals);
+         LotSizeP2=NormalizeDouble(LotSizeP2-MathMod(LotSizeP2,SymbolStep), countedDecimals);
         }
      }
    if(LotSize>MarketInfo(Symbol(),MODE_MAXLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
-      LotSizeP1=NormalizeDouble(LotSizeP1*0.625,digits);
-      LotSizeP2=NormalizeDouble(LotSizeP2*0.5,digits);
+      LotSizeP1=NormalizeDouble(LotSizeP1*0.625,countedDecimals);
+      LotSizeP2=NormalizeDouble(LotSizeP2*0.5,countedDecimals);
       if(SymbolStep>0.0)
         {
-         LotSize=LotSize-MathMod(LotSize,SymbolStep);
-         LotSizeP1=LotSizeP1-MathMod(LotSizeP1,SymbolStep);
-         LotSizeP2=LotSizeP2-MathMod(LotSizeP2,SymbolStep);
+         LotSize=NormalizeDouble(LotSize-MathMod(LotSize,SymbolStep),countedDecimals);
+         LotSizeP1=NormalizeDouble(LotSizeP1-MathMod(LotSizeP1,SymbolStep), countedDecimals);
+         LotSizeP2=NormalizeDouble(LotSizeP2-MathMod(LotSizeP2,SymbolStep), countedDecimals);
         }
      }
 
    if(Debug)
      {
-      Print("LotSize="+DoubleToStr(LotSize-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));
-      Print("LotSize*0,625="+DoubleToStr(LotSizeP1-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));
-      Print("LotSize*0,5="+DoubleToStr(LotSizeP2-MathMod(LotSize,SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP))));
+      Print("LotSize="+DoubleToStr(LotSize,countedDecimals));
+      Print("LotSize*0,625="+DoubleToStr(LotSizeP1,countedDecimals));
+      Print("LotSize*0,5="+DoubleToStr(LotSizeP2,countedDecimals));
      }
 
 //Money Management
