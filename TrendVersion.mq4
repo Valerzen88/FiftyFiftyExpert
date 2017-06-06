@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "2.1"
+#property version   "2.12"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -71,12 +71,12 @@ string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 string IndicatorName2="AreaFiftyOne_Trend";
 /*licence*/
-bool trial_lic=true;
+bool trial_lic=false;
 datetime expiryDate=D'2017.06.17 00:00';
 bool rent_lic=false;
 datetime rentExpiryDate=D'2018.05.12 00:00';
 int rentAccountNumber=904901;
-string rentCustomerName="Johannes Lasotta";
+string rentCustomerName="Johannes Lassotta";
 /*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
 int WrongDirectionBuyTicketNr=0,WrongDirectionSellTicketNr=0;
@@ -116,7 +116,7 @@ int OnInit()
      }
    if(trial_lic)
      {
-      if(TimeCurrent()>expiryDate)
+      if(!IsTesting() && TimeCurrent()>expiryDate)
         {
          Alert("Expired copy. Please contact vendor.");
          return(INIT_FAILED);
@@ -131,7 +131,7 @@ int OnInit()
 
    if(rent_lic)
      {
-      if(AccountName()==rentCustomerName && AccountNumber()==rentAccountNumber)
+      if(!IsTesting() && AccountName()==rentCustomerName && AccountNumber()==rentAccountNumber)
         {
          if(TimeCurrent()>rentExpiryDate)
            {
@@ -145,8 +145,11 @@ int OnInit()
 
            }
            } else {
-         Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and servename="+rentCustomerName);
-         return(INIT_FAILED);
+         if(!IsTesting()) 
+           {
+            Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and username="+rentCustomerName);
+            return(INIT_FAILED);
+           }
         }
      }
    if(UseRSIBasedIndicator)
@@ -995,8 +998,8 @@ void CurrentProfit(double CurProfit)
 
      }
 
-   if(trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
-   if(rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
+   if(!IsTesting() && trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
+   if(!IsTesting() && rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
 int getTicketCurrentType(int TicketNr)
