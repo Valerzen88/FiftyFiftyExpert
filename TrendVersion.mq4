@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "2.12"
+#property version   "2.13"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -145,7 +145,7 @@ int OnInit()
 
            }
            } else {
-         if(!IsTesting()) 
+         if(!IsTesting())
            {
             Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and username="+rentCustomerName);
             return(INIT_FAILED);
@@ -638,7 +638,7 @@ TempTDIGreen=TDIGreen;
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
+               if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(LotSize))
                  {
                   TicketNrSellStoch=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
                   if(TicketNrSellStoch<0)
@@ -652,7 +652,7 @@ TempTDIGreen=TDIGreen;
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
+               if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(LotSize))
                  {
                   TicketNrSell=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
                   if(TicketNrSell<0)
@@ -671,7 +671,7 @@ TempTDIGreen=TDIGreen;
                  {TicketNrPendingSell=0;}
                if(TicketNrPendingSell==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_SELL)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
+                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(TempPendingLotSize))
                     {
                      TicketNrPendingSell=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize,Bid+TP/2*Point,Slippage,0,Bid,EAName+"P1S",MagicNumber,0,Red);
                      if(TicketNrPendingSell<0)
@@ -688,7 +688,7 @@ TempTDIGreen=TDIGreen;
                  {TicketNrPendingSell2=0;}
                if(TicketNrPendingSell2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_SELL)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
+                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(TempPendingLotSize2))
                     {
                      TicketNrPendingSell2=OrderSend(Symbol(),OP_SELLLIMIT,TempPendingLotSize2,Bid+TP/1*Point,Slippage,0,Bid,EAName+"P2S",MagicNumber,0,Red);
                      if(TicketNrPendingSell2<0)
@@ -700,7 +700,7 @@ TempTDIGreen=TDIGreen;
                if(TP==0)TPI=0;else TPI=Ask+(TP*2)*Point;if(SL==0)SLI=10000*Point;else SLI=Ask-(SL*2)*Point;
                if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY) && IsNewOrderAllowed())
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(LotSize))
                     {
                      int expiryTime=(int)TimeCurrent()+(1209600);
                      TicketNrBuyWD=OrderSend(Symbol(),OP_BUYSTOP,LotSize,Ask+TP*Point,Slippage,SLI,TPI,EAName+"WD_BUY",MagicNumber,expiryTime,Lime);
@@ -723,7 +723,7 @@ TempTDIGreen=TDIGreen;
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+               if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(LotSize))
                  {
                   TicketNrBuyStoch=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
                   if(TicketNrBuyStoch<0)
@@ -737,7 +737,7 @@ TempTDIGreen=TDIGreen;
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+               if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(LotSize))
                  {
                   TicketNrBuy=OrderSend(Symbol(),OP_BUY,LotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
                   if(TicketNrBuy<0)
@@ -755,7 +755,7 @@ TempTDIGreen=TDIGreen;
                  {TicketNrPendingBuy=0;}
                if(TicketNrPendingBuy==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize,OP_BUY)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(TempPendingLotSize))
                     {
                      TicketNrPendingBuy=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize,Ask-TP/2*Point,Slippage,0,Ask,EAName+"P1B",MagicNumber,0,Red);
                      if(TicketNrPendingBuy<0)
@@ -772,7 +772,7 @@ TempTDIGreen=TDIGreen;
                  {TicketNrPendingBuy2=0;}
                if(TicketNrPendingBuy2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(Symbol(),TempPendingLotSize2,OP_BUY)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(TempPendingLotSize2))
                     {
                      TicketNrPendingBuy2=OrderSend(Symbol(),OP_BUYLIMIT,TempPendingLotSize2,Ask-TP/1*Point,Slippage,0,Ask,EAName+"P2B",MagicNumber,0,Red);
                      if(TicketNrPendingBuy2<0)
@@ -784,7 +784,7 @@ TempTDIGreen=TDIGreen;
                if(TP==0)TPI=0;else TPI=Bid-(TP*2)*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+(SL*2)*Point;
                if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL) && IsNewOrderAllowed())
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
+                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(LotSize))
                     {
                      int expiryTime=(int)TimeCurrent()+(1209600);
                      TicketNrSellWD=OrderSend(Symbol(),OP_SELLSTOP,LotSize,Bid-TP*Point,Slippage,SLI,TPI,EAName+"WD_SELL",MagicNumber,expiryTime,Red);
@@ -1184,5 +1184,42 @@ bool CheckStopLoss_Takeprofit(ENUM_ORDER_TYPE type,double SLT,double TPT)
       break;
      }
    return false;
+  }
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Check the correctness of the order volume                        |
+//+------------------------------------------------------------------+
+bool CheckVolumeValue(double volume)
+  {
+//--- minimal allowed volume for trade operations
+   string description="";
+   double min_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MIN);
+   if(volume<min_volume)
+     {
+      description=StringFormat("Volume is less than the minimal allowed SYMBOL_VOLUME_MIN=%.2f",min_volume);
+      return(false);
+     }
+
+//--- maximal allowed volume of trade operations
+   double max_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MAX);
+   if(volume>max_volume)
+     {
+      description=StringFormat("Volume is greater than the maximal allowed SYMBOL_VOLUME_MAX=%.2f",max_volume);
+      return(false);
+     }
+
+//--- get minimal step of volume changing
+   double volume_step=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
+
+   int ratio=(int)MathRound(volume/volume_step);
+   if(MathAbs(ratio*volume_step-volume)>0.0000001)
+     {
+      description=StringFormat("Volume is not a multiple of the minimal step SYMBOL_VOLUME_STEP=%.2f, the closest correct volume is %.2f",
+                               volume_step,ratio*volume_step);
+      return(false);
+     }
+   if(description=="") {description="Correct volume value";}
+   if(Debug) {Print(description);}
+   return(true);
   }
 //+------------------------------------------------------------------+
