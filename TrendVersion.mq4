@@ -39,7 +39,7 @@ extern int      MagicNumber=3537;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
 
-bool Debug=false;
+bool Debug=true;
 
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
@@ -92,14 +92,14 @@ int countedDecimals=2;
 int OnInit()
   {
 //---
-   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
+   /*if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MINLOT);
      }
    if(LotSize>=MarketInfo(Symbol(),MODE_MAXLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
-     }
+     }*/
    double lotstep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
    countedDecimals=(int)-MathLog10(lotstep);
    if(Debug)
@@ -280,7 +280,7 @@ TempTDIGreen=TDIGreen;
             && (TrendBack2<=5)))
             //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
            {
-            if(Debug)
+            if(!Debug)
               {
                Print("BuySignal!");
                Print("Trend="+DoubleToStr(Trend));
@@ -403,7 +403,7 @@ TempTDIGreen=TDIGreen;
         }
      }
 
-   if(Debug)
+   if(!Debug)
      {
       Print("LotSize="+DoubleToStr(LotSize,countedDecimals));
       Print("LotSize*0,625="+DoubleToStr(LotSizeP1,countedDecimals));
@@ -1219,7 +1219,8 @@ bool CheckVolumeValue(double volume)
       return(false);
      }
    if(description=="") {description="Correct volume value";}
-   if(Debug) {Print(description);}
+   Print(description);
    return(true);
   }
-//+------------------------------------------------------------------+
+//+-----------------------------------------------------------------+
+
