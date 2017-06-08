@@ -39,7 +39,7 @@ extern int      MagicNumber=3537;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
 
-bool Debug=true;
+bool Debug=false;
 
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
@@ -92,14 +92,14 @@ int countedDecimals=2;
 int OnInit()
   {
 //---
-   /*if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
+   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MINLOT);
      }
    if(LotSize>=MarketInfo(Symbol(),MODE_MAXLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
-     }*/
+     }
    double lotstep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
    countedDecimals=(int)-MathLog10(lotstep);
    if(Debug)
@@ -1196,7 +1196,7 @@ bool CheckVolumeValue(double volume)
    double min_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MIN);
    if(volume<min_volume)
      {
-      description=StringFormat("Volume is less than the minimal allowed SYMBOL_VOLUME_MIN=%.2f",min_volume);
+      PrintFormat("Volume is less than the minimal allowed SYMBOL_VOLUME_MIN=%.2f",min_volume);
       return(false);
      }
 
@@ -1204,7 +1204,7 @@ bool CheckVolumeValue(double volume)
    double max_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MAX);
    if(volume>max_volume)
      {
-      description=StringFormat("Volume is greater than the maximal allowed SYMBOL_VOLUME_MAX=%.2f",max_volume);
+      PrintFormat("Volume is greater than the maximal allowed SYMBOL_VOLUME_MAX=%.2f",max_volume);
       return(false);
      }
 
@@ -1214,8 +1214,8 @@ bool CheckVolumeValue(double volume)
    int ratio=(int)MathRound(volume/volume_step);
    if(MathAbs(ratio*volume_step-volume)>0.0000001)
      {
-      description=StringFormat("Volume is not a multiple of the minimal step SYMBOL_VOLUME_STEP=%.2f, the closest correct volume is %.2f",
-                               volume_step,ratio*volume_step);
+      Print(StringFormat("Volume is not a multiple of the minimal step SYMBOL_VOLUME_STEP=%.2f, the closest correct volume is %.2f",
+                               volume_step,ratio*volume_step));
       return(false);
      }
    if(description=="") {description="Correct volume value";}
@@ -1223,4 +1223,3 @@ bool CheckVolumeValue(double volume)
    return(true);
   }
 //+-----------------------------------------------------------------+
-
