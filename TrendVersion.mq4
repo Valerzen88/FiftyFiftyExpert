@@ -280,7 +280,7 @@ TempTDIGreen=TDIGreen;
             && (TrendBack2<=5)))
             //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
            {
-            if(!Debug)
+            if(Debug)
               {
                Print("BuySignal!");
                Print("Trend="+DoubleToStr(Trend));
@@ -403,7 +403,7 @@ TempTDIGreen=TDIGreen;
         }
      }
 
-   if(!Debug)
+   if(Debug)
      {
       Print("LotSize="+DoubleToStr(LotSize,countedDecimals));
       Print("LotSize*0,625="+DoubleToStr(LotSizeP1,countedDecimals));
@@ -886,7 +886,6 @@ void TrP()
                if((pbid-((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))>OrderOpenPrice())
                  {
                   if(Debug){Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
-                  Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));
                   if(pbid>pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
                     {
                      ModSL(pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
@@ -920,7 +919,6 @@ void TrP()
                if((pask+((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))<OrderOpenPrice())
                  {
                   if(Debug){Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
-                  Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));
                   if(pask<pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
                     {
                      ModSL(pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
