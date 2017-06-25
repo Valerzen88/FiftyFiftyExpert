@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "2.13"
+#property version   "2.15"
 #property description "Trades on oversold or overbought market."
 #property strict
 
@@ -41,6 +41,15 @@ extern int      StopLoss=0;
 
 bool Debug=false;
 
+/*licence*/
+bool trial_lic=false;
+datetime expiryDate=D'2017.06.17 00:00';
+bool rent_lic=false;
+datetime rentExpiryDate=D'2018.05.12 00:00';
+int rentAccountNumber=0;
+string rentCustomerName="";
+/*licence_end*/
+
 int RSI_Period=13;         //8-25
 int RSI_Price=5;           //0-6
 int Volatility_Band=34;    //20-40
@@ -70,14 +79,6 @@ double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 string IndicatorName2="AreaFiftyOne_Trend";
-/*licence*/
-bool trial_lic=false;
-datetime expiryDate=D'2017.06.17 00:00';
-bool rent_lic=false;
-datetime rentExpiryDate=D'2018.05.12 00:00';
-int rentAccountNumber=904901;
-string rentCustomerName="Johannes Lassotta";
-/*licence_end*/
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
 int WrongDirectionBuyTicketNr=0,WrongDirectionSellTicketNr=0;
 int TicketNrBuyWD=0,TicketNrSellWD=0;
