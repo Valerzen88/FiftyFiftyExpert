@@ -25,14 +25,24 @@
 #define ORDER_TYPE_SELL_STOP  OP_SELLSTOP
 
 //--- input parameters
+extern static string Base="trading params";
 extern double   LotSize=0.01;
+//extern static string LotAutoSize_Comment="Available in the full version!";
+//extern static string LotRiskPercent_Comment="Available in the full version!";
+//extern static string MoneyRiskInPercent_Comment="Available in the full version!";
 extern bool     LotAutoSize=false;
 extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
+extern static string Handle="user opened positions a EA own";
+extern bool     HandleUserPositions=false;
+extern static string Choose="indicators";
 extern bool     UseRSIBasedIndicator=false;
 extern bool     UseTrendIndicator=true;
 bool     AllowPendings=false;
 bool     UseStochastikBasedIndicator=false;
+//extern static string TrailingStep_Comment="Available in the full version!";
+//extern static string DistanceStep_Comment="Available in the full version!";
+extern static string Position="handle params";
 extern int      TrailingStep=50;
 extern int      DistanceStep=50;
 extern int      MagicNumber=3537;
@@ -1217,8 +1227,8 @@ bool CheckVolumeValue(double volume)
                                volume_step,ratio*volume_step));
       return(false);
      }
-   if(description=="") {description="Correct volume value";}
-   Print(description);
+   //if(description=="") {description="Correct volume value";}
+   //Print(description);
    return(true);
   }
 //+-----------------------------------------------------------------+
