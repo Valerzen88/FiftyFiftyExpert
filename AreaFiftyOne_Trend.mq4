@@ -16,7 +16,7 @@ double g_ibuf_76[];
 extern int key = 678999942;
 extern double Smooth = 1.0;
 double gd_92 = 100.0;
-extern int bars = 150;
+extern int bars = 15;
 int gi_104 = 0;
 extern int Progression = 8;
 extern int Len = 3;
@@ -88,8 +88,8 @@ int g_index_516;
 int gi_520;
 int gi_528;
 double g_ibuf_556[];
-double gda_560[15000];
-double gda_564[15000];
+double gda_560[150];
+double gda_564[150];
 double g_icustom_568;
 double g_icustom_576 = 0.0;
 double gd_584;
@@ -116,7 +116,7 @@ int start() {
    if (li_12 == 34562788) loadJMA();
    else {
       if (Bars > g_bars_600) {
-         g_bars_600 = Bars;
+         if (Bars > 100) {g_bars_600 = 100;}else {g_bars_600 = Bars;}
          li_unused_16 = 0;
          for (int l_index_20 = 0; l_index_20 < bars; l_index_20++) {
             gd_584 = 0;
@@ -143,8 +143,8 @@ void loadJMA() {
    gi_220 = 63;
    gi_224 = 64;
    if (gi_120 == TRUE) {
-      for (g_index_208 = 1; g_index_208 < gi_220 + 1; g_index_208++) gda_492[g_index_208] = -1000000;
-      for (g_index_208 = gi_224; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 1000000;
+      for (g_index_208 = 1; g_index_208 < gi_220 + 1; g_index_208++) gda_492[g_index_208] = -100;
+      for (g_index_208 = gi_224; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 100;
       gi_120 = FALSE;
    }
    gi_468 = TRUE;
@@ -168,7 +168,7 @@ void loadJMA() {
    gd_332 = gd_380 / (gd_380 + 2.0);
    gi_468 = TRUE;
    if (bars == 0) bars = Bars;
-   for (gi_124 = bars + 1000; gi_124 >= 0; gi_124--) {
+   for (gi_124 = bars + 100; gi_124 >= 0; gi_124--) {
       switch (gi_104) {
       case 0:
          ld_0 = Close[gi_124];
@@ -374,13 +374,13 @@ void loadJMA() {
    }
 }
 
-void lenars(double ada_0[15000], int ai_4) {
+void lenars(double ada_0[150], int ai_4) {
    double ld_8;
    gi_220 = 63;
    gi_224 = 64;
    if (gi_120 == TRUE) {
-      for (g_index_208 = 1; g_index_208 < gi_220 + 1; g_index_208++) gda_492[g_index_208] = -1000000;
-      for (g_index_208 = gi_224; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 1000000;
+      for (g_index_208 = 1; g_index_208 < gi_220 + 1; g_index_208++) gda_492[g_index_208] = -100;
+      for (g_index_208 = gi_224; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 100;
       gi_120 = FALSE;
    }
    gi_468 = TRUE;
