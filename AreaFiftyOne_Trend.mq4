@@ -22,7 +22,7 @@ double g_ibuf_76[];
 extern int key=678999942;
 extern double Smooth=1.0;
 double gd_92=100.0;
-extern int bars=500;
+extern int bars=150;
 int gi_104=0;
 extern int Progression=8;
 extern int Len=3;
@@ -153,11 +153,14 @@ int start()
          lenars(gda_560,1);
          lenars(gda_564,2);
          int g_bars_601 = 500;
-         if(Bars>550) {g_bars_601=500;}else{g_bars_601=Bars;}
-         for(int k=0;k<=g_bars_601; k++)
-           {
-            MA_Buff[k]=iMAOnArray(g_ibuf_76,0,Period_MA,0,MODE_SMMA,k);
-           }
+         for(int k=0; k<bars;k++) {
+            double SUM;
+            for(int c=0;c<Period_MA;c++) {
+               SUM += g_ibuf_76[k+c]; 
+            }
+            double SMMA1 = SUM / Period_MA;
+            MA_Buff[k] = (SUM-SMMA1+g_ibuf_76[k])/Period_MA;        
+         }
          return (0);
         }
      }
