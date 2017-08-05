@@ -111,7 +111,7 @@ int OnInit()
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
      }
-     if(HandleUserPositions) bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);
+   if(HandleUserPositions) bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);
    double lotstep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
    countedDecimals=(int)-MathLog10(lotstep);
    if(Debug)
@@ -306,30 +306,32 @@ TempTDIGreen=TDIGreen;
               }
             //BuyFlag=1;
            }
-           //Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
-           //+"&&MaBack2="+MathRound(MABack2)+"<TrendBack2="+MathRound(TrendBack2));
-           if(((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
-           && (((MA-Trend) > 1) || ((MA-Trend) == 1))
-           && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-           && ((MathRound(MABack2)<MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
-           || (MathRound(MABack2) > MathRound(TrendBack2)))) {
-           Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
-           +"&&MaBack2="+MathRound(MABack2)+"<=TrendBack2="+MathRound(TrendBack2));
-               SellFlag=1;
+         //Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
+         //+"&&MaBack2="+MathRound(MABack2)+"<TrendBack2="+MathRound(TrendBack2));
+         if(((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
+            && (((MA-Trend)>1) || ((MA-Trend)==1))
+            && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
+            && ((MathRound(MABack2)<MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
+            || (MathRound(MABack2)>MathRound(TrendBack2))))
+           {
+            Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
+                  +"&&MaBack2="+MathRound(MABack2)+"<=TrendBack2="+MathRound(TrendBack2));
+            SellFlag=1;
            }
-           if(((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
-           && (((Trend-MA) > 1) || ((Trend-MA) == 1))
-           && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack))) 
-           && ((MathRound(MABack2)>MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2)) 
-           || (MathRound(MABack2) < MathRound(TrendBack2)))) {
-           Print("Ma="+MathRound(MA)+"<Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"=>TrendBack="+MathRound(TrendBack)
-           +"&&MaBack2="+MathRound(MABack2)+"=>TrendBack2="+MathRound(TrendBack2));
-               BuyFlag=1;
+         if(((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
+            && (((Trend-MA)>1) || ((Trend-MA)==1))
+            && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
+            && ((MathRound(MABack2)>MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
+            || (MathRound(MABack2)<MathRound(TrendBack2))))
+           {
+            Print("Ma="+MathRound(MA)+"<Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"=>TrendBack="+MathRound(TrendBack)
+                  +"&&MaBack2="+MathRound(MABack2)+"=>TrendBack2="+MathRound(TrendBack2));
+            BuyFlag=1;
            }
          if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
         }
      }
-   if(UseStochastikBasedIndicator) 
+   if(UseStochastikBasedIndicator)
      {
       sto_main_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,0);
       sto_sign_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_SIGNAL,0);
@@ -836,13 +838,12 @@ TempTDIGreen=TDIGreen;
            }
         }
      }
-     if(TP==0)TPI=0;else TPI=Bid-(TP*2)*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+(SL*2)*Point;
    double TempProfit=0;
    for(int j=0;j<OrdersTotal();j++)
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-        HandleUserPositionsFun(TPI, SLI);
+         if(HandleUserPositions)HandleUserPositionsFun();
          if(OrderSymbol()==Symbol() && (OrderMagicNumber()==MagicNumber))
            {
             if(WrongDirectionBuy==true && OrderType()==OP_SELL){TrP();}
@@ -850,14 +851,12 @@ TempTDIGreen=TDIGreen;
             else if(WrongDirectionBuy==false && WrongDirectionSell==false){TrP();}
             TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
            }
-          //Add TrP() for manual trades based on Symbol and no comment
-          Print(OrderSymbol()+";"+OrderMagicNumber()+";'"+OrderComment()+"'");
-          if(HandleUserPositions==true && OrderSymbol()==Symbol() && OrderComment()=="" && OrderMagicNumber()==0) {
-            Print("Test");
+         if(HandleUserPositions==true && OrderSymbol()==Symbol() && OrderComment()=="" && OrderMagicNumber()==0)
+           {
             TrP();
-          } 
+           }
         }
-     } 
+     }
    CurrentProfit(TempProfit);
 
 //not enough money message to continue the martingale
@@ -874,26 +873,50 @@ double OnTester()
 //---
    return(ret);
   }
-  
-void HandleUserPositionsFun(double TPT, double SLT) {
-   for(int j=0;j<OrdersTotal();j++) {
-      if(OrderSelect(j, SELECT_BY_POS)==true && OrderSymbol()==Symbol()) {
-         if(OrderMagicNumber() == 0 && OrderComment()=="") {
-            if((OrderTakeProfit()!=TPT) && (OrderStopLoss()<SLT || OrderStopLoss()==0)) {
-               bool Res = OrderModify(OrderTicket(),OrderOpenPrice(),SLT,TPT,0,clrGoldenrod);
-            }
-         }
-      }
-   }
-}  
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void HandleUserPositionsFun()
+  {
+   for(int j=0;j<OrdersTotal();j++)
+     {
+      if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol())
+        {
+         if(OrderMagicNumber()==0 && OrderComment()=="")
+           {
+            if(((OrderOpenPrice()-OrderTakeProfit())!=TakeProfit)
+               &&((OrderOpenPrice()-OrderStopLoss())!=StopLoss || OrderStopLoss()==0))
+              {
+               if(OrderType()==OP_SELL)
+                 {
+                  if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
+                  if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+                    {
+                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI) 
+                       {
+                        bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
+                       }
+                    }
+                    } else if(OrderType()==OP_BUY) {
+                  if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
+                  if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+                    {
+                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI) 
+                       {
+                        bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
+                       }
+                    }
+                 }
+              }
+           }
+        }
+     }
+  }
 //add positions function
 bool AddP()
   {
    int _num=0,_ot=0;
    for(int j=0;j<OrdersTotal();j++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
      {
       if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol() && OrderType()<3 && (OrderMagicNumber()==MagicNumber))
         {
@@ -916,11 +939,17 @@ void TrP()
    if(Debug) {Print("commissions="+DoubleToStr(commissions,8));}
    commissionsInPips=(commissions/OrderLots()/tickValue)*tickSize+spread*2;
    if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(Debug)
      {
       Print("commissionsInPips(Ticket="+IntegerToString(OrderTicket())+")="+DoubleToStr(commissionsInPips,5)
             +";DistanceStep="+IntegerToString(TS)+";TrailingStep="+IntegerToString(TrailingStep));
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(OrderType()==OP_BUY)
      {
       pbid=MarketInfo(OrderSymbol(),MODE_BID);
@@ -954,6 +983,9 @@ void TrP()
            }
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(OrderType()==OP_SELL)
      {
       pask=MarketInfo(OrderSymbol(),MODE_ASK);
@@ -1016,10 +1048,16 @@ void ModSL(double ldSL)
 void CurrentProfit(double CurProfit)
   {
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(CurProfit>=0.0)
      {
       ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
         }else{ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
@@ -1036,7 +1074,9 @@ void CurrentProfit(double CurProfit)
    ObjectSet("NextLotSize",OBJPROP_CORNER,1);
    ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
    ObjectSet("NextLotSize",OBJPROP_YDISTANCE,80);
-
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 /*ObjectCreate("EAName",OBJ_LABEL,0,0,0);
    ObjectSetText("EAName","EAName: "+EAName,11,"Calibri",clrGold);
    ObjectSet("EAName",OBJPROP_CORNER,1);
@@ -1051,7 +1091,9 @@ void CurrentProfit(double CurProfit)
       ObjectSet("CurrentLoss",OBJPROP_XDISTANCE,5);
       ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,100);
         } else {ObjectDelete("CurrentLoss");
-
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      }
 
    if(!IsTesting() && trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
@@ -1078,6 +1120,9 @@ int CloseAll()
    int FirstOrderType=0;
 
    for(int index=0; index<OrdersTotal(); index++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
       if(OrderSymbol()==Symbol() && OrderMagicNumber()==MagicNumber)
@@ -1088,6 +1133,9 @@ int CloseAll()
      }
 
    for(int index=numOfOrders-1; index>=0; index--)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
 
@@ -1171,7 +1219,7 @@ bool OrderModifyCheck(int ticket,double price,double sl,double tp)
 //--- Wählen wir die Order nach dem Ticket
    if(OrderSelect(ticket,SELECT_BY_TICKET))
      {
-      //--- Die Größe des Punktes und des Symbol-Namens, nach dem die Pendig Order gesetzt wurde
+      //--- Die Größe des Punktes und des Symbol-Namens, nach dem die Pending Order gesetzt wurde
       string symbol=OrderSymbol();
       double point=SymbolInfoDouble(symbol,SYMBOL_POINT);
       //--- Überprüfen wir - ob es Änderungen im Eröffnungspreis gibt 
@@ -1250,6 +1298,9 @@ bool CheckVolumeValue(double volume)
 //--- minimal allowed volume for trade operations
    string description="";
    double min_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MIN);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(volume<min_volume)
      {
       PrintFormat("Volume is less than the minimal allowed SYMBOL_VOLUME_MIN=%.2f",min_volume);
@@ -1258,6 +1309,9 @@ bool CheckVolumeValue(double volume)
 
 //--- maximal allowed volume of trade operations
    double max_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MAX);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(volume>max_volume)
      {
       PrintFormat("Volume is greater than the maximal allowed SYMBOL_VOLUME_MAX=%.2f",max_volume);
@@ -1268,14 +1322,17 @@ bool CheckVolumeValue(double volume)
    double volume_step=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
 
    int ratio=(int)MathRound(volume/volume_step);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(MathAbs(ratio*volume_step-volume)>0.0000001)
      {
       Print(StringFormat("Volume is not a multiple of the minimal step SYMBOL_VOLUME_STEP=%.2f, the closest correct volume is %.2f",
-                               volume_step,ratio*volume_step));
+            volume_step,ratio*volume_step));
       return(false);
      }
-   //if(description=="") {description="Correct volume value";}
-   //Print(description);
+//if(description=="") {description="Correct volume value";}
+//Print(description);
    return(true);
   }
 //+-----------------------------------------------------------------+
