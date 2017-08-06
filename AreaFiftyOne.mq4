@@ -25,7 +25,7 @@
 #define ORDER_TYPE_SELL_STOP  OP_SELLSTOP
 
 //--- input parameters
-extern static string Base="trading params";
+extern static string Trading="Base trading params";
 extern double   LotSize=0.01;
 //extern static string LotAutoSize_Comment="Available in the full version!";
 //extern static string LotRiskPercent_Comment="Available in the full version!";
@@ -33,23 +33,24 @@ extern double   LotSize=0.01;
 extern bool     LotAutoSize=false;
 extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
-extern static string Handle="user opened positions a EA own";
-extern bool     HandleUserPositions=false;
-extern static string Choose="indicators";
+//extern static string TrailingStep_Comment="Available in the full version!";
+//extern static string DistanceStep_Comment="Available in the full version!";
+extern static string Positions="Handle positions params";
+extern int      TrailingStep=15;
+extern int      DistanceStep=15;
+extern int      TakeProfit=750;
+extern int      StopLoss=0;
+extern static string Indicators="Choose indicators";
 extern bool     UseRSIBasedIndicator=false;
 extern bool     UseTrendIndicator=true;
 bool     AllowPendings=false;
 bool     UseStochastikBasedIndicator=false;
-//extern static string TrailingStep_Comment="Available in the full version!";
-//extern static string DistanceStep_Comment="Available in the full version!";
-extern static string Position="handle params";
-extern int      TrailingStep=50;
-extern int      DistanceStep=50;
+extern static string UserPositions="Handle user opened positions as a EA own";
+extern bool     HandleUserPositions=false;
 extern int      MagicNumber=3537;
-extern int      TakeProfit=750;
-extern int      StopLoss=0;
 
-extern bool Debug=false;
+bool Debug=false;
+bool DebugTrace=true;
 
 /*licence*/
 bool trial_lic=false;
@@ -111,7 +112,7 @@ int OnInit()
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
      }
-   if(HandleUserPositions) bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);
+   //if(HandleUserPositions) bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);
    double lotstep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
    countedDecimals=(int)-MathLog10(lotstep);
    if(Debug)
@@ -308,24 +309,29 @@ TempTDIGreen=TDIGreen;
            }
          //Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
          //+"&&MaBack2="+MathRound(MABack2)+"<TrendBack2="+MathRound(TrendBack2));
-         if(((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
+         if((((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
             && (((MA-Trend)>1) || ((MA-Trend)==1))
             && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
             && ((MathRound(MABack2)<MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
-            || (MathRound(MABack2)>MathRound(TrendBack2))))
+            || (MathRound(MABack2)>MathRound(TrendBack2)))) 
+            /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
            {
-            Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
-                  +"&&MaBack2="+MathRound(MABack2)+"<=TrendBack2="+MathRound(TrendBack2));
+           if(DebugTrace) {
+            Print("SELL=>Ma="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
+                  +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
+                  +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));}
             SellFlag=1;
            }
-         if(((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
+         if((((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
             && (((Trend-MA)>1) || ((Trend-MA)==1))
             && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
             && ((MathRound(MABack2)>MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
-            || (MathRound(MABack2)<MathRound(TrendBack2))))
+            || (MathRound(MABack2)<MathRound(TrendBack2)))) 
+            /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
            {
-            Print("Ma="+MathRound(MA)+"<Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"=>TrendBack="+MathRound(TrendBack)
-                  +"&&MaBack2="+MathRound(MABack2)+"=>TrendBack2="+MathRound(TrendBack2));
+            if(DebugTrace){Print("BUY=>Ma="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
+                  +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
+                  +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));}
             BuyFlag=1;
            }
          if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
@@ -892,7 +898,7 @@ void HandleUserPositionsFun()
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
                   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
                     {
-                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI) 
+                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
                        {
                         bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
                        }
@@ -901,7 +907,7 @@ void HandleUserPositionsFun()
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
                   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
                     {
-                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI) 
+                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
                        {
                         bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
                        }

@@ -9,9 +9,10 @@
 #property indicator_separate_window
 #property indicator_minimum -5.0
 #property indicator_maximum 36.0
-#property indicator_buffers 2
+#property indicator_buffers 3
 #property indicator_color1 Lime
 #property indicator_color2 Orange
+#property indicator_color3 Blue
 #property indicator_level2 4.0
 #property indicator_level3 16.5
 #property indicator_level4 14.5
@@ -27,7 +28,8 @@ int gi_104 = 0;
 extern int Progression = 8;
 extern int Len = 3;
 extern int Sensitivity = 30;
-extern int Period_MA = 34;
+extern int Period_MA = 23;
+extern int Period_MA_Second = 50;
 extern int ModeMA = MODE_EMA;
 int gi_120 = 1;
 int gi_124 = 0;
@@ -97,6 +99,7 @@ int gi_520;
 int gi_528;
 double g_ibuf_556[];
 double MA_Buff[];
+double MA_Buff_Second[];
 double gda_560[150];
 double gda_564[150];
 double g_icustom_568;
@@ -113,11 +116,14 @@ int OnInit() {
    for (g_index_208 = 0; g_index_208 < 62; g_index_208++) gda_504[g_index_208] = 0.0;
    SetIndexStyle(0, DRAW_LINE, STYLE_SOLID, 1);
    SetIndexBuffer(0, g_ibuf_76);
-   SetIndexStyle(2, DRAW_LINE, STYLE_SOLID, 1);
-   SetIndexBuffer(2, g_ibuf_556);
+   SetIndexStyle(3, DRAW_LINE, STYLE_SOLID, 1);
+   SetIndexBuffer(3, g_ibuf_556);
    SetIndexStyle(1, DRAW_LINE, STYLE_SOLID, 1);
    SetIndexBuffer(1,MA_Buff);
    ArraySetAsSeries(MA_Buff,true);
+   SetIndexStyle(2, DRAW_LINE, STYLE_SOLID, 1);
+   SetIndexBuffer(2,MA_Buff_Second);
+   ArraySetAsSeries(MA_Buff_Second,true);
    return (0);
 }
 
@@ -146,6 +152,7 @@ int start() {
          lenars(gda_564, 2);
          for(int k=1000;k>-1;k--) {
             MA_Buff[k] = iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
+            MA_Buff_Second[k] = iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
             /*double tempD;
             for(int c=0;c<Period_MA;c++) {
                tempD += g_ibuf_76[k+c]; 
