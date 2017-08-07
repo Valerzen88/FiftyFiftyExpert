@@ -112,7 +112,7 @@ int OnInit()
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
      }
-   //if(HandleUserPositions) bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);
+//if(HandleUserPositions) bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);
    double lotstep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
    countedDecimals=(int)-MathLog10(lotstep);
    if(Debug)
@@ -269,6 +269,9 @@ TempTDIGreen=TDIGreen;
          double MA=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",1,0),1);
          double MABack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",1,1),1);
          double MABack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",1,2),1);
+         double MA_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,0),1);
+         double MABack_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,1),1);
+         double MABack2_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,2),1);
          if(Debug)
            {
             Print("Trend="+DoubleToStr(Trend));
@@ -313,25 +316,30 @@ TempTDIGreen=TDIGreen;
             && (((MA-Trend)>1) || ((MA-Trend)==1))
             && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
             && ((MathRound(MABack2)<MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
-            || (MathRound(MABack2)>MathRound(TrendBack2)))) 
+            || (MathRound(MABack2)>MathRound(TrendBack2))))
             /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
            {
-           if(DebugTrace) {
-            Print("SELL=>Ma="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
-                  +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
-                  +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));}
+            if(DebugTrace) 
+              {
+               Print("SELL=>Ma="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
+                     +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
+                     +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+              }
             SellFlag=1;
            }
          if((((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
             && (((Trend-MA)>1) || ((Trend-MA)==1))
             && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
             && ((MathRound(MABack2)>MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
-            || (MathRound(MABack2)<MathRound(TrendBack2)))) 
+            || (MathRound(MABack2)<MathRound(TrendBack2))))
             /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
            {
-            if(DebugTrace){Print("BUY=>Ma="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
-                  +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
-                  +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));}
+            if(DebugTrace)
+              {
+               Print("BUY=>Ma="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
+                     +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
+                     +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+              }
             BuyFlag=1;
            }
          if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
@@ -849,21 +857,31 @@ TempTDIGreen=TDIGreen;
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-         if(HandleUserPositions)HandleUserPositionsFun();
          if(OrderSymbol()==Symbol() && (OrderMagicNumber()==MagicNumber))
            {
             if(WrongDirectionBuy==true && OrderType()==OP_SELL){TrP();}
             else if(WrongDirectionSell==true && OrderType()==OP_BUY){TrP();}
             else if(WrongDirectionBuy==false && WrongDirectionSell==false){TrP();}
             TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
+            if(DebugTrace){Print("TempProfit="+DoubleToStr(TempProfit));}
            }
-         if(HandleUserPositions==true && OrderSymbol()==Symbol() && OrderComment()=="" && OrderMagicNumber()==0)
+        }
+     }
+   CurrentProfit(TempProfit);
+   //TODO -> handle current profit of the changed manual positions!
+
+   for(int f=0;f<OrdersTotal();f++) 
+     {
+      if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
+        {
+         if(HandleUserPositions){HandleUserPositionsFun();}
+         if(HandleUserPositions==true && OrderSymbol()==Symbol()
+            && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
            {
             TrP();
            }
         }
      }
-   CurrentProfit(TempProfit);
 
 //not enough money message to continue the martingale
    if((TicketNrBuy<0 || TicketNrSell<0) && GetLastError()==134){err=1;Print("NOT ENOGUGHT MONEY!!");}
@@ -888,7 +906,9 @@ void HandleUserPositionsFun()
      {
       if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol())
         {
-         if(OrderMagicNumber()==0 && OrderComment()=="")
+         if(Debug){Print("OrderComment='"+OrderComment()+"'");}
+         if(Debug){Print("OrderMagicNumber='"+OrderMagicNumber()+"'");}
+         if(OrderMagicNumber()==0 && (OrderComment()=="" || OrderComment()=="[0]"))
            {
             if(((OrderOpenPrice()-OrderTakeProfit())!=TakeProfit)
                &&((OrderOpenPrice()-OrderStopLoss())!=StopLoss || OrderStopLoss()==0))
@@ -896,7 +916,7 @@ void HandleUserPositionsFun()
                if(OrderType()==OP_SELL)
                  {
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
-                  if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+                  if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
                     {
                      if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
                        {
@@ -905,6 +925,8 @@ void HandleUserPositionsFun()
                     }
                     } else if(OrderType()==OP_BUY) {
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
+                  if(Debug){Print("TPI='"+DoubleToStr(TPI)+"'");}
+                  if(Debug){Print("SLI='"+DoubleToStr(SLI)+"'");}
                   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
                     {
                      if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
@@ -1054,16 +1076,10 @@ void ModSL(double ldSL)
 void CurrentProfit(double CurProfit)
   {
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(CurProfit>=0.0)
      {
       ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
         }else{ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
