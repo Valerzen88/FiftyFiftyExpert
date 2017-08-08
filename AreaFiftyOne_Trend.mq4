@@ -23,7 +23,7 @@ double g_ibuf_76[];
 extern int key = 678999942;
 extern double Smooth = 1.0;
 double gd_92 = 100.0;
-extern int bars = 501;
+extern int bars = 701;
 int gi_104 = 0;
 extern int Progression = 8;
 extern int Len = 3;
@@ -150,7 +150,7 @@ int start() {
          }
          lenars(gda_560, 1);
          lenars(gda_564, 2);
-         for(int k=500;k>-1;k--) {
+         for(int k=700;k>-1;k--) {
             MA_Buff[k] = iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
             MA_Buff_Second[k] = iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
             /*double tempD;

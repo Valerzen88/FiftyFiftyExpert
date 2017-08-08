@@ -303,7 +303,7 @@ TempTDIGreen=TDIGreen;
                Print("MABack2_Second="+DoubleToStr(MABack2_Second));
               }
 
-            if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
+            /*if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
                && (TrendBack>=23))
                && (TrendBack2>=26)))
                // || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
@@ -330,7 +330,7 @@ TempTDIGreen=TDIGreen;
                   Print("TrendBack="+DoubleToStr(TrendBack));
                  }
                //BuyFlag=1;
-              }
+              }*/
             //Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
             //+"&&MaBack2="+MathRound(MABack2)+"<TrendBack2="+MathRound(TrendBack2));
             if((((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
@@ -342,7 +342,7 @@ TempTDIGreen=TDIGreen;
               {
                if(DebugTrace)
                  {
-                  Print("SELL=>Ma="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
+                  Print("SELL=>MA="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
                         +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
                         +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
                  }
@@ -357,7 +357,7 @@ TempTDIGreen=TDIGreen;
               {
                if(DebugTrace)
                  {
-                  Print("BUY=>Ma="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
+                  Print("BUY=>MA="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
                         +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
                         +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
                  }
@@ -373,9 +373,9 @@ TempTDIGreen=TDIGreen;
               {
                if(DebugTrace)
                  {
-                  Print("SELL=>Ma="+DoubleToStr(MathRound(MA_Second))+">Trend="+DoubleToStr(MathRound(Trend))
-                        +"&&MABack="+DoubleToStr(MathRound(MABack_Second))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
-                        +"&&MaBack2="+DoubleToStr(MathRound(MABack2_Second))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+                  Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">Trend="+DoubleToStr(MathRound(Trend))
+                        +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
+                        +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
                  }
                SellFlag=1;
               }
@@ -388,9 +388,9 @@ TempTDIGreen=TDIGreen;
               {
                if(DebugTrace)
                  {
-                  Print("BUY=>Ma="+DoubleToStr(MathRound(MA_Second))+"<Trend="+DoubleToStr(MathRound(Trend))
-                        +"&&MABack="+DoubleToStr(MathRound(MABack_Second))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
-                        +"&&MaBack2="+DoubleToStr(MathRound(MABack2_Second))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+                  Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<Trend="+DoubleToStr(MathRound(Trend))
+                        +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
+                        +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
                  }
                BuyFlag=1;
               }
@@ -1124,8 +1124,8 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
    if(CurProfit>=0.0)
      {
-      ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
-        }else{ObjectSetText("CurProfit","Current Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+      ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
+        }else{ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
@@ -1139,7 +1139,7 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
          ObjectSetText("CurProfitOfManualPlacedUserPositions",
                        "Profit(user positions): "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
            }else{ObjectSetText("CurProfitOfManualPlacedUserPositions",
-                                 "Profit(useer positions): "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+                                 "Profit(user positions): "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
         }
       ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_CORNER,1);
       ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_XDISTANCE,5);
