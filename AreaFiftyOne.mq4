@@ -361,8 +361,8 @@ TempTDIGreen=TDIGreen;
                  }
                BuyFlag=1;
               }
-              //using ma50
-              if((((MathRound(MA_Second)>MathRound(Trend)) || ((MA_Second-0.5)==Trend))
+            //using ma50
+            if((((MathRound(MA_Second)>MathRound(Trend)) || ((MA_Second-0.5)==Trend))
                && (((MA_Second-Trend)>1) || ((MA_Second-Trend)==1))
                && ((MathRound(MABack_Second)<MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
                && ((MathRound(MABack2_Second)<MathRound(TrendBack2)) || (MathRound(MABack2_Second)==MathRound(TrendBack2))
@@ -925,7 +925,7 @@ TempTDIGreen=TDIGreen;
       if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
         {
          if(HandleUserPositions){HandleUserPositionsFun();}
-         if(HandleUserPositions==true     &&     OrderSymbol()==Symbol()
+         if(HandleUserPositions==true      &&      OrderSymbol()==Symbol()
             && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
            {
             TrP();
@@ -1019,17 +1019,11 @@ void TrP()
    if(Debug) {Print("commissions="+DoubleToStr(commissions,8));}
    commissionsInPips=(commissions/OrderLots()/tickValue)*tickSize+spread*2;
    if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(Debug)
      {
       Print("commissionsInPips(Ticket="+IntegerToString(OrderTicket())+")="+DoubleToStr(commissionsInPips,5)
             +";DistanceStep="+IntegerToString(TS)+";TrailingStep="+IntegerToString(TrailingStep));
      }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(OrderType()==OP_BUY)
      {
       pbid=MarketInfo(OrderSymbol(),MODE_BID);
@@ -1063,9 +1057,6 @@ void TrP()
            }
         }
      }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(OrderType()==OP_SELL)
      {
       pask=MarketInfo(OrderSymbol(),MODE_ASK);

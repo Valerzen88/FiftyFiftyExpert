@@ -150,7 +150,7 @@ int start() {
          }
          lenars(gda_560, 1);
          lenars(gda_564, 2);
-         for(int k=1000;k>-1;k--) {
+         for(int k=500;k>-1;k--) {
             MA_Buff[k] = iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
             MA_Buff_Second[k] = iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
             /*double tempD;
