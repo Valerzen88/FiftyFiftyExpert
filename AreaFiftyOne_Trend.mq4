@@ -136,7 +136,7 @@ int start() {
       if (Bars > g_bars_600) {
          g_bars_600 = Bars;
          li_unused_16 = 0;
-         for (int l_index_20 = 0; l_index_20 < bars; l_index_20++) {
+         for (int l_index_20 = 0; l_index_20 < 150; l_index_20++) {
             gd_584 = 0;
             gd_592 = 0;
             for (int li_24 = Len; li_24 <= Len + Progression * Sensitivity; li_24 += Progression) {
@@ -150,9 +150,12 @@ int start() {
          }
          lenars(gda_560, 1);
          lenars(gda_564, 2);
-         for(int k=700;k>-1;k--) {
-            MA_Buff[k] = iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
-            MA_Buff_Second[k] = iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
+         for(int k=bars;k>-1;k--) {
+            //MA_Buff[k] = iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
+            //MA_Buff_Second[k] = iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
+            ExponentialMAOnBuffer(ArraySize(g_ibuf_76),k,0,Period_MA,g_ibuf_76,MA_Buff);
+            ExponentialMAOnBuffer(ArraySize(g_ibuf_76),k,0,Period_MA_Second,g_ibuf_76,MA_Buff_Second);
+            //MA_Buff[k] = ExponentialMA(k,Period_MA,MA_Buff[k-1],MA_Buff);
             /*double tempD;
             for(int c=0;c<Period_MA;c++) {
                tempD += g_ibuf_76[k+c]; 
@@ -160,9 +163,9 @@ int start() {
             double SUM = tempD;
             double SMMA = tempD / Period_MA;
             
-            MA_Buff[k] = (SUM-SMMA+g_ibuf_76[k])/Period_MA;*/
-         }
-         /*for(int g=ArraySize(MA_Buff);g>0;g--)
+            MA_Buff[k] = ((SUM-SMMA+g_ibuf_76[k])/Period_MA);*/
+         }/*
+         for(int g=ArraySize(MA_Buff);g>0;g--)
            {
             MA_Buff[g] = (MA_Buff[g-1]*(Period_MA-1) + g_ibuf_76[g])/Period_MA;
             Print(MA_Buff[g]);
@@ -203,7 +206,7 @@ void loadJMA() {
    gd_332 = gd_380 / (gd_380 + 2.0);
    gi_468 = TRUE;
    if (bars == 0) bars = Bars;
-   for (gi_124 = bars + 1000; gi_124 >= 0; gi_124--) {
+   for (gi_124 = bars + 100; gi_124 >= 0; gi_124--) {
       switch (gi_104) {
       case 0:
          ld_0 = Close[gi_124];
@@ -683,4 +686,41 @@ string GetRelativeProgramPath()
       return(StringSubstr(path,pos));
 //--- return the path relative to the subdirectory (for example, MQL4\Indicators)
    return(StringSubstr(path,pos2+1));
+  }
+
+//+------------------------------------------------------------------+
+//|  Exponential moving average on price array                       |
+//+------------------------------------------------------------------+
+int ExponentialMAOnBuffer(const int rates_total,const int prev_calculated,const int begin,
+                          const int period,const double& price[],double& buffer[])
+  {
+   int    i,limit;
+//--- check for data
+   if(period<=1 || rates_total-begin<period) return(0);
+   double dSmoothFactor=2.0/(1.0+period);
+//--- save as_series flags
+   bool as_series_price=ArrayGetAsSeries(price);
+   bool as_series_buffer=ArrayGetAsSeries(buffer);
+   if(as_series_price)  ArraySetAsSeries(price,false);
+   if(as_series_buffer) ArraySetAsSeries(buffer,false);
+//--- first calculation or number of bars was changed
+   if(prev_calculated==0)
+     {
+      limit=period+begin;
+      //--- set empty value for first bars
+      for(i=0;i<begin;i++) buffer[i]=0.0;
+      //--- calculate first visible value
+      buffer[begin]=price[begin];
+      for(i=begin+1;i<limit;i++)
+         buffer[i]=price[i]*dSmoothFactor+buffer[i-1]*(1.0-dSmoothFactor);
+     }
+   else limit=prev_calculated-1;
+//--- main loop
+   for(i=limit;i<rates_total;i++)
+      buffer[i]=price[i]*dSmoothFactor+buffer[i-1]*(1.0-dSmoothFactor);
+//--- restore as_series flags
+   if(as_series_price)  ArraySetAsSeries(price,true);
+   if(as_series_buffer) ArraySetAsSeries(buffer,true);
+//---
+    return(rates_total);
   }

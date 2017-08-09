@@ -54,7 +54,7 @@ extern bool     HandleUserPositions=false;
 extern int      MagicNumber=3537;
 
 bool Debug=false;
-bool DebugTrace=true;
+bool DebugTrace=false;
 
 /*licence*/
 bool trial_lic=false;
