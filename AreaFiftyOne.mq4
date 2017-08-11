@@ -54,7 +54,7 @@ extern bool     HandleUserPositions=false;
 extern int      MagicNumber=3537;
 
 bool Debug=false;
-bool DebugTrace=false;
+bool DebugTrace=true;
 
 /*licence*/
 bool trial_lic=false;
@@ -331,10 +331,10 @@ TempTDIGreen=TDIGreen;
             //Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
             //+"&&MaBack2="+MathRound(MABack2)+"<TrendBack2="+MathRound(TrendBack2));
             if((((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
-               && (((MA-Trend)>1) || ((MA-Trend)==1))
+               && (((MA-Trend)>0.5) || ((MA-Trend)==1)) && (Trend<14.5 || Trend>16.5)
                && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-               && ((MathRound(MABack2)<MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
-               || (MathRound(MABack2)>MathRound(TrendBack2))))
+               && ((MathRound(MABack2)<MathRound(TrendBack2)) /*|| (MathRound(MABack2)==MathRound(TrendBack2))*/
+               /*|| (MathRound(MABack2)>MathRound(TrendBack2))*/))
                /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
               {
                if(DebugTrace)
@@ -346,10 +346,10 @@ TempTDIGreen=TDIGreen;
                SellFlag=1;
               }
             if((((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
-               && (((Trend-MA)>1) || ((Trend-MA)==1))
+               && (((Trend-MA)>0.5) || ((Trend-MA)==1)) && (Trend<14.5 || Trend>16.5)
                && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-               && ((MathRound(MABack2)>MathRound(TrendBack2)) || (MathRound(MABack2)==MathRound(TrendBack2))
-               || (MathRound(MABack2)<MathRound(TrendBack2))))
+               && ((MathRound(MABack2)>MathRound(TrendBack2)) /*|| (MathRound(MABack2)==MathRound(TrendBack2))*/
+               /*|| (MathRound(MABack2)<MathRound(TrendBack2))*/))
                /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
               {
                if(DebugTrace)
@@ -362,11 +362,11 @@ TempTDIGreen=TDIGreen;
               }
               
               //using ma50
-              if((((MathRound(MA_Second)>MathRound(Trend)) || ((MA_Second-0.5)==Trend))
-               && (((MA_Second-Trend)>1) || ((MA_Second-Trend)==1))
+              if((((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
+               && (((MA_Second-Trend)>0.5) || ((MA_Second-Trend)==1)) && (Trend<14.5 || Trend>16.5)
                && ((MathRound(MABack_Second)<MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-               && ((MathRound(MABack2_Second)<MathRound(TrendBack2)) || (MathRound(MABack2_Second)==MathRound(TrendBack2))
-               || (MathRound(MABack2_Second)>MathRound(TrendBack2))))
+               && ((MathRound(MABack2_Second)<MathRound(TrendBack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
+               /*|| (MathRound(MABack2_Second)>MathRound(TrendBack2))*/))
                /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
               {
                if(DebugTrace)
@@ -377,11 +377,11 @@ TempTDIGreen=TDIGreen;
                  }
                SellFlag=1;
               }
-            if((((MathRound(MA_Second)<MathRound(Trend)) || ((MA_Second+0.5)==Trend))
-               && (((Trend-MA_Second)>1) || ((Trend-MA_Second)==1))
+            if((((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
+               && (((Trend-MA_Second)>0.5) || ((Trend-MA_Second)==1)) && (Trend<14.5 || Trend>16.5)
                && ((MathRound(MABack_Second)>MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-               && ((MathRound(MABack2_Second)>MathRound(TrendBack2)) || (MathRound(MABack2_Second)==MathRound(TrendBack2))
-               || (MathRound(MABack2_Second)<MathRound(TrendBack2))))
+               && ((MathRound(MABack2_Second)>MathRound(TrendBack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
+               /*|| (MathRound(MABack2_Second)<MathRound(TrendBack2))*/))
                /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
               {
                if(DebugTrace)
