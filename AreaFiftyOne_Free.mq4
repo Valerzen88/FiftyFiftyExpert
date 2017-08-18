@@ -6,8 +6,8 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "2.50"
-#property description "Trades on oversold or overbought market."
+#property version   "2.80"
+#property description "Trades on trend change with different indicators."
 #property strict
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
@@ -45,8 +45,9 @@ extern bool     UseRSIBasedIndicator=false;
 extern bool     UseTrendIndicator=true;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=2;
+extern bool     UseSimpleTrendStrategy=false;
 bool     AllowPendings=false;
-bool     UseStochastikBasedIndicator=false;
+extern bool     UseStochastikBasedIndicator =false;
 extern static string TimeSettings="Trading time";
 extern static string StartHour_Comment="Available in the full versioin!";
 extern static string EndHour_Comment="Available in the full versioin!";
@@ -79,10 +80,13 @@ int Trade_Signal_Line2=18;
 int Trade_Signal_Type=MODE_SMA;   //0-3
 double over_bought=80;
 double over_sold=20;
-int k_period=9;
-int d_period=6;
-int slowing=6;
-double sto_main_curr,sto_sign_curr,sto_main_prev1,sto_sign_prev1,sto_main_prev2,sto_sign_prev2;
+int MAFastPeriod = 7;
+int MASlowPeriod = 21;
+int KPeriod1=34;
+int DPeriod1=23;
+int Slowing1=12;
+int MAMethod1=2;
+int PriceField1=1;
 int ma_method=MODE_SMA;
 int price_field=0;
 int Slippage=3,MaxOrders=4,BreakEven=0;
@@ -440,37 +444,74 @@ TempTDIGreen=TDIGreen;
             if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
            }
         }
-      if(UseStochastikBasedIndicator)
+        if(UseSimpleTrendStrategy)
         {
-         sto_main_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,0);
-         sto_sign_curr  = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_SIGNAL,0);
-         sto_main_prev1 = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,1);
-         sto_sign_prev1 = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_SIGNAL,1);
-         sto_main_prev2 = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_MAIN,2);
-         sto_sign_prev2 = iStochastic(Symbol(),PERIOD_D1,k_period,d_period,slowing,ma_method,price_field,MODE_SIGNAL,2);
-
-         if((sto_sign_prev2<over_sold) && (sto_main_prev2<over_sold))
+         if(Volume[0]==1)
            {
-            if((sto_sign_prev2>sto_main_prev2) && (sto_sign_prev1<sto_main_prev1))
+            double MAFastPrevious1,MAFastPrevious2;
+            double MASlowPrevious1,MASlowPrevious2;
+
+            MAFastPrevious1=iMA(NULL,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,1);
+            MAFastPrevious2=iMA(NULL,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,2);
+            MASlowPrevious1=iMA(NULL,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,1);
+            MASlowPrevious2=iMA(NULL,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,2);
+
+            //fast MA > slow MA.
+            if(MAFastPrevious1>MASlowPrevious1)
               {
-               if(sto_sign_prev1<sto_sign_curr)
+               //BuyFlag = true;
+               //fast MA crosses over slow MA.
+               if(MAFastPrevious2<MASlowPrevious2)
                  {
-                  //Print("Buy due Stoch!");
-                  OrderDueStoch=true;
-                  BuyFlag=1;
+                  if(iMACD(NULL,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)>0 && 
+                     iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
+                    {
+                     BuyFlag=true;
+                    }
+                 }
+              }
+            //fast MA < slow MA.
+            else if(MAFastPrevious1<MASlowPrevious1)
+              {
+               //SellFlag = true;
+               //fast MA crosses below slow MA.
+               if(MAFastPrevious2>MASlowPrevious2)
+                 {
+                  if(iMACD(NULL,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)<0 && 
+                     iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
+                    {
+                     SellFlag=true;
+                    }
                  }
               }
            }
-         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~SELL~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-         if((sto_sign_prev2>over_bought) && (sto_main_prev2>over_bought))
+        }
+      if(UseStochastikBasedIndicator)
+        {
+         for(int i=0; i<=2; i++)
            {
-            if((sto_sign_prev2<sto_main_prev2) && (sto_sign_prev1>sto_main_prev1))
+            double stochastic1now,stochastic2now,stochastic1previous,stochastic2previous,stochastic1after,stochastic2after;
+            stochastic1now=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i);
+            stochastic1previous=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i+1);
+            stochastic1after=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i-1);
+            stochastic2now=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i);
+            stochastic2previous=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i+1);
+            stochastic2after=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i-1);
+
+            if((stochastic1now>stochastic2now) && (stochastic1previous<stochastic2previous) && (stochastic1after>stochastic2after)
+               && ((stochastic1now-stochastic2now)>0.5) && (stochastic1now<70.0))
               {
-               if(sto_sign_prev1>sto_sign_curr)
+               if(NewBar())
                  {
-                  //Print("Sell due Stoch!");
-                  OrderDueStoch=true;
-                  SellFlag=1;
+                  BuyFlag=true;
+                 }
+              }
+            if((stochastic1now<stochastic2now) && (stochastic1previous>stochastic2previous) && (stochastic1after<stochastic2after)
+               && ((stochastic2now-stochastic1now)>0.5) && (stochastic1now>30.0))
+              {
+               if(NewBar())
+                 {
+                  SellFlag=true;
                  }
               }
            }
@@ -487,7 +528,7 @@ TempTDIGreen=TDIGreen;
    if(LotAutoSize)
      {
       int Faktor=100;
-      if(LotRiskPercent<0.1 || LotRiskPercent>100){Comment("Invalid Risk Value.");}
+      if(LotRiskPercent<0.1 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
       else
         {
          if(getContractProfitCalcMode()==0 || (MarginMode==0 && compareContractSizes))
@@ -1438,3 +1479,19 @@ bool CheckVolumeValue(double volume)
    return(true);
   }
 //+-----------------------------------------------------------------+
+
+bool NewBar()
+  {
+   static datetime lastbar;
+   datetime curbar=Time[0];
+   if(lastbar!=curbar)
+     {
+      lastbar=curbar;
+      return(true);
+     }
+   else
+     {
+      return(false);
+     }
+  }
+//+------------------------------------------------------------------+

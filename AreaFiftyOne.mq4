@@ -7,7 +7,7 @@
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
 #property version   "2.80"
-#property description "Trades on oversold or overbought market."
+#property description "Trades on trend change with different indicators."
 #property strict
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
@@ -42,7 +42,7 @@ extern int      TakeProfit=750;
 extern int      StopLoss=0;
 extern static string Indicators="Choose indicators";
 extern bool     UseRSIBasedIndicator=false;
-extern bool     UseSimpleTrendStrategy=true;
+extern bool     UseSimpleTrendStrategy=false;
 extern bool     UseTrendIndicator=true;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=2;
@@ -55,14 +55,12 @@ extern static string UserPositions="Handle user opened positions as a EA own";
 //extern static string HandleUserPositions_Comment="Available in the full version!";
 extern bool     HandleUserPositions=false;
 extern int      MagicNumber=3537;
-int MAFastPeriod = 7;
-int MASlowPeriod = 21;
 
 bool Debug=false;
 bool DebugTrace=false;
 
 /*licence*/
-bool trial_lic=true;
+bool trial_lic=false;
 datetime expiryDate=D'2017.09.01 00:00';
 bool rent_lic=false;
 datetime rentExpiryDate=D'2018.05.12 00:00';
@@ -78,6 +76,8 @@ int RSI_Price_Type=MODE_SMA;      //0-3
 int Trade_Signal_Line=7;
 int Trade_Signal_Line2=18;
 int Trade_Signal_Type=MODE_SMA;   //0-3
+int MAFastPeriod = 7;
+int MASlowPeriod = 21;
 double over_bought=80;
 double over_sold=20;
 int KPeriod1=34;
