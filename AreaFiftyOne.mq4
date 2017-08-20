@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
 #property link      "http://vbapps.co"
-#property version   "2.80"
+#property version   "2.90"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -42,12 +42,12 @@ extern int      TakeProfit=750;
 extern int      StopLoss=0;
 extern static string Indicators="Choose indicators";
 extern bool     UseRSIBasedIndicator=false;
-extern bool     UseSimpleTrendStrategy=false;
 extern bool     UseTrendIndicator=true;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=2;
-bool     AllowPendings=false;
+extern bool     UseSimpleTrendStrategy=false;
 extern bool     UseStochastikBasedIndicator=false;
+bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int StartHour=8;
 extern int EndHour=22;
@@ -108,6 +108,7 @@ int handle_ind;
 bool OrderDueStoch=false;
 int countStochOrders=0;
 int countedDecimals=2;
+double CurrentTotalLotSize=0.0;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -520,6 +521,14 @@ TempTDIGreen=TDIGreen;
    bool compareContractSizes=false;
    if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
    else {compareContractSizes=false;}
+   double RemainingLotSize=0.0;
+   int countRemainingMaxLots=0;
+   bool LotSizeIsBiggerThenMaxLot=false;
+   double MaxLot=MarketInfo(Symbol(),MODE_MAXLOT);
+   if(SymbolStep>0.0)
+     {
+      MaxLot=NormalizeDouble(MaxLot-MathMod(MaxLot,SymbolStep),countedDecimals);
+     }
 
    if(LotAutoSize)
      {
@@ -577,8 +586,12 @@ TempTDIGreen=TDIGreen;
          LotSizeP2=NormalizeDouble(LotSizeP2-MathMod(LotSizeP2,SymbolStep), countedDecimals);
         }
      }
-   if(LotSize>MarketInfo(Symbol(),MODE_MAXLOT))
+   if(LotSize>MaxLot)
      {
+      countRemainingMaxLots=(int)(LotSize/MaxLot);
+      RemainingLotSize=MathMod(LotSize,MaxLot);
+      LotSizeIsBiggerThenMaxLot=true;
+      CurrentTotalLotSize=LotSize;
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
       LotSizeP1=NormalizeDouble(LotSizeP1*0.625,countedDecimals);
       LotSizeP2=NormalizeDouble(LotSizeP2*0.5,countedDecimals);
@@ -831,7 +844,17 @@ TempTDIGreen=TDIGreen;
                   TicketNrSellStoch=OrderSend(Symbol(),OP_SELL,LotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
                   if(TicketNrSellStoch<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
-                  //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
+                  //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}                 
+                  if(LotSizeIsBiggerThenMaxLot) 
+                    {
+                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                       {
+                        if(OrderSend(Symbol(),OP_SELL,MaxLot,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                          {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                       }
+                     if(OrderSend(Symbol(),OP_SELL,RemainingLotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                       {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                    }
                  }
               }
            }
@@ -846,6 +869,16 @@ TempTDIGreen=TDIGreen;
                   if(TicketNrSell<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
+                  if(LotSizeIsBiggerThenMaxLot) 
+                    {
+                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                       {
+                        if(OrderSend(Symbol(),OP_SELL,MaxLot,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                          {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                       }
+                     if(OrderSend(Symbol(),OP_SELL,RemainingLotSize,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                       {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                    }
                  }
               }
 
@@ -917,6 +950,16 @@ TempTDIGreen=TDIGreen;
                   if(TicketNrBuyStoch<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
+                  if(LotSizeIsBiggerThenMaxLot) 
+                    {
+                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                       {
+                        if(OrderSend(Symbol(),OP_BUY,MaxLot,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                          {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                       }
+                     if(OrderSend(Symbol(),OP_BUY,RemainingLotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                       {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                    }
                  }
               }
            }
@@ -931,6 +974,16 @@ TempTDIGreen=TDIGreen;
                   if(TicketNrBuy<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
+                  if(LotSizeIsBiggerThenMaxLot) 
+                    {
+                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                       {
+                        if(OrderSend(Symbol(),OP_BUY,MaxLot,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                          {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                       }
+                     if(OrderSend(Symbol(),OP_BUY,RemainingLotSize,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                       {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
+                    }
                  }
               }
             if(AllowPendings && !OrderDueStoch)
@@ -1008,7 +1061,7 @@ TempTDIGreen=TDIGreen;
       if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
         {
          if(HandleUserPositions){HandleUserPositionsFun();}
-         if(HandleUserPositions==true            &&            OrderSymbol()==Symbol()
+         if(HandleUserPositions==true             &&             OrderSymbol()==Symbol()
             && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
            {
             TrP();
@@ -1233,7 +1286,9 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    ObjectSet("MagicNumber",OBJPROP_YDISTANCE,60);
 
    ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
-   ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(LotSize,2),11,"Calibri",clrLightYellow);
+   if(CurrentTotalLotSize>0.0)
+     {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(CurrentTotalLotSize,2),11,"Calibri",clrLightYellow);}
+   else {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(LotSize,2),11,"Calibri",clrLightYellow);}
    ObjectSet("NextLotSize",OBJPROP_CORNER,1);
    ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
    ObjectSet("NextLotSize",OBJPROP_YDISTANCE,80);
