@@ -5,7 +5,6 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property link      "http://vbapps.co"
 #property version   "2.80"
 #property description "Trades on trend change with different indicators."
 #property strict
@@ -594,7 +593,7 @@ TempTDIGreen=TDIGreen;
         }
      }
 //in the free version LotSize can be less then 0.20!
-   if(LotSize>0.2) {LotSize=0.19;}
+   if(LotSize>0.10) {LotSize=0.10;}
    if(Debug)
      {
       Print("LotSize="+DoubleToStr(LotSize,countedDecimals));

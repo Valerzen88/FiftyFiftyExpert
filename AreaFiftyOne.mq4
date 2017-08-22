@@ -5,7 +5,6 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property link      "http://vbapps.co"
 #property version   "2.90"
 #property description "Trades on trend change with different indicators."
 #property strict
@@ -63,7 +62,7 @@ bool DebugTrace=false;
 bool trial_lic=false;
 datetime expiryDate=D'2017.09.01 00:00';
 bool rent_lic=false;
-datetime rentExpiryDate=D'2018.05.12 00:00';
+datetime rentExpiryDate=D'2018.05.13 00:00';
 int rentAccountNumber=0;
 string rentCustomerName="";
 /*licence_end*/

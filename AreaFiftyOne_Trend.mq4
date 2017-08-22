@@ -4,7 +4,6 @@
 //|                                             http://www.vbapps.co |
 //+------------------------------------------------------------------+
 #property copyright "Copyright © 2017, VBApps"
-#property link      "http://www.vbapps.co"
 
 #property indicator_separate_window
 #property indicator_minimum -5.0
