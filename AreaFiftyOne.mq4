@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "2.90"
+#property version   "2.92"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -50,6 +50,9 @@ bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int StartHour=8;
 extern int EndHour=22;
+extern static string OnlyBuyOrSellMarket="";
+extern bool OnlyBuy=true;
+extern bool OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
 //extern static string HandleUserPositions_Comment="Available in the full version!";
 extern bool     HandleUserPositions=false;
@@ -830,7 +833,7 @@ TempTDIGreen=TDIGreen;
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
-      if(!(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
+      if(OnlySell==true && !(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
         {
          if(OrderDueStoch && UseStochastikBasedIndicator && TicketNrSellStoch==0)
            {
@@ -935,7 +938,7 @@ TempTDIGreen=TDIGreen;
         }
       // && TempTDIGreen<RSI_Down_Value && (TempTDIGreen-TempTDIRed)>=3.5
       // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
-      if(!(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
+      if(OnlyBuy==true && !(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
         {
          if(OrderDueStoch && UseStochastikBasedIndicator && TicketNrBuyStoch==0)
            {
