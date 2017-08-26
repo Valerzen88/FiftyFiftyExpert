@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "2.92"
+#property version   "3.0"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -41,11 +41,12 @@ extern int      TakeProfit=750;
 extern int      StopLoss=0;
 extern static string Indicators="Choose indicators";
 extern bool     UseRSIBasedIndicator=false;
-extern bool     UseTrendIndicator=true;
+extern bool     UseTrendIndicator=false;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=2;
 extern bool     UseSimpleTrendStrategy=false;
 extern bool     UseStochastikBasedIndicator=false;
+extern bool     Use5050Strategy=true;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int StartHour=8;
@@ -515,6 +516,25 @@ TempTDIGreen=TDIGreen;
               }
            }
         }
+      if(Use5050Strategy)
+        {
+         if(Volume[0]==1)
+           {
+            int i=0;
+            if((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))>50) && (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))<52)
+               && ((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==49))
+               && (iMA(NULL,0,34,8,MODE_SMA,PRICE_CLOSE,0)<Ask))
+              {
+               BuyFlag=true;
+              }
+            if((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))<50) && (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))>48)
+               && ((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==49))
+               && (iMA(NULL,0,34,8,MODE_SMA,PRICE_CLOSE,0)>Bid))
+              {
+               SellFlag=true;
+              }
+           }
+        }
      }
 
 //risk management
@@ -847,9 +867,9 @@ TempTDIGreen=TDIGreen;
                   if(TicketNrSellStoch<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}                 
-                  if(LotSizeIsBiggerThenMaxLot) 
+                  if(LotSizeIsBiggerThenMaxLot)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                     for(int c=0;c<countRemainingMaxLots-1;c++)
                        {
                         if(OrderSend(Symbol(),OP_SELL,MaxLot,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
@@ -871,9 +891,9 @@ TempTDIGreen=TDIGreen;
                   if(TicketNrSell<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
-                  if(LotSizeIsBiggerThenMaxLot) 
+                  if(LotSizeIsBiggerThenMaxLot)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                     for(int c=0;c<countRemainingMaxLots-1;c++)
                        {
                         if(OrderSend(Symbol(),OP_SELL,MaxLot,Bid,Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
@@ -952,9 +972,9 @@ TempTDIGreen=TDIGreen;
                   if(TicketNrBuyStoch<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
-                  if(LotSizeIsBiggerThenMaxLot) 
+                  if(LotSizeIsBiggerThenMaxLot)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                     for(int c=0;c<countRemainingMaxLots-1;c++)
                        {
                         if(OrderSend(Symbol(),OP_BUY,MaxLot,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
@@ -976,9 +996,9 @@ TempTDIGreen=TDIGreen;
                   if(TicketNrBuy<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
-                  if(LotSizeIsBiggerThenMaxLot) 
+                  if(LotSizeIsBiggerThenMaxLot)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++) 
+                     for(int c=0;c<countRemainingMaxLots-1;c++)
                        {
                         if(OrderSend(Symbol(),OP_BUY,MaxLot,Ask,Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
@@ -1063,7 +1083,7 @@ TempTDIGreen=TDIGreen;
       if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
         {
          if(HandleUserPositions){HandleUserPositionsFun();}
-         if(HandleUserPositions==true             &&             OrderSymbol()==Symbol()
+         if(HandleUserPositions==true              &&              OrderSymbol()==Symbol()
             && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
            {
             TrP();
