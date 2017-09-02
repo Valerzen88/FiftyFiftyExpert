@@ -45,7 +45,7 @@ extern bool     UseTrendIndicator=false;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=2;
 extern bool     UseSimpleTrendStrategy=false;
-extern bool     UseStochastikBasedIndicator=false;
+extern bool     UseStochasticBasedIndicator=false;
 extern bool     Use5050Strategy=true;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
@@ -64,7 +64,7 @@ bool DebugTrace=false;
 
 /*licence*/
 bool trial_lic=false;
-datetime expiryDate=D'2017.09.01 00:00';
+datetime expiryDate=D'2017.10.01 00:00';
 bool rent_lic=false;
 datetime rentExpiryDate=D'2018.05.13 00:00';
 int rentAccountNumber=0;
@@ -222,7 +222,7 @@ void OnDeinit(const int reason)
   {
    if(Debug)
      {
-      if(UseStochastikBasedIndicator){Print("countStochOrders="+IntegerToString(countStochOrders));}
+      if(UseStochasticBasedIndicator){Print("countStochOrders="+IntegerToString(countStochOrders));}
       Print("StopLevelDouble="+DoubleToStr(StopLevelDouble));
       Print("StopLevel="+IntegerToString(StopLevel));
      }
@@ -486,7 +486,7 @@ TempTDIGreen=TDIGreen;
               }
            }
         }
-      if(UseStochastikBasedIndicator)
+      if(UseStochasticBasedIndicator)
         {
          for(int i=0; i<=2; i++)
            {
@@ -521,14 +521,14 @@ TempTDIGreen=TDIGreen;
          if(Volume[0]==1)
            {
             int i=0;
-            if((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))>50) && (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))<52)
-               && ((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==49))
+            if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>50) && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<52)
+               && ((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==49))
                && (iMA(NULL,0,34,8,MODE_SMA,PRICE_CLOSE,0)<Ask))
               {
                BuyFlag=true;
               }
-            if((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))<50) && (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i))>48)
-               && ((MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_WEIGHTED,i+1))==49))
+            if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<50) && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>48)
+               && ((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==49))
                && (iMA(NULL,0,34,8,MODE_SMA,PRICE_CLOSE,0)>Bid))
               {
                SellFlag=true;
@@ -855,7 +855,7 @@ TempTDIGreen=TDIGreen;
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(OnlySell==true && !(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && UseStochastikBasedIndicator && TicketNrSellStoch==0)
+         if(OrderDueStoch && UseStochasticBasedIndicator && TicketNrSellStoch==0)
            {
             if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
@@ -960,7 +960,7 @@ TempTDIGreen=TDIGreen;
       // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(OnlyBuy==true && !(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && UseStochastikBasedIndicator && TicketNrBuyStoch==0)
+         if(OrderDueStoch && UseStochasticBasedIndicator && TicketNrBuyStoch==0)
            {
             if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
