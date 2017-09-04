@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.0"
+#property version   "3.3"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -40,13 +40,14 @@ extern int      DistanceStep=15;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
 extern static string Indicators="Choose indicators";
-extern bool     UseRSIBasedIndicator=false;
-extern bool     UseTrendIndicator=false;
+extern bool     UseTrendIndicator=true;
 extern bool     UseSMAOnTrendIndicator=true;
-extern int      UseOneOrTwoSMAOnTrendIndicator=2;
+extern int      UseOneOrTwoSMAOnTrendIndicator=1;
+extern bool     UseRSIBasedIndicator=false;
 extern bool     UseSimpleTrendStrategy=false;
 extern bool     UseStochasticBasedIndicator=false;
-extern bool     Use5050Strategy=true;
+extern bool     Use5050Strategy=false;
+extern bool     UseStochRSICroosingStrategy=false;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int StartHour=8;
@@ -66,9 +67,9 @@ bool DebugTrace=false;
 bool trial_lic=false;
 datetime expiryDate=D'2017.10.01 00:00';
 bool rent_lic=false;
-datetime rentExpiryDate=D'2018.05.13 00:00';
-int rentAccountNumber=0;
-string rentCustomerName="";
+datetime rentExpiryDate=D'2018.06.01 00:00';
+int rentAccountNumber=5388181;
+string rentCustomerName="Koehn Vitali";
 /*licence_end*/
 
 int RSI_Period=13;         //8-25
@@ -174,7 +175,8 @@ int OnInit()
            } else {
          if(!IsTesting())
            {
-            Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and username="+rentCustomerName);
+            Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and accountName="+rentCustomerName);
+            Alert("Current accountNumber="+IntegerToString(AccountNumber())+" && accountName="+AccountName());
             return(INIT_FAILED);
            }
         }
@@ -530,6 +532,27 @@ TempTDIGreen=TDIGreen;
             if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<50) && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>48)
                && ((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==49))
                && (iMA(NULL,0,34,8,MODE_SMA,PRICE_CLOSE,0)>Bid))
+              {
+               SellFlag=true;
+              }
+           }
+        }
+      if(UseStochRSICroosingStrategy) 
+        {
+         if(true)//Volume[0]==1)
+           {
+            int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=PRICE_CLOSE;
+            double stochastic1now,stochastic1previous;
+            stochastic1now=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i);
+            stochastic1previous=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i+1);
+            
+            if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<MathRound(stochastic1now))
+               && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>MathRound(stochastic1previous)))
+              {
+               BuyFlag=true;
+              }
+            if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>MathRound(stochastic1now))
+               && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<MathRound(stochastic1previous)))
               {
                SellFlag=true;
               }
@@ -1078,16 +1101,27 @@ TempTDIGreen=TDIGreen;
      }
 
    double TempProfitUserPosis=0.0;
-   for(int f=0;f<OrdersTotal();f++)
+   if(HandleUserPositions)
      {
-      if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
+      for(int f=0;f<OrdersTotal();f++)
         {
-         if(HandleUserPositions){HandleUserPositionsFun();}
-         if(HandleUserPositions==true              &&              OrderSymbol()==Symbol()
-            && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
+         if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
            {
-            TrP();
-            TempProfitUserPosis=TempProfitUserPosis+OrderProfit()+OrderCommission()+OrderSwap();
+            HandleUserPositionsFun();
+            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
+              {
+               TrP();
+              }
+           }
+        }
+      for(int f=0;f<OrdersTotal();f++)
+        {
+         if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
+           {
+            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
+              {
+               TempProfitUserPosis=TempProfitUserPosis+OrderProfit()+OrderCommission()+OrderSwap();
+              }
            }
         }
      }
@@ -1103,8 +1137,6 @@ double OnTester()
   {
 //---
    double ret=AccountBalance();
-//---
-//---
    return(ret);
   }
 //+------------------------------------------------------------------+
