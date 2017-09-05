@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.3"
+#property version   "3.33"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -58,6 +58,8 @@ extern bool OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
 //extern static string HandleUserPositions_Comment="Available in the full version!";
 extern bool     HandleUserPositions=false;
+extern static string Common="Create signals only on new candle or on every tick";
+extern bool     HandleOnCandleOpenOnly=true;
 extern int      MagicNumber=3537;
 
 bool Debug=false;
@@ -127,7 +129,7 @@ int OnInit()
      {
       LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
      }
-//if(HandleUserPositions) bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);
+//if(HandleUserPositions) { bool h=OrderSend(Symbol(),OP_BUY,LotSize,Ask,3,0,0);}
    double lotstep=SymbolInfoDouble(_Symbol,SYMBOL_VOLUME_STEP);
    countedDecimals=(int)-MathLog10(lotstep);
    if(Debug)
@@ -245,9 +247,12 @@ void OnTick()
      {
       TradingAllowed=true;
      }
+   bool CheckForSignal;
+   if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
+   if(HandleOnCandleOpenOnly==false) {CheckForSignal=true;}
 
 //double TempTDIGreen=0,TempTDIRed=0;
-   if(TradingAllowed)
+   if(TradingAllowed && CheckForSignal)
      {
       if(UseRSIBasedIndicator)
         {
@@ -286,7 +291,7 @@ TempTDIGreen=TDIGreen;
 
       if(UseTrendIndicator)
         {
-         if(Volume[0]==1)
+         if(true)//(Volume[0]==1)
            {
             double Trend=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,0),1);
             double TrendBack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,1),1);
@@ -353,7 +358,7 @@ TempTDIGreen=TDIGreen;
                   /*|| (MathRound(MABack2)>MathRound(TrendBack2))*/))
                   /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
                  {
-                  if(DebugTrace)
+                  if(Debug)
                     {
                      Print("SELL=>MA="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
                            +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
@@ -368,7 +373,7 @@ TempTDIGreen=TDIGreen;
                   /*|| (MathRound(MABack2)<MathRound(TrendBack2))*/))
                   /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
                  {
-                  if(DebugTrace)
+                  if(Debug)
                     {
                      Print("BUY=>MA="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
                            +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
@@ -388,7 +393,7 @@ TempTDIGreen=TDIGreen;
                   /*|| (MathRound(MABack2_Second)>MathRound(TrendBack2))*/))
                   /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
                  {
-                  if(DebugTrace)
+                  if(Debug)
                     {
                      Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">Trend="+DoubleToStr(MathRound(Trend))
                            +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
@@ -403,7 +408,7 @@ TempTDIGreen=TDIGreen;
                   /*|| (MathRound(MABack2_Second)<MathRound(TrendBack2))*/))
                   /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
                  {
-                  if(DebugTrace)
+                  if(Debug)
                     {
                      Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<Trend="+DoubleToStr(MathRound(Trend))
                            +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
@@ -420,7 +425,7 @@ TempTDIGreen=TDIGreen;
                /*|| (MathRound(MABack2_Second)>MathRound(TrendBack2))*/))
                /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
               {
-               if(DebugTrace)
+               if(Debug)
                  {
                   Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">MATrend="+DoubleToStr(MathRound(MA))
                         +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=MABack="+DoubleToStr(MathRound(MABack))
@@ -435,7 +440,7 @@ TempTDIGreen=TDIGreen;
                /*|| (MathRound(MABack2_Second)<MathRound(TrendBack2))*/))
                /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
               {
-               if(DebugTrace)
+               if(Debug)
                  {
                   Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<MA="+DoubleToStr(MathRound(MA))
                         +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>MABack="+DoubleToStr(MathRound(MABack))
@@ -448,7 +453,7 @@ TempTDIGreen=TDIGreen;
         }
       if(UseSimpleTrendStrategy)
         {
-         if(Volume[0]==1)
+         if(true)//(Volume[0]==1)
            {
             double MAFastPrevious1,MAFastPrevious2;
             double MASlowPrevious1,MASlowPrevious2;
@@ -520,7 +525,7 @@ TempTDIGreen=TDIGreen;
         }
       if(Use5050Strategy)
         {
-         if(Volume[0]==1)
+         if(true)//(Volume[0]==1)
            {
             int i=0;
             if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>50) && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<52)
@@ -537,15 +542,15 @@ TempTDIGreen=TDIGreen;
               }
            }
         }
-      if(UseStochRSICroosingStrategy) 
+      if(UseStochRSICroosingStrategy)
         {
-         if(true)//Volume[0]==1)
+         if(true)//(CheckForSignal)
            {
             int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=PRICE_CLOSE;
             double stochastic1now,stochastic1previous;
             stochastic1now=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i);
             stochastic1previous=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i+1);
-            
+
             if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<MathRound(stochastic1now))
                && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>MathRound(stochastic1previous)))
               {
@@ -1100,14 +1105,14 @@ TempTDIGreen=TDIGreen;
         }
      }
 
+   if(HandleUserPositions){HandleUserPositionsFun();}
    double TempProfitUserPosis=0.0;
    if(HandleUserPositions)
      {
-      for(int f=0;f<OrdersTotal();f++)
+      for(int ff=0;ff<OrdersTotal();ff++)
         {
-         if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
+         if(OrderSelect(ff,SELECT_BY_POS,MODE_TRADES))
            {
-            HandleUserPositionsFun();
             if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
               {
                TrP();
@@ -1152,23 +1157,23 @@ void HandleUserPositionsFun()
          if(Debug){Print("OrderMagicNumber='"+IntegerToString(OrderMagicNumber())+"'");}
          if(OrderMagicNumber()==0 && (OrderComment()=="" || OrderComment()=="[0]"))
            {
-            if(((OrderOpenPrice()-OrderTakeProfit())!=TakeProfit)
-               &&((OrderOpenPrice()-OrderStopLoss())!=StopLoss || OrderStopLoss()==0))
+            if((OrderType()==OP_SELL) && (((OrderOpenPrice()-OrderTakeProfit())!=TakeProfit*Point)
+               || ((OrderStopLoss()>OrderOpenPrice()) || OrderStopLoss()==0)))
               {
-               if(OrderType()==OP_SELL)
+               if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
+               if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
                  {
-                  if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
-                  if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
+                  if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
                     {
-                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
-                       {
-                        bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
-                       }
+                     bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
                     }
-                    } else if(OrderType()==OP_BUY) {
+                 }
+              }
+            else
+               if((OrderType()==OP_BUY) && (((OrderTakeProfit()-OrderOpenPrice())!=TakeProfit*Point)
+                  || ((OrderStopLoss()<OrderOpenPrice()) || OrderStopLoss()==0)))
+                 {
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
-                  if(Debug){Print("TPI='"+DoubleToStr(TPI)+"'");}
-                  if(Debug){Print("SLI='"+DoubleToStr(SLI)+"'");}
                   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
                     {
                      if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
@@ -1177,7 +1182,7 @@ void HandleUserPositionsFun()
                        }
                     }
                  }
-              }
+
            }
         }
      }
@@ -1209,7 +1214,7 @@ void TrP()
    if(Debug) {Print("commissions="+DoubleToStr(commissions,8));}
    commissionsInPips=(commissions/OrderLots()/tickValue)*tickSize+spread*2;
    if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
-   if(Debug)
+   if(DebugTrace)
      {
       Print("commissionsInPips(Ticket="+IntegerToString(OrderTicket())+")="+DoubleToStr(commissionsInPips,5)
             +";DistanceStep="+IntegerToString(TS)+";TrailingStep="+IntegerToString(TrailingStep));

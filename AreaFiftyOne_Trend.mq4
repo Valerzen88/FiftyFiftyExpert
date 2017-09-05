@@ -30,6 +30,8 @@ extern int Sensitivity = 30;
 extern int Period_MA = 23;
 extern int Period_MA_Second = 50;
 extern int ModeMA = MODE_LWMA;
+extern bool UseAlerts=true;
+extern bool SendEMailOnSignal=true;
 int gi_120 = 1;
 int gi_124 = 0;
 double gd_128 = 0.0;
@@ -152,27 +154,16 @@ int start() {
          for(int k=bars;k>-1;k--) {
             MA_Buff[k] = iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
             MA_Buff_Second[k] = iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
-            //ExponentialMAOnBuffer(ArraySize(g_ibuf_76),k,0,Period_MA,g_ibuf_76,MA_Buff);
-            //ExponentialMAOnBuffer(ArraySize(g_ibuf_76),k,0,Period_MA_Second,g_ibuf_76,MA_Buff_Second);
-            //MA_Buff[k] = ExponentialMA(k,Period_MA,MA_Buff[k-1],MA_Buff);
-            /*double tempD;
-            for(int c=0;c<Period_MA;c++) {
-               tempD += g_ibuf_76[k+c]; 
-            }
-            double SUM = tempD;
-            double SMMA = tempD / Period_MA;
-            
-            MA_Buff[k] = ((SUM-SMMA+g_ibuf_76[k])/Period_MA);*/
-         }/*
-         for(int g=ArraySize(MA_Buff);g>0;g--)
-           {
-            MA_Buff[g] = (MA_Buff[g-1]*(Period_MA-1) + g_ibuf_76[g])/Period_MA;
-            Print(MA_Buff[g]);
-           }*/
+         }
+         if(UseAlerts) {HandleAlerts();}
          return (0);
       }
    }
    return (0);
+}
+
+void HandleAlerts() {
+   
 }
 
 void loadJMA() {
