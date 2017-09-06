@@ -27,13 +27,14 @@ int gi_104=0;
 extern int Progression=8;
 extern int Length=3;
 extern int Sensitivity=30;
-extern bool UseSMAOnTrendIndicator=true;
-extern int UseOneOrTwoSMAOnTrendIndicator=1;
 extern int Period_MA=23;
 extern int Period_MA_Second=50;
 extern int ModeMA=MODE_LWMA;
 extern bool UseAlerts=false;
 extern bool SendEMailOnSignal=false;
+extern bool UseSMAOnTrendIndicatorForAlerts=true;
+extern bool UseFirstSMAOnTrendIndicatorForAlerts=true;
+extern bool UseSecondSMAOnTrendIndicatorForAlerts=true;
 extern bool Debug=false;
 int gi_120 = 1;
 int gi_124 = 0;
@@ -110,13 +111,15 @@ double g_icustom_568;
 double g_icustom_576=0.0;
 double gd_584;
 double gd_592;
-double g_BarsToLoad_600=0.0;
+double g_bars_600=0.0;
+string selfpath;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int OnInit() 
+int OnInit()
   {
    IndicatorShortName("AreaFiftyOne_Trend");
+   selfpath=GetRelativeProgramPath();
    for(g_index_208 = 0; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 0.0;
    for(g_index_208 = 0; g_index_208 < 128; g_index_208++) gda_496[g_index_208] = 0.0;
    for(g_index_208 = 0; g_index_208 < 11; g_index_208++) gda_500[g_index_208] = 0.0;
@@ -136,35 +139,34 @@ int OnInit()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int start() 
+int start()
   {
    int li_unused_16;
-   string path=GetRelativeProgramPath();
-   int li_12 = InternalKey;
+   int li_12= InternalKey;
    if(li_12 == 34562788) loadJMA();
-   else 
+   else
      {
-      if(BarsToLoad>g_BarsToLoad_600) 
+      if(Bars>g_bars_600)
         {
-         g_BarsToLoad_600=BarsToLoad;
+         g_bars_600=Bars;
          li_unused_16=0;
-         for(int l_index_20=0; l_index_20<150; l_index_20++) 
+         for(int l_index_20=0; l_index_20<150; l_index_20++)
            {
             gd_584 = 0;
             gd_592 = 0;
-            for(int li_24=Length; li_24<=Length+Progression*Sensitivity; li_24+=Progression) 
+            for(int li_24=Length; li_24<=Length+Progression*Sensitivity; li_24+=Progression)
               {
-               g_icustom_568 = iCustom(NULL, 0, path, 34562788, li_24, BarsToLoad, 0, l_index_20);
-               g_icustom_576 = iCustom(NULL, 0, path, 34562788, li_24, BarsToLoad, 0, l_index_20 + 1);
+               g_icustom_568 = iCustom(NULL, 0, selfpath, 34562788, li_24, BarsToLoad, 0, l_index_20);
+               g_icustom_576 = iCustom(NULL, 0, selfpath, 34562788, li_24, BarsToLoad, 0, l_index_20 + 1);
                if(g_icustom_568>g_icustom_576) gd_584++;
                else gd_592++;
               }
             gda_560[l_index_20] = gd_584;
             gda_564[l_index_20] = gd_592;
            }
-         Lengthars(gda_560,1);
-         Lengthars(gda_564,2);
-         for(int k=BarsToLoad;k>-1;k--) 
+         lenars(gda_560,1);
+         lenars(gda_564,2);
+         for(int k=BarsToLoad;k>-1;k--)
            {
             MA_Buff[k]=iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
             MA_Buff_Second[k]=iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
@@ -178,7 +180,7 @@ int start()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void HandleAlerts() 
+void HandleAlerts()
   {
    bool   SellFlag=false;
    bool   BuyFlag=false;
@@ -204,7 +206,7 @@ void HandleAlerts()
       Print("MABack_Second="+DoubleToStr(MABack_Second));
       Print("MABack2_Second="+DoubleToStr(MABack2_Second));
      }
-   if(!UseSMAOnTrendIndicator)
+   if(!UseSMAOnTrendIndicatorForAlerts)
      {
       if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
          && (TrendBack>=23))
@@ -216,8 +218,7 @@ void HandleAlerts()
             Print("Trend="+DoubleToStr(Trend));
             Print("TrendBack="+DoubleToStr(TrendBack));
            }
-         SellFlag=1;
-
+         SellFlag=true;
         }
 
       if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
@@ -230,10 +231,10 @@ void HandleAlerts()
             Print("Trend="+DoubleToStr(Trend));
             Print("TrendBack="+DoubleToStr(TrendBack));
            }
-         BuyFlag=1;
+         BuyFlag=true;
         }
      }
-   if(UseSMAOnTrendIndicator && (UseOneOrTwoSMAOnTrendIndicator==1 || UseOneOrTwoSMAOnTrendIndicator==2))
+   if(UseSMAOnTrendIndicatorForAlerts && UseFirstSMAOnTrendIndicatorForAlerts)
      {
       if((((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
          && (((MA-Trend)>1) || ((MA-Trend)==1)) && (Trend<14.5 || Trend>16.5)
@@ -248,7 +249,7 @@ void HandleAlerts()
                   +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
                   +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
-         SellFlag=1;
+         SellFlag=true;
         }
       if((((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
          && (((Trend-MA)>1) || ((Trend-MA)==1)) && (Trend<14.5 || Trend>16.5) && (Trend>4)
@@ -263,11 +264,10 @@ void HandleAlerts()
                   +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
                   +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
-         BuyFlag=1;
+         BuyFlag=true;
         }
      }
-
-   if(UseSMAOnTrendIndicator && UseOneOrTwoSMAOnTrendIndicator==2)
+   if(UseSMAOnTrendIndicatorForAlerts && UseSecondSMAOnTrendIndicatorForAlerts)
      {
       //using ma50
       if((((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
@@ -283,7 +283,7 @@ void HandleAlerts()
                   +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
                   +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
-         SellFlag=1;
+         SellFlag=true;
         }
       if((((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
          && (((Trend-MA_Second)>0.5) || ((Trend-MA_Second)==1)) && (Trend<14.5 || Trend>16.5)
@@ -298,21 +298,21 @@ void HandleAlerts()
                   +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
                   +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
-         BuyFlag=1;
+         BuyFlag=true;
         }
      }
-   if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
-
+   if(BuyFlag) {Alert("Got buy signal at "+Ask+" from trend-based indicator!");}
+   if(SellFlag) {Alert("Got buy signal at "+Bid+" from trend-based indicator!");}
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void loadJMA() 
+void loadJMA()
   {
    double ld_0;
    gi_220 = 63;
    gi_224 = 64;
-   if(gi_120==TRUE) 
+   if(gi_120==TRUE)
      {
       for(g_index_208 = 1; g_index_208 < gi_220 + 1; g_index_208++) gda_492[g_index_208] = -100;
       for(g_index_208 = gi_224; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 100;
@@ -322,7 +322,7 @@ void loadJMA()
    if(Smoothing<=1.0) gd_380=0.0000000001;
    else gd_380=(Smoothing-1.0)/2.0;
    if(gd_92<-100.0) gd_268=0.5;
-   else 
+   else
      {
       if(gd_92>100.0) gd_268=2.5;
       else gd_268=gd_92/100.0+1.5;
@@ -339,10 +339,10 @@ void loadJMA()
    gd_380 = 0.9 * gd_380;
    gd_332 = gd_380 / (gd_380 + 2.0);
    gi_468 = TRUE;
-   if(BarsToLoad== 0) BarsToLoad = BarsToLoad;
-   for(gi_124=BarsToLoad+1000; gi_124>=0; gi_124--) 
+   if(BarsToLoad==0) BarsToLoad=Bars;
+   for(gi_124=BarsToLoad+1000; gi_124>=0; gi_124--)
      {
-      switch(gi_104) 
+      switch(gi_104)
         {
          case 0:
             ld_0=Close[gi_124];
@@ -362,14 +362,14 @@ void loadJMA()
          default:
             ld_0=Close[gi_124];
         }
-      if(gi_484<61) 
+      if(gi_484<61)
         {
          gi_484++;
          gda_504[gi_484]=ld_0;
         }
-      if(gi_484>30) 
+      if(gi_484>30)
         {
-         if(gi_468!=FALSE) 
+         if(gi_468!=FALSE)
            {
             gi_468 = FALSE;
             gi_212 = 0;
@@ -382,7 +382,7 @@ void loadJMA()
             if(gi_472>29) gi_472=29;
            }
          else gi_472=0;
-         for(g_index_208=gi_472; g_index_208>=0; g_index_208--) 
+         for(g_index_208=gi_472; g_index_208>=0; g_index_208--)
            {
             if(g_index_208==0) gd_260=ld_0;
             else gd_260=gda_504[31-g_index_208];
@@ -402,23 +402,23 @@ void loadJMA()
             if(gi_256>10) gd_200=gd_176/10.0;
             else gd_200=gd_176/gi_256;
             if(gi_256==30) g_index_516=0;
-            if(gi_256>127) 
+            if(gi_256>127)
               {
                gd_184=gda_496[gi_236];
                gda_496[gi_236]=gd_200;
                gi_252 = 64;
                gi_244 = gi_252;
                gi_unused_512=gi_244;
-               while(gi_252>1) 
+               while(gi_252>1)
                  {
-                  if(gda_492[gi_244]<gd_184) 
+                  if(gda_492[gi_244]<gd_184)
                     {
                      gi_252 /= 2;
                      gi_244 += gi_252;
                      gi_unused_512=gi_244;
                        } else {
                      if(gda_492[gi_244]<=gd_184) gi_252=1;
-                     else 
+                     else
                        {
                         gi_252 /= 2;
                         gi_244 -= gi_252;
@@ -428,7 +428,7 @@ void loadJMA()
                  }
                  } else {
                gda_496[gi_236]=gd_200;
-               if(gi_220+gi_224>127) 
+               if(gi_220+gi_224>127)
                  {
                   gi_224--;
                   gi_244=gi_224;
@@ -445,12 +445,12 @@ void loadJMA()
               }
             gi_252 = 64;
             gi_248 = gi_252;
-            while(gi_252>1) 
+            while(gi_252>1)
               {
-               if(gda_492[gi_248]>=gd_200) 
+               if(gda_492[gi_248]>=gd_200)
                  {
                   if(gda_492[gi_248-1]<=gd_200) gi_252=1;
-                  else 
+                  else
                     {
                      gi_252 /= 2;
                      gi_248 -= gi_252;
@@ -461,15 +461,15 @@ void loadJMA()
                  }
                if(gi_248==127 && gd_200>gda_492[127]) gi_248=128;
               }
-            if(gi_256>127) 
+            if(gi_256>127)
               {
-               if(gi_244>=gi_248) 
+               if(gi_244>=gi_248)
                  {
                   if(gi_228+1>gi_248 && gi_232-1<gi_248) gd_192+=gd_200;
                   else
                      if(gi_232>gi_248 && gi_232-1<gi_244) gd_192+=gda_492[gi_232-1];
                     } else {
-                  if(gi_232>=gi_248) 
+                  if(gi_232>=gi_248)
                     {
                      if(gi_228+1<gi_248 && gi_228+1>gi_244) gd_192+=gda_492[gi_228+1];
                        } else {
@@ -478,7 +478,7 @@ void loadJMA()
                         if(gi_228+1<gi_248 && gi_228+1>gi_244) gd_192+=gda_492[gi_228+1];
                     }
                  }
-               if(gi_244>gi_248) 
+               if(gi_244>gi_248)
                  {
                   if(gi_232-1<gi_244 && gi_228+1>gi_244) gd_192-=gda_492[gi_244];
                   else
@@ -489,10 +489,10 @@ void loadJMA()
                      if(gi_232>gi_244 && gi_232<gi_248) gd_192-=gda_492[gi_232];
                  }
               }
-            if(gi_244<=gi_248) 
+            if(gi_244<=gi_248)
               {
                if(gi_244>=gi_248) gda_492[gi_248]=gd_200;
-               else 
+               else
                  {
                   for(g_index_516=gi_244+1; g_index_516<gi_248; g_index_516++) gda_492[g_index_516-1]=gda_492[g_index_516];
                   gda_492[gi_248-1]=gd_200;
@@ -501,24 +501,24 @@ void loadJMA()
                for(gi_520=gi_244-1; gi_520>=gi_248; gi_520--) gda_492[gi_520+1]=gda_492[gi_520];
                gda_492[gi_248]=gd_200;
               }
-            if(gi_256<=127) 
+            if(gi_256<=127)
               {
-               gd_192 = 0;
+               gd_192=0;
                for(gi_528=gi_232; gi_528<gi_228+1; gi_528++) gd_192+=gda_492[gi_528];
               }
             gd_348=gd_192/(gi_228-gi_232+1);
             if(gi_488+1>31) gi_488=31;
             else gi_488++;
-            if(gi_488<=30) 
+            if(gi_488<=30)
               {
                if(gd_292>0.0) gd_276=gd_260;
                else gd_276=gd_260-gd_292*gd_396;
                if(gd_324<0.0) gd_308=gd_260;
                else gd_308=gd_260-gd_324*gd_396;
                gd_436=ld_0;
-               if(gi_488==30) 
+               if(gi_488==30)
                  {
-                  gd_444= ld_0;
+                  gd_444=ld_0;
                   if(MathCeil(gd_372)>=1.0) gd_168=MathCeil(gd_372);
                   else gd_168=1;
                   gi_480=gd_168;
@@ -526,7 +526,7 @@ void loadJMA()
                   else gd_152=1;
                   gi_476=gd_152;
                   if(gi_480==gi_476) gd_356=1;
-                  else 
+                  else
                     {
                      gd_168 = gi_480 - gi_476;
                      gd_356 = (gd_372 - gi_476) / gd_168;
@@ -541,7 +541,7 @@ void loadJMA()
                if(gd_404>=MathPow(MathAbs(gd_412/gd_348),gd_388)) gd_144=MathPow(MathAbs(gd_412/gd_348),gd_388);
                else gd_144=gd_404;
                if(gd_144<1.0) gd_152=1.0;
-               else 
+               else
                  {
                   if(gd_404>=MathPow(MathAbs(gd_412/gd_348),gd_388)) gd_160=MathPow(MathAbs(gd_412/gd_348),gd_388);
                   else gd_160=gd_404;
@@ -555,7 +555,7 @@ void loadJMA()
                else gd_308=gd_260-gd_324*gd_364;
               }
            }
-         if(gi_488>30) 
+         if(gi_488>30)
            {
             gd_300 = MathPow(gd_332, gd_340);
             gd_444 = (1 - gd_300) * ld_0 + gd_300 * gd_444;
@@ -575,12 +575,12 @@ void loadJMA()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void Lengthars(double ada_0[150],int ai_4) 
+void lenars(double ada_0[150],int ai_4)
   {
    double ld_8;
    gi_220 = 63;
    gi_224 = 64;
-   if(gi_120==TRUE) 
+   if(gi_120==TRUE)
      {
       for(g_index_208 = 1; g_index_208 < gi_220 + 1; g_index_208++) gda_492[g_index_208] = -100;
       for(g_index_208 = gi_224; g_index_208 < 128; g_index_208++) gda_492[g_index_208] = 100;
@@ -590,7 +590,7 @@ void Lengthars(double ada_0[150],int ai_4)
    if(Smoothing<=1.0) gd_380=0.0000000001;
    else gd_380=(Smoothing-1.0)/2.0;
    if(gd_92<-100.0) gd_268=0.5;
-   else 
+   else
      {
       if(gd_92>100.0) gd_268=2.5;
       else gd_268=gd_92/100.0+1.5;
@@ -607,18 +607,18 @@ void Lengthars(double ada_0[150],int ai_4)
    gd_380 = 0.9 * gd_380;
    gd_332 = gd_380 / (gd_380 + 2.0);
    gi_468 = TRUE;
-   if(BarsToLoad== 0) BarsToLoad = BarsToLoad;
-   for(gi_124=BarsToLoad+30; gi_124>=0; gi_124--) 
+   if(BarsToLoad==0) BarsToLoad=Bars;
+   for(gi_124=BarsToLoad+30; gi_124>=0; gi_124--)
      {
       ld_8=ada_0[gi_124];
-      if(gi_484<61) 
+      if(gi_484<61)
         {
          gi_484++;
          gda_504[gi_484]=ld_8;
         }
-      if(gi_484>30) 
+      if(gi_484>30)
         {
-         if(gi_468!=FALSE) 
+         if(gi_468!=FALSE)
            {
             gi_468 = FALSE;
             gi_212 = 0;
@@ -631,7 +631,7 @@ void Lengthars(double ada_0[150],int ai_4)
             if(gi_472>29) gi_472=29;
            }
          else gi_472=0;
-         for(g_index_208=gi_472; g_index_208>=0; g_index_208--) 
+         for(g_index_208=gi_472; g_index_208>=0; g_index_208--)
            {
             if(g_index_208==0) gd_260=ld_8;
             else gd_260=gda_504[31-g_index_208];
@@ -651,23 +651,23 @@ void Lengthars(double ada_0[150],int ai_4)
             if(gi_256>10) gd_200=gd_176/10.0;
             else gd_200=gd_176/gi_256;
             if(gi_256==30) g_index_516=0;
-            if(gi_256>127) 
+            if(gi_256>127)
               {
                gd_184=gda_496[gi_236];
                gda_496[gi_236]=gd_200;
                gi_252 = 64;
                gi_244 = gi_252;
                gi_unused_512=gi_244;
-               while(gi_252>1) 
+               while(gi_252>1)
                  {
-                  if(gda_492[gi_244]<gd_184) 
+                  if(gda_492[gi_244]<gd_184)
                     {
                      gi_252 /= 2;
                      gi_244 += gi_252;
                      gi_unused_512=gi_244;
                        } else {
                      if(gda_492[gi_244]<=gd_184) gi_252=1;
-                     else 
+                     else
                        {
                         gi_252 /= 2;
                         gi_244 -= gi_252;
@@ -677,7 +677,7 @@ void Lengthars(double ada_0[150],int ai_4)
                  }
                  } else {
                gda_496[gi_236]=gd_200;
-               if(gi_220+gi_224>127) 
+               if(gi_220+gi_224>127)
                  {
                   gi_224--;
                   gi_244=gi_224;
@@ -694,12 +694,12 @@ void Lengthars(double ada_0[150],int ai_4)
               }
             gi_252 = 64;
             gi_248 = gi_252;
-            while(gi_252>1) 
+            while(gi_252>1)
               {
-               if(gda_492[gi_248]>=gd_200) 
+               if(gda_492[gi_248]>=gd_200)
                  {
                   if(gda_492[gi_248-1]<=gd_200) gi_252=1;
-                  else 
+                  else
                     {
                      gi_252 /= 2;
                      gi_248 -= gi_252;
@@ -710,15 +710,15 @@ void Lengthars(double ada_0[150],int ai_4)
                  }
                if(gi_248==127 && gd_200>gda_492[127]) gi_248=128;
               }
-            if(gi_256>127) 
+            if(gi_256>127)
               {
-               if(gi_244>=gi_248) 
+               if(gi_244>=gi_248)
                  {
                   if(gi_228+1>gi_248 && gi_232-1<gi_248) gd_192+=gd_200;
                   else
                      if(gi_232>gi_248 && gi_232-1<gi_244) gd_192+=gda_492[gi_232-1];
                     } else {
-                  if(gi_232>=gi_248) 
+                  if(gi_232>=gi_248)
                     {
                      if(gi_228+1<gi_248 && gi_228+1>gi_244) gd_192+=gda_492[gi_228+1];
                        } else {
@@ -727,7 +727,7 @@ void Lengthars(double ada_0[150],int ai_4)
                         if(gi_228+1<gi_248 && gi_228+1>gi_244) gd_192+=gda_492[gi_228+1];
                     }
                  }
-               if(gi_244>gi_248) 
+               if(gi_244>gi_248)
                  {
                   if(gi_232-1<gi_244 && gi_228+1>gi_244) gd_192-=gda_492[gi_244];
                   else
@@ -738,10 +738,10 @@ void Lengthars(double ada_0[150],int ai_4)
                      if(gi_232>gi_244 && gi_232<gi_248) gd_192-=gda_492[gi_232];
                  }
               }
-            if(gi_244<=gi_248) 
+            if(gi_244<=gi_248)
               {
                if(gi_244>=gi_248) gda_492[gi_248]=gd_200;
-               else 
+               else
                  {
                   for(g_index_516=gi_244+1; g_index_516<gi_248; g_index_516++) gda_492[g_index_516-1]=gda_492[g_index_516];
                   gda_492[gi_248-1]=gd_200;
@@ -750,24 +750,24 @@ void Lengthars(double ada_0[150],int ai_4)
                for(gi_520=gi_244-1; gi_520>=gi_248; gi_520--) gda_492[gi_520+1]=gda_492[gi_520];
                gda_492[gi_248]=gd_200;
               }
-            if(gi_256<=127) 
+            if(gi_256<=127)
               {
-               gd_192 = 0;
+               gd_192=0;
                for(gi_528=gi_232; gi_528<gi_228+1; gi_528++) gd_192+=gda_492[gi_528];
               }
             gd_348=gd_192/(gi_228-gi_232+1);
             if(gi_488+1>31) gi_488=31;
             else gi_488++;
-            if(gi_488<=30) 
+            if(gi_488<=30)
               {
                if(gd_292>0.0) gd_276=gd_260;
                else gd_276=gd_260-gd_292*gd_396;
                if(gd_324<0.0) gd_308=gd_260;
                else gd_308=gd_260-gd_324*gd_396;
                gd_436=ld_8;
-               if(gi_488==30) 
+               if(gi_488==30)
                  {
-                  gd_444= ld_8;
+                  gd_444=ld_8;
                   if(MathCeil(gd_372)>=1.0) gd_168=MathCeil(gd_372);
                   else gd_168=1;
                   gi_480=gd_168;
@@ -775,7 +775,7 @@ void Lengthars(double ada_0[150],int ai_4)
                   else gd_152=1;
                   gi_476=gd_152;
                   if(gi_480==gi_476) gd_356=1;
-                  else 
+                  else
                     {
                      gd_168 = gi_480 - gi_476;
                      gd_356 = (gd_372 - gi_476) / gd_168;
@@ -790,7 +790,7 @@ void Lengthars(double ada_0[150],int ai_4)
                if(gd_404>=MathPow(MathAbs(gd_412/gd_348),gd_388)) gd_144=MathPow(MathAbs(gd_412/gd_348),gd_388);
                else gd_144=gd_404;
                if(gd_144<1.0) gd_152=1.0;
-               else 
+               else
                  {
                   if(gd_404>=MathPow(MathAbs(gd_412/gd_348),gd_388)) gd_160=MathPow(MathAbs(gd_412/gd_348),gd_388);
                   else gd_160=gd_404;
@@ -804,7 +804,7 @@ void Lengthars(double ada_0[150],int ai_4)
                else gd_308=gd_260-gd_324*gd_364;
               }
            }
-         if(gi_488>30) 
+         if(gi_488>30)
            {
             gd_300 = MathPow(gd_332, gd_340);
             gd_444 = (1 - gd_300) * ld_8 + gd_300 * gd_444;
