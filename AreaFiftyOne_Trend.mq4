@@ -19,22 +19,22 @@
 #property indicator_level6 31.0
 
 double g_ibuf_76[];
-int key=678999942;
-extern double Smooth=1.0;
+extern int InternalKey=7575;
+extern double Smoothing=1.0;
 double gd_92=100.0;
-extern int bars=701;
+extern int BarsToLoad=701;
 int gi_104=0;
 extern int Progression=8;
-extern int Len=3;
+extern int Length=3;
 extern int Sensitivity=30;
 extern bool UseSMAOnTrendIndicator=true;
 extern int UseOneOrTwoSMAOnTrendIndicator=1;
 extern int Period_MA=23;
 extern int Period_MA_Second=50;
 extern int ModeMA=MODE_LWMA;
-extern bool UseAlerts=true;
-extern bool SendEMailOnSignal=true;
-extern bool Debug=true;
+extern bool UseAlerts=false;
+extern bool SendEMailOnSignal=false;
+extern bool Debug=false;
 int gi_120 = 1;
 int gi_124 = 0;
 double gd_128=0.0;
@@ -110,7 +110,7 @@ double g_icustom_568;
 double g_icustom_576=0.0;
 double gd_584;
 double gd_592;
-double g_bars_600=0.0;
+double g_BarsToLoad_600=0.0;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -140,31 +140,31 @@ int start()
   {
    int li_unused_16;
    string path=GetRelativeProgramPath();
-   int li_12= key;
+   int li_12 = InternalKey;
    if(li_12 == 34562788) loadJMA();
    else 
      {
-      if(Bars>g_bars_600) 
+      if(BarsToLoad>g_BarsToLoad_600) 
         {
-         g_bars_600=Bars;
+         g_BarsToLoad_600=BarsToLoad;
          li_unused_16=0;
          for(int l_index_20=0; l_index_20<150; l_index_20++) 
            {
             gd_584 = 0;
             gd_592 = 0;
-            for(int li_24=Len; li_24<=Len+Progression*Sensitivity; li_24+=Progression) 
+            for(int li_24=Length; li_24<=Length+Progression*Sensitivity; li_24+=Progression) 
               {
-               g_icustom_568 = iCustom(NULL, 0, path, 34562788, li_24, bars, 0, l_index_20);
-               g_icustom_576 = iCustom(NULL, 0, path, 34562788, li_24, bars, 0, l_index_20 + 1);
+               g_icustom_568 = iCustom(NULL, 0, path, 34562788, li_24, BarsToLoad, 0, l_index_20);
+               g_icustom_576 = iCustom(NULL, 0, path, 34562788, li_24, BarsToLoad, 0, l_index_20 + 1);
                if(g_icustom_568>g_icustom_576) gd_584++;
                else gd_592++;
               }
             gda_560[l_index_20] = gd_584;
             gda_564[l_index_20] = gd_592;
            }
-         lenars(gda_560,1);
-         lenars(gda_564,2);
-         for(int k=bars;k>-1;k--) 
+         Lengthars(gda_560,1);
+         Lengthars(gda_564,2);
+         for(int k=BarsToLoad;k>-1;k--) 
            {
             MA_Buff[k]=iMAOnArray(g_ibuf_76,0,Period_MA,0,ModeMA,k);
             MA_Buff_Second[k]=iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
@@ -319,8 +319,8 @@ void loadJMA()
       gi_120=FALSE;
      }
    gi_468=TRUE;
-   if(Smooth<=1.0) gd_380=0.0000000001;
-   else gd_380=(Smooth-1.0)/2.0;
+   if(Smoothing<=1.0) gd_380=0.0000000001;
+   else gd_380=(Smoothing-1.0)/2.0;
    if(gd_92<-100.0) gd_268=0.5;
    else 
      {
@@ -339,8 +339,8 @@ void loadJMA()
    gd_380 = 0.9 * gd_380;
    gd_332 = gd_380 / (gd_380 + 2.0);
    gi_468 = TRUE;
-   if(bars== 0) bars = Bars;
-   for(gi_124=bars+1000; gi_124>=0; gi_124--) 
+   if(BarsToLoad== 0) BarsToLoad = BarsToLoad;
+   for(gi_124=BarsToLoad+1000; gi_124>=0; gi_124--) 
      {
       switch(gi_104) 
         {
@@ -575,7 +575,7 @@ void loadJMA()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void lenars(double ada_0[150],int ai_4) 
+void Lengthars(double ada_0[150],int ai_4) 
   {
    double ld_8;
    gi_220 = 63;
@@ -587,8 +587,8 @@ void lenars(double ada_0[150],int ai_4)
       gi_120=FALSE;
      }
    gi_468=TRUE;
-   if(Smooth<=1.0) gd_380=0.0000000001;
-   else gd_380=(Smooth-1.0)/2.0;
+   if(Smoothing<=1.0) gd_380=0.0000000001;
+   else gd_380=(Smoothing-1.0)/2.0;
    if(gd_92<-100.0) gd_268=0.5;
    else 
      {
@@ -607,8 +607,8 @@ void lenars(double ada_0[150],int ai_4)
    gd_380 = 0.9 * gd_380;
    gd_332 = gd_380 / (gd_380 + 2.0);
    gi_468 = TRUE;
-   if(bars== 0) bars = Bars;
-   for(gi_124=bars+30; gi_124>=0; gi_124--) 
+   if(BarsToLoad== 0) BarsToLoad = BarsToLoad;
+   for(gi_124=BarsToLoad+30; gi_124>=0; gi_124--) 
      {
       ld_8=ada_0[gi_124];
       if(gi_484<61) 
