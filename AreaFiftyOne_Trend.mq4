@@ -308,9 +308,25 @@ void HandleAlerts()
          CrossingText = "Crossing with second MA to buy.";
         }
      }
-   if(BuyFlag) {Alert(Symbol()+"("+Period()+")"+": Buy signal at "+Ask+"! "+CrossingText);}
-   if(SellFlag) {Alert(Symbol()+"("+Period()+")"+": Sell signal at "+Bid+"! "+CrossingText);}
+   if(BuyFlag) {Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Buy signal at "+Ask+"! "+CrossingText);}
+   if(SellFlag) {Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Sell signal at "+Bid+"! "+CrossingText);}
   }
+
+string TimeFrameToString(int TimeFrameInt)
+{
+   string TimeFrame="";
+      if (TimeFrameInt==1)  TimeFrame="M1";
+      if (TimeFrameInt==5)  TimeFrame="M5";
+      if (TimeFrameInt==15) TimeFrame="M115";       
+      if (TimeFrameInt==30) TimeFrame="M30";       
+      if (TimeFrameInt==60)  TimeFrame="H1";        
+      if (TimeFrameInt==240)  TimeFrame="H4";       
+      if (TimeFrameInt==1440)  TimeFrame="D1";       
+      if (TimeFrameInt==10080)  TimeFrame="W1";        
+      if (TimeFrameInt==43200)  TimeFrame="MN";        
+   return(TimeFrame);
+}  
+  
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
