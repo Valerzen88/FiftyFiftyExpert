@@ -35,7 +35,7 @@ extern bool SendEMailOnSignal=false;
 extern bool UseSMAOnTrendIndicatorForAlerts=true;
 extern bool UseFirstSMAOnTrendIndicatorForAlerts=true;
 extern bool UseSecondSMAOnTrendIndicatorForAlerts=true;
-extern bool Debug=false;
+bool Debug=false;
 int gi_120 = 1;
 int gi_124 = 0;
 double gd_128=0.0;
@@ -193,6 +193,7 @@ void HandleAlerts()
    double MA_Second=NormalizeDouble(MA_Buff_Second[0],1);
    double MABack_Second=NormalizeDouble(MA_Buff_Second[1],1);
    double MABack2_Second=NormalizeDouble(MA_Buff_Second[2],1);
+   string CrossingText;
 
    if(Debug)
      {
@@ -219,6 +220,7 @@ void HandleAlerts()
             Print("TrendBack="+DoubleToStr(TrendBack));
            }
          SellFlag=true;
+         CrossingText = "Crossing from overbougth in sell area.";
         }
 
       if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
@@ -232,6 +234,7 @@ void HandleAlerts()
             Print("TrendBack="+DoubleToStr(TrendBack));
            }
          BuyFlag=true;
+         CrossingText = "Crossing from oversold in buy area.";
         }
      }
    if(UseSMAOnTrendIndicatorForAlerts && UseFirstSMAOnTrendIndicatorForAlerts)
@@ -250,6 +253,7 @@ void HandleAlerts()
                   +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
          SellFlag=true;
+         CrossingText = "Crossing with first MA to sell.";
         }
       if((((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
          && (((Trend-MA)>1) || ((Trend-MA)==1)) && (Trend<14.5 || Trend>16.5) && (Trend>4)
@@ -265,6 +269,7 @@ void HandleAlerts()
                   +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
          BuyFlag=true;
+         CrossingText = "Crossing with first MA to buy.";
         }
      }
    if(UseSMAOnTrendIndicatorForAlerts && UseSecondSMAOnTrendIndicatorForAlerts)
@@ -284,6 +289,7 @@ void HandleAlerts()
                   +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
          SellFlag=true;
+         CrossingText = "Crossing with second MA to sell.";
         }
       if((((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
          && (((Trend-MA_Second)>0.5) || ((Trend-MA_Second)==1)) && (Trend<14.5 || Trend>16.5)
@@ -299,10 +305,11 @@ void HandleAlerts()
                   +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
            }
          BuyFlag=true;
+         CrossingText = "Crossing with second MA to buy.";
         }
      }
-   if(BuyFlag) {Alert("Got buy signal at "+Ask+" from trend-based indicator!");}
-   if(SellFlag) {Alert("Got buy signal at "+Bid+" from trend-based indicator!");}
+   if(BuyFlag) {Alert(Symbol()+": Buy signal at "+Ask+"! "+CrossingText);}
+   if(SellFlag) {Alert(Symbol()+": Sell signal at "+Bid+"! "+CrossingText);}
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
