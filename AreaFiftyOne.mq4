@@ -703,7 +703,7 @@ TempTDIGreen=TDIGreen;
 
 //entry conditions verification
    if(SellFlag>0){OS=1;OB=0;}if(BuyFlag>0){OB=1;OS=0;}
-
+   if(HandleUserPositions){HandleUserPositionsFun();}
 //conditions to close positions
 /* if(SellFlag>0){CloseBuy=1;}
    if(BuyFlag>0){CloseSell=1;}
@@ -1105,7 +1105,6 @@ TempTDIGreen=TDIGreen;
         }
      }
 
-   if(HandleUserPositions){HandleUserPositionsFun();}
    double TempProfitUserPosis=0.0;
    if(HandleUserPositions)
      {
@@ -1163,7 +1162,7 @@ void HandleUserPositionsFun()
                if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
                if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
                  {
-                  if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
+                  if(OrderTakeProfit()!=TPI && ((OrderStopLoss()<SLI && OrderOpenPrice()<OrderStopLoss()) || OrderStopLoss()==0))
                     {
                      bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
                     }
@@ -1176,7 +1175,7 @@ void HandleUserPositionsFun()
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
                   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
                     {
-                     if(OrderTakeProfit()!=TPI && OrderStopLoss()!=SLI)
+                     if(OrderTakeProfit()!=TPI && ((OrderStopLoss()>SLI && OrderOpenPrice()>OrderStopLoss()) || OrderStopLoss()==0))
                        {
                         bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
                        }
@@ -1205,14 +1204,15 @@ void TrP()
   {
    int BE=0;int TS=DistanceStep;double pbid,pask,ppoint;ppoint=MarketInfo(OrderSymbol(),MODE_POINT);
    double commissions=OrderCommission()+OrderSwap();
-   double commissionsInPips=0.0;
+   double commissionsInPips;
    double tickValue=MarketInfo(Symbol(),MODE_TICKVALUE);
    if(Debug) {Print("tickValue="+DoubleToStr(tickValue,5));}
    if(tickValue==0) {tickValue=0.9;}
    double spread=Ask-Bid;
    double tickSize=MarketInfo(Symbol(),MODE_TICKSIZE);
    if(Debug) {Print("commissions="+DoubleToStr(commissions,8));}
-   commissionsInPips=(commissions/OrderLots()/tickValue)*tickSize+spread*2;
+   commissionsInPips=((commissions/OrderLots()/tickValue)*tickSize)+(spread*2);
+   if(Debug){Print("commissionsInPips="+commissionsInPips);}
    if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
    if(DebugTrace)
      {
@@ -1241,7 +1241,9 @@ void TrP()
               {
                if((pbid-((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))>OrderOpenPrice())
                  {
-                  if(Debug){Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
+                  if(Debug){
+                  Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+
+                  ";commissionInPips="+DoubleToStr(commissionsInPips,5));}
                   if(pbid>pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
                     {
                      ModSL(pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
@@ -1274,7 +1276,9 @@ void TrP()
               {
                if((pask+((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))<OrderOpenPrice())
                  {
-                  if(Debug){Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+";commissionInPips="+DoubleToStr(commissionsInPips,5));}
+                  if(Debug){
+                  Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+
+                  ";commissionInPips="+DoubleToStr(commissionsInPips,5));}
                   if(pask<pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
                     {
                      ModSL(pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
@@ -1289,7 +1293,8 @@ void TrP()
 //stop loss modification function
 void ModSL(double ldSL)
   {
-   if(Debug){Print("ldSL="+DoubleToStr(ldSL,5));}
+   if(Debug){
+   Print("ldSL="+DoubleToStr(ldSL,5));}
    if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit()))
      {
       if(OrderType()==OP_BUY)
