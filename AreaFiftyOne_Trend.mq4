@@ -308,8 +308,8 @@ void HandleAlerts()
          CrossingText = "Crossing with second MA to buy.";
         }
      }
-   if(BuyFlag) {Alert(Symbol()+": Buy signal at "+Ask+"! "+CrossingText);}
-   if(SellFlag) {Alert(Symbol()+": Sell signal at "+Bid+"! "+CrossingText);}
+   if(BuyFlag) {Alert(Symbol()+"("+Period()+")"+": Buy signal at "+Ask+"! "+CrossingText);}
+   if(SellFlag) {Alert(Symbol()+"("+Period()+")"+": Sell signal at "+Bid+"! "+CrossingText);}
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
