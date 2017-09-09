@@ -47,7 +47,7 @@ extern bool     UseRSIBasedIndicator=false;
 extern bool     UseSimpleTrendStrategy=false;
 extern bool     UseStochasticBasedIndicator=false;
 extern bool     Use5050Strategy=false;
-extern bool     UseStochRSICroosingStrategy=false;
+extern bool     UseStochRSICroosingStrategy=true;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern static string StartHour_Comment="Available in the full versioin!";
@@ -61,7 +61,7 @@ extern static string UserPositions="Handle user opened positions as a EA own";
 extern static string HandleUserPositions_Comment="Available in the full version!";
 bool     HandleUserPositions=false;
 extern static string Common="Create signals only on new candle or on every tick";
-extern bool     HandleOnCandleOpenOnly=true;
+extern bool     HandleOnCandleOpenOnly=false;
 extern int      MagicNumber=3537;
 
 bool Debug=false;
@@ -319,10 +319,7 @@ TempTDIGreen=TDIGreen;
 
             if(!UseSMAOnTrendIndicator)
               {
-               if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
-                  && (TrendBack>=23))
-                  && (TrendBack2>=26)))
-                  // || (Trend<TrendBack && TrendBack>14 && TrendBack2>15 && Trend<18))
+               if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26)))
                  {
                   if(Debug)
                     {
@@ -334,10 +331,7 @@ TempTDIGreen=TDIGreen;
 
                  }
 
-               if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
-                  && (TrendBack<=8)
-                  && (TrendBack2<=5)))
-                  //|| (Trend>TrendBack && TrendBack<16 && TrendBack2<15 && Trend>12))
+               if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4) && (TrendBack<=8) && (TrendBack2<=5)))
                  {
                   if(Debug)
                     {
@@ -348,16 +342,12 @@ TempTDIGreen=TDIGreen;
                   BuyFlag=1;
                  }
               }
-            //Print("Ma="+MathRound(MA)+">Trend="+MathRound(Trend)+"&&MABack="+MathRound(MABack)+"<=TrendBack="+MathRound(TrendBack)
-            //+"&&MaBack2="+MathRound(MABack2)+"<TrendBack2="+MathRound(TrendBack2));
             if(UseSMAOnTrendIndicator && (UseOneOrTwoSMAOnTrendIndicator==1 || UseOneOrTwoSMAOnTrendIndicator==2))
               {
-               if((((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
+               if(((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
                   && (((MA-Trend)>1) || ((MA-Trend)==1)) && (Trend<14.5 || Trend>16.5)
                   && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-                  && ((MathRound(MABack2)<MathRound(TrendBack2)) /*|| (MathRound(MABack2)==MathRound(TrendBack2))*/
-                  /*|| (MathRound(MABack2)>MathRound(TrendBack2))*/))
-                  /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
+                  && (MathRound(MABack2)<MathRound(TrendBack2)))
                  {
                   if(Debug)
                     {
@@ -367,12 +357,10 @@ TempTDIGreen=TDIGreen;
                     }
                   SellFlag=1;
                  }
-               if((((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
+               if(((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
                   && (((Trend-MA)>1) || ((Trend-MA)==1)) && (Trend<14.5 || Trend>16.5) && (Trend>4)
                   && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-                  && ((MathRound(MABack2)>MathRound(TrendBack2)) /*|| (MathRound(MABack2)==MathRound(TrendBack2))*/
-                  /*|| (MathRound(MABack2)<MathRound(TrendBack2))*/))
-                  /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
+                  && (MathRound(MABack2)>MathRound(TrendBack2)))
                  {
                   if(Debug)
                     {
@@ -387,12 +375,10 @@ TempTDIGreen=TDIGreen;
             if(UseSMAOnTrendIndicator && UseOneOrTwoSMAOnTrendIndicator==2)
               {
                //using ma50
-               if((((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
+               if(((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
                   && (((MA_Second-Trend)>0.5) || ((MA_Second-Trend)==1)) && (Trend<14.5 || Trend>16.5)
                   && ((MathRound(MABack_Second)<MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-                  && ((MathRound(MABack2_Second)<MathRound(TrendBack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
-                  /*|| (MathRound(MABack2_Second)>MathRound(TrendBack2))*/))
-                  /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
+                  && (MathRound(MABack2_Second)<MathRound(TrendBack2)))
                  {
                   if(Debug)
                     {
@@ -402,12 +388,10 @@ TempTDIGreen=TDIGreen;
                     }
                   SellFlag=1;
                  }
-               if((((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
+               if(((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
                   && (((Trend-MA_Second)>0.5) || ((Trend-MA_Second)==1)) && (Trend<14.5 || Trend>16.5)
                   && ((MathRound(MABack_Second)>MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-                  && ((MathRound(MABack2_Second)>MathRound(TrendBack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
-                  /*|| (MathRound(MABack2_Second)<MathRound(TrendBack2))*/))
-                  /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
+                  && (MathRound(MABack2_Second)>MathRound(TrendBack2)))
                  {
                   if(Debug)
                     {
@@ -419,12 +403,10 @@ TempTDIGreen=TDIGreen;
                  }
               }
             //using emas
-            if((((MathRound(MA_Second)>MathRound(MA)) || (MathRound(MA_Second-0.5)==MA))
+            if(((MathRound(MA_Second)>MathRound(MA)) || (MathRound(MA_Second-0.5)==MA))
                && (((MA_Second-MA)>0.5) || ((MA_Second-MA)==1))
                && ((MathRound(MABack_Second)<MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack2)))
-               && ((MathRound(MABack2_Second)<MathRound(MABack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
-               /*|| (MathRound(MABack2_Second)>MathRound(TrendBack2))*/))
-               /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
+               && (MathRound(MABack2_Second)<MathRound(MABack2)))
               {
                if(Debug)
                  {
@@ -434,12 +416,10 @@ TempTDIGreen=TDIGreen;
                  }
                //SellFlag=1;
               }
-            if((((MathRound(MA_Second)<MathRound(MA)) || (MathRound(MA_Second+0.5)==MA))
+            if(((MathRound(MA_Second)<MathRound(MA)) || (MathRound(MA_Second+0.5)==MA))
                && (((MA-MA_Second)>0.5) || ((MA-MA_Second)==1))
                && ((MathRound(MABack_Second)>MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack)))
-               && ((MathRound(MABack2_Second)>MathRound(MABack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
-               /*|| (MathRound(MABack2_Second)<MathRound(TrendBack2))*/))
-               /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
+               && (MathRound(MABack2_Second)>MathRound(MABack2)))
               {
                if(Debug)
                  {
@@ -1112,7 +1092,6 @@ TempTDIGreen=TDIGreen;
       for(int ff=0;ff<OrdersTotal();ff++)
         {
          if(OrderSelect(ff,SELECT_BY_POS,MODE_TRADES))
-
            {
             if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
               {
@@ -1165,11 +1144,8 @@ void HandleUserPositionsFun()
                if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
                  {
                   if(OrderTakeProfit()!=TPI && ((OrderStopLoss()<SLI && OrderOpenPrice()<OrderStopLoss()) || OrderStopLoss()==0))
-
                     {
-
                      bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,TPI,0,clrGoldenrod);
-
                     }
                  }
               }
@@ -1187,13 +1163,12 @@ void HandleUserPositionsFun()
                        }
                     }
                  }
-
            }
         }
      }
-  }//add positions function
+  }
 //+------------------------------------------------------------------+
-//|                                                                  |
+//|add positions function                                            |
 //+------------------------------------------------------------------+
 bool AddP()
   {

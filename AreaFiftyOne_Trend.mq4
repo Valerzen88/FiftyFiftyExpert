@@ -19,11 +19,13 @@
 #property indicator_level6 31.0
 
 double g_ibuf_76[];
+double g_ibuf_77[];
+double gd_92=100.0;
+int gi_104=0;
 extern int InternalKey=7575;
 extern double Smoothing=1.0;
-double gd_92=100.0;
-extern int BarsToLoad=701;
-int gi_104=0;
+extern int BarsToLoad=251;
+extern bool HandleOnCandleOpenOnly=true;
 extern int Progression=8;
 extern int Length=3;
 extern int Sensitivity=30;
@@ -31,7 +33,9 @@ extern int Period_MA=23;
 extern int Period_MA_Second=50;
 extern int ModeMA=MODE_LWMA;
 extern bool UseAlerts=false;
+extern bool ShowAlert=false;
 extern bool SendEMailOnSignal=false;
+extern bool SendNotificationToMobile=false;
 extern bool UseSMAOnTrendIndicatorForAlerts=true;
 extern bool UseFirstSMAOnTrendIndicatorForAlerts=true;
 extern bool UseSecondSMAOnTrendIndicatorForAlerts=true;
@@ -134,22 +138,22 @@ int OnInit()
    SetIndexStyle(2,DRAW_LINE,STYLE_SOLID,2);
    SetIndexBuffer(2,MA_Buff_Second);
    ArraySetAsSeries(MA_Buff_Second,true);
-   return (0);
+   return(0);
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 int start()
   {
-   int li_unused_16;
-   int li_12= InternalKey;
-   if(li_12 == 34562788) loadJMA();
+   bool volume0 = Volume[0]==1;
+   if (!HandleOnCandleOpenOnly) {volume0=true;}
+   int li_12=InternalKey;
+   if(li_12==34562788) loadJMA();
    else
      {
-      if(Bars>g_bars_600)
+      if(Bars>g_bars_600 && volume0)
         {
          g_bars_600=Bars;
-         li_unused_16=0;
          for(int l_index_20=0; l_index_20<150; l_index_20++)
            {
             gd_584 = 0;
@@ -158,8 +162,7 @@ int start()
               {
                g_icustom_568 = iCustom(NULL, 0, selfpath, 34562788, li_24, BarsToLoad, 0, l_index_20);
                g_icustom_576 = iCustom(NULL, 0, selfpath, 34562788, li_24, BarsToLoad, 0, l_index_20 + 1);
-               if(g_icustom_568>g_icustom_576) gd_584++;
-               else gd_592++;
+               if(g_icustom_568>g_icustom_576) gd_584++; else gd_592++;
               }
             gda_560[l_index_20] = gd_584;
             gda_564[l_index_20] = gd_592;
@@ -172,10 +175,10 @@ int start()
             MA_Buff_Second[k]=iMAOnArray(g_ibuf_76,0,Period_MA_Second,0,ModeMA,k);
            }
          if(UseAlerts) {HandleAlerts();}
-         return (0);
+         return(0);
         }
      }
-   return (0);
+   return(0);
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -194,139 +197,126 @@ void HandleAlerts()
    double MABack_Second=NormalizeDouble(MA_Buff_Second[1],1);
    double MABack2_Second=NormalizeDouble(MA_Buff_Second[2],1);
    string CrossingText;
-
-   if(Debug)
-     {
-      Print("Trend="+DoubleToStr(Trend));
-      Print("TrendBack="+DoubleToStr(TrendBack));
-      Print("TrendBack2="+DoubleToStr(TrendBack2));
-      Print("MA="+DoubleToStr(MA));
-      Print("MABack="+DoubleToStr(MABack));
-      Print("MABack2="+DoubleToStr(MABack2));
-      Print("MA_Second="+DoubleToStr(MA_Second));
-      Print("MABack_Second="+DoubleToStr(MABack_Second));
-      Print("MABack2_Second="+DoubleToStr(MABack2_Second));
-     }
    if(!UseSMAOnTrendIndicatorForAlerts)
      {
-      if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26)
-         && (TrendBack>=23))
-         && (TrendBack2>=26)))
+      if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26)))
         {
-         if(Debug)
-           {
-            Print("SellSignal!");
-            Print("Trend="+DoubleToStr(Trend));
-            Print("TrendBack="+DoubleToStr(TrendBack));
-           }
          SellFlag=true;
-         CrossingText = "Crossing from overbougth in sell area.";
+         CrossingText="Crossing from overbougth in sell area.";
         }
 
-      if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4)
-         && (TrendBack<=8)
-         && (TrendBack2<=5)))
+      if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4) && (TrendBack<=8) && (TrendBack2<=5)))
         {
-         if(Debug)
-           {
-            Print("BuySignal!");
-            Print("Trend="+DoubleToStr(Trend));
-            Print("TrendBack="+DoubleToStr(TrendBack));
-           }
          BuyFlag=true;
-         CrossingText = "Crossing from oversold in buy area.";
+         CrossingText="Crossing from oversold in buy area.";
         }
      }
    if(UseSMAOnTrendIndicatorForAlerts && UseFirstSMAOnTrendIndicatorForAlerts)
      {
-      if((((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
+      if(((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
          && (((MA-Trend)>1) || ((MA-Trend)==1)) && (Trend<14.5 || Trend>16.5)
          && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-         && ((MathRound(MABack2)<MathRound(TrendBack2)) /*|| (MathRound(MABack2)==MathRound(TrendBack2))*/
-         /*|| (MathRound(MABack2)>MathRound(TrendBack2))*/))
-         /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
+         && (MathRound(MABack2)<MathRound(TrendBack2)))
         {
-         if(Debug)
-           {
-            Print("SELL=>MA="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
-                  +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
-                  +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-           }
          SellFlag=true;
-         CrossingText = "Crossing with first MA to sell.";
+         CrossingText="Crossing with first MA to sell.";
         }
-      if((((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
+      if(((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
          && (((Trend-MA)>1) || ((Trend-MA)==1)) && (Trend<14.5 || Trend>16.5) && (Trend>4)
          && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-         && ((MathRound(MABack2)>MathRound(TrendBack2)) /*|| (MathRound(MABack2)==MathRound(TrendBack2))*/
-         /*|| (MathRound(MABack2)<MathRound(TrendBack2))*/))
-         /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
+         && (MathRound(MABack2)>MathRound(TrendBack2)))
         {
-         if(Debug)
-           {
-            Print("BUY=>MA="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
-                  +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
-                  +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-           }
          BuyFlag=true;
-         CrossingText = "Crossing with first MA to buy.";
+         CrossingText="Crossing with first MA to buy.";
         }
      }
    if(UseSMAOnTrendIndicatorForAlerts && UseSecondSMAOnTrendIndicatorForAlerts)
      {
       //using ma50
-      if((((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
+      if(((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
          && (((MA_Second-Trend)>0.5) || ((MA_Second-Trend)==1)) && (Trend<14.5 || Trend>16.5)
          && ((MathRound(MABack_Second)<MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-         && ((MathRound(MABack2_Second)<MathRound(TrendBack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
-         /*|| (MathRound(MABack2_Second)>MathRound(TrendBack2))*/))
-         /*|| (((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26))*/)
+         && (MathRound(MABack2_Second)<MathRound(TrendBack2)))
         {
-         if(Debug)
-           {
-            Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">Trend="+DoubleToStr(MathRound(Trend))
-                  +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
-                  +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-           }
          SellFlag=true;
-         CrossingText = "Crossing with second MA to sell.";
+         CrossingText="Crossing with second MA to sell.";
         }
-      if((((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
+      if(((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
          && (((Trend-MA_Second)>0.5) || ((Trend-MA_Second)==1)) && (Trend<14.5 || Trend>16.5)
          && ((MathRound(MABack_Second)>MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-         && ((MathRound(MABack2_Second)>MathRound(TrendBack2)) /*|| (MathRound(MABack2_Second)==MathRound(TrendBack2))*/
-         /*|| (MathRound(MABack2_Second)<MathRound(TrendBack2))*/))
-         /*|| ((Trend>4) && (TrendBack<=8) && (TrendBack2<=5))*/)
+         && (MathRound(MABack2_Second)>MathRound(TrendBack2)))
         {
-         if(Debug)
-           {
-            Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<Trend="+DoubleToStr(MathRound(Trend))
-                  +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
-                  +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-           }
          BuyFlag=true;
-         CrossingText = "Crossing with second MA to buy.";
+         CrossingText="Crossing with second MA to buy.";
         }
      }
-   if(BuyFlag) {Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Buy signal at "+Ask+"! "+CrossingText);}
-   if(SellFlag) {Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Sell signal at "+Bid+"! "+CrossingText);}
+   if(BuyFlag)
+     {
+      if(ShowAlert) 
+        {
+         Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Buy signal at "+Ask+"! "+CrossingText);
+        }
+      if(SendEMailOnSignal && !IsTesting())
+        {
+         SendAlerPerMail(Symbol()+"("+TimeFrameToString(Period())+")"+": Buy signal at "+Ask+"! "+CrossingText);
+        }
+      if(SendNotificationToMobile && !IsTesting())
+        {
+         if(SendNotification(Symbol()+"("+TimeFrameToString(Period())+")"+": Buy signal at "+Ask+"! "+CrossingText)!=true)
+           {
+            Print("Got error on sending notification to mobbile: "+GetLastError());
+           }
+        }
+     }
+   if(SellFlag)
+     {
+      if(ShowAlert) 
+        {
+         Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Sell signal at "+Bid+"! "+CrossingText);
+        }
+      if(SendEMailOnSignal && !IsTesting())
+        {
+         SendAlerPerMail(Symbol()+"("+TimeFrameToString(Period())+")"+": Sell signal at "+Bid+"! "+CrossingText);
+        }
+      if(SendNotificationToMobile && !IsTesting())
+        {
+         if(SendNotification(Symbol()+"("+TimeFrameToString(Period())+")"+": Sell signal at "+Bid+"! "+CrossingText)!=true)
+           {
+            Print("Got error on sending notification to mobbile: "+GetLastError());
+           }
+        }
+     }
   }
-
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool SendAlerPerMail(string Text)
+  {
+   bool res=SendMail("Area51 Trend Indicator Signal",
+                     "There was signal from Area51 Trend Indicator:\n"+Text+"\n");
+   if(res==false)
+     {
+      Print(Symbol()+"("+TimeFrameToString(Period())+"): Error sending email");
+     }
+   return res;
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 string TimeFrameToString(int TimeFrameInt)
-{
+  {
    string TimeFrame="";
-      if (TimeFrameInt==1)  TimeFrame="M1";
-      if (TimeFrameInt==5)  TimeFrame="M5";
-      if (TimeFrameInt==15) TimeFrame="M115";       
-      if (TimeFrameInt==30) TimeFrame="M30";       
-      if (TimeFrameInt==60)  TimeFrame="H1";        
-      if (TimeFrameInt==240)  TimeFrame="H4";       
-      if (TimeFrameInt==1440)  TimeFrame="D1";       
-      if (TimeFrameInt==10080)  TimeFrame="W1";        
-      if (TimeFrameInt==43200)  TimeFrame="MN";        
+   if(TimeFrameInt==1)  TimeFrame="M1";
+   if(TimeFrameInt==5)  TimeFrame="M5";
+   if(TimeFrameInt==15) TimeFrame="M115";
+   if(TimeFrameInt==30) TimeFrame="M30";
+   if(TimeFrameInt==60)  TimeFrame="H1";
+   if(TimeFrameInt==240)  TimeFrame="H4";
+   if(TimeFrameInt==1440)  TimeFrame="D1";
+   if(TimeFrameInt==10080)  TimeFrame="W1";
+   if(TimeFrameInt==43200)  TimeFrame="MN";
    return(TimeFrame);
-}  
-  
+  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -363,9 +353,10 @@ void loadJMA()
    gd_332 = gd_380 / (gd_380 + 2.0);
    gi_468 = TRUE;
    if(BarsToLoad==0) BarsToLoad=Bars;
-   for(gi_124=BarsToLoad+1000; gi_124>=0; gi_124--)
+   for(gi_124=BarsToLoad+100; gi_124>=0; gi_124--)
      {
-      switch(gi_104)
+      ld_0=Close[gi_124];
+/*switch(gi_104)
         {
          case 0:
             ld_0=Close[gi_124];
@@ -384,7 +375,7 @@ void loadJMA()
             break;
          default:
             ld_0=Close[gi_124];
-        }
+        }*/
       if(gi_484<61)
         {
          gi_484++;
@@ -862,7 +853,7 @@ int OnCalculate(const int rates_total,
 void OnDeinit(const int reason)
   {
 //--- The first way to get the uninitialization reason code 
-   Print(__FUNCTION__,"_Uninitalization reason code = ",reason);
+   //Print(__FUNCTION__,"_Uninitalization reason code = ",reason);
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
