@@ -1,83 +1,115 @@
 # FiftyFiftyExpert
 MQL Expert
 
+AreaFiftyOne Expert
+
 DE:
-Handelt den überver- und überkauften Markt wenn Take Profit oder dynamischer Stop Loss erreicht wird. Bei Öffnen der Position werden zwei Pending Orders geöffnet: der erste (Größe der offenen Position * 0,625) bei 350 Punkten von einer offenen Position mit TakeProfit von 350 Punkten und den zweiten (Größe der offenen Position * 0,5) mit 750 Punkten Abstand von der geöffneten Position mit TakeProfit von 750 Punkten. Um die laufende Gewinne zu sichern, wurde der gleitende StopLoss eingeführt. Sollten die Pending Orders bis zum Schließen der vom Signal eröffneten Position sich nicht aktiviert haben, so werden diese auch geschlossen.
+Handelt den Markt bei der Trendwende bis zu einem dynamisch nachziehenden Stop Loss. Dieser Handelsroboter implementiert 2 unterschiedliche Indikatoren, welche sich auf unterschiedliche Weise kombinieren lassen. Dabei ist das Money Management so integriert, dass es einen fixen sowie einen variablen Lot erlaubt.
 
-Neben der Fixen-Lot-Funktionalität wurde der dynamische Lotgrößenberechnung implementiert. Diese wird anhand des zur Verfügung stehenden freien Margins und des Kontohebels berechnet. 
+Zusätzlich gibt es die Möglichkeit manuelle Positionen durch den Handelsroboter übernehmen lassen.
 
-Dieser Handelsroboter benutzt einen eigenen Indikator.
+Die Einstellungen sind für das Handeln auf EURUSD, NZDUSD, GBPJPY, USDJPY, USDCHF, AUDCAD und GBPUSD optimiert.
 
-Die Einstellungen sind für das Handeln auf EURUSD, NZDUSD und GBPUSD optimiert. 
+Zeiteinheiten: M15 bis H4
 
-Zeiteinheiten: M30 bis H4
+Bitte seien Sie vorsichtig bei der Wahl des Risikowertes und testen Sie diese Werte für Ihren Broker!!! Die Ergebnisse können wegen dem Spread oder anderen Spezifikationen Ihres Brokers abweichen!
+Hinweise:
 
-Die unten 
-stehende Tabelle zeigt die besten Timeframes mit dem maximalen empfohlenen Risiko:
+Je größer das Timeframe, desto sicherer, dass die Position größeren und sicheren Gewinn bring. Die kleineren Timeframes (M5-M15) sollten eher im Seitwärtsmarkt verwendet werden.
+Je kleiner der Spread, desto größer der Gewinn.
+Eine Verwendung von einem virtuellen Server ist empfehlenswert.
 
-Symbol	Timeframe	Risk in %
-EURUSD	M30 oder H1	50-90
-NZDUSD	H4	40-50
-AUDUSD	H1	50-70
-Bitte seien Sie vorsichtig bei der Wahl des Risikowertes und testen Sie diese Werte für Ihren Broker!!! Die Ergebnisse können anders sein, wegen dem Spread oder anderen Spezifikationen Ihres Brokers!
 
-Parameter:
-
+Parameter
 LotSize=0.01 -> Größe der Position
-LotAutoSize=true -> Dynamische Berechnung der Positionsgröße erlauben
-RiskPercent=50 -> Risiko für die Positionsgröße. Wird anhand des freien Margins und des Hebels berechnet.
-TrailingStep=50 -> Trailing Stop-Wert
-DistanceStep=50 -> SL-Wert
-MagicNumber=3537 -> Setzen Sie pro Handelsfenster diesen Wert neu
+LotAutoSize=false -> Dynamische Berechnung der Positionsgröße erlauben
+RiskPercent=25 -> Risiko für die Positionsgröße. Wird anhand des freien Margins und des Hebels berechnet
+MoneyRiskInPercent=0 -> Zur Sicherheit kann hier der empfohlene Wert von 32 eingetragen werden
+UseTrendBasedIndicator=true -> den Trendindikator für Signale verwenden.
+UseRSIBasedIndicator=true -> den RSI-basierten Indikator für Signale verwenden.
+UseSMAOnTrendIndicator=true -> Gleitenden Mittelwert für die Signalbildung auf den Trendindikator verwenden
+UseOneOrTwoSMAOnTrendIndicator=2 -> Einen oder zwei gleitenden Mittelwerte verwenden
+TrailingStep=15 -> Trailing Stop-Wert
+DistanceStep=15 -> SL-Wert
+MagicNumber=3537 -> Setzen Sie pro Handelsfenster eines Währungspaares diesen Wert neu
+TakeProfit=750 -> Take Profit für eventuelle Gaps
+StopLoss=0 -> Standardwert ist 10000 Punkte
+StartHour=8 -> Ab diesem Zeitpunkt startet der Handel
+EndHour=22 -> Ab diesem Zeitpunkt werden keine neue Positionen an diesem Tag mehr eröffnet
+HandleUserPositions=false -> Übernehmen der manuell eröffneten Positionen
+
+Optimale Einstellungen für Ihr Konto können über PN angefragt werden.
 
 EN:
-This EA trades on oversold or overbought market till TakeProfit or dynamic StopLoss will be reached. Next to the open position two pending orders will be opened: the first one (a size of the open position *0,625) at 350 points from an opened position with TakeProfit  of 350 points and the second one (a size of the open position *0,5) with 750 points distance of the open Position with TakeProfit from 750 Points.
-To secure the current profit the gliding StopLoss was implemented.  If the pending orders didn’t activate till the closing of the opened position from the signal, they will be also closed.
- 
-In addition to fix-lot-functionality a dynamic size calculation of a lot was implemented. This will be calculated by means of free margin and by account leverage.
- 
-This trading robot uses its own integrated indicator.
- 
-The settings are optimized for handling on EURUSD, NZDUSD  and GBPUSD.
- 
-Time units are: M30 to H4
+This EA trades based on the changes of the trend in the market, using custom indicators. There are 2 indicators: an RSI-based and a trend-based indicator. By default, the trend indicator is activated. Simultaneous use of both indicators is also possible.
 
-The table below shows the best timeframes with the maximum recommended risk:
+In addition to fix-lot-functionality, a dynamic size calculation of a lot was implemented. It will be calculated by means of free margin and by account leverage.
 
-Symbol	Timeframe	Risk in %
-EURUSD	M30 oder H1	50-90
-NZDUSD	H4	40-50
-AUDUSD	H1	50-70
+We added a new function for taking over of manually opened positions.
+
+The settings are optimized for trading on EURUSD, USDCHF, NZDUSD, GBPJPY, AUDCAD, USDJPY and GBPUSD.
+
+Timeframes are: M15 to H4
 
 Please be prudent in choose of risk value and test this values for your broker!!! The results can be different, because of spread or other specification of your broker!
+Hints:
 
- 
-Parameters:
+The larger the timeframe, the safer that the position will bring greater and safer profit. The smaller timeframes (M5-M15) should rather be used in the sideways market.
+The smaller the spread, the greater the profit.
+It is recommended to use a virtual server.
+
+
+Parameters
 Lotsize= 0,01 -> size of the position
-LotAutoSize -> to allow a dynamic calculation of the position size
-Riskpercent=50 -> risk for the position size.It is calculated by means of the free margins and the leverage
-TrailingStep=50 -> Trailing Stop value
-DistanceStep=50 -> dynamic StopLoss value
-MagicNumber=3537 -> set this value per trading window.
+LotAutoSize=false -> allow a dynamic calculation of the position size
+LotRiskPercent=25 -> risk for the position size. It is calculated by means of the free margins and the leverage
+MoneyRiskInPercent=0 -> Value in percent, reaching which the program closes all of program opened trades
+UseRSIBasedIndicator = false -> Use RSI-based indicator
+UseTrendIndicator = true -> Use trend-based indicator
+UseSMAOnTrendIndicator=true -> Using moving average for signal creation
+UseOneOrTwoSMAOnTrendIndicator=2 -> Using one or two moving average lines for signal creation
+TrailingStep = 50 -> TrailingStop value (the smaller the timeframe, the smaller the value!)
+DistanceStep = 50 -> SL value (the smaller the timeframe, the smaller the value!)
+MagicNumber=3537 -> set this value per trading window
+TakeProfit=750 -> Take profit for possible gap's
+StopLoss=0 -> Standard value is 10000 points
+HandleUserPositions=false -> handle manually opened positions
+StartHour=8 -> Start time for trading
+EndHour=22 -> End time for trading
+
+Optimal settings for your account can be requested via PN.
 
 RU:
-Робот торгует на перекупленном или перепроданном рынке используя собственный индикатор. При сигнале открывает позицию и два пендинг ордера: первый (размер открытой позиции*0,625) на 350 пунктов от открытой позиции с TakeProfit в 350 пунктов и второй (размер открытой позиции*0,5)  на растоянии 750 пунктов от открытой позиции с TakeProfit на уровне открытой позиции. Для сохранения прибыли в программе существует функция скользящего StopLoss. Если отложенные ордера не были использованы, они будут закрыты с закрытием основной позиции.
+Робот торгует на изменении тренда на рынке, используя собственные индикаторы. В программе используются два индикатора: первый на основе RSI и индикатор на основе тренда. По умолчанию активирован индикатор тренда. Одновременное использование двух индикаторов также возможно.
 
-В дополнение к фиксированому размеру позиции, в программе можно использовать динамический размер позиции. Размер рассчитывается на основе имеющейся свободной маржи и рычага счета.
+В дополнение к фиксированному размеру позиции в программе можно использовать динамический размер позиции. Размер рассчитывается на основе имеющейся свободной маржи и размере плеча счета.
 
-Прекрасно работает на EURUSD, NZDUSD и GBPUSD на таймфреймах от 30Мин до 4H
+Так же добавлена фунция перенятия вручную открытых позиций в платной версии.
 
-Пожалуйста, будьте благоразумны в выборе процента риска и проверьте эти значения для своего брокера!!! Результаты могут быть разными, из-за сперда или другой спецификации вашего брокера!
+Работает на EURUSD, NZDUSD, GBPJPY, USDJPY, AUDCAD, USDCHF и GBPUSD на таймфреймах от M15 до H4.
+
+Пожалуйста, будьте благоразумны при выборе процента риска и проверьте эти значения для своего брокера!!! Результаты могут быть разными из-за сперда или другой спецификации вашего брокера!
 
 
-Параметры:
-
+Параметры
 LotSize = 0.01 -> Размер позиции
-LotAutoSize = true -> Разрешить динмамический выбор размера позиции
-RiskPercent = 50 -> Риск для размера позиции. Рассчитывается с использованием свободного края и рычага
-TrailingStep = 50 -> Значение TrailingStop
-DistanceStep = 50 -> Начальное значение SL
-MagicNumber = 3537 -> Установите это значение для каждого торгового окна
+LotAutoSize = false-> Разрешить динамический выбор размера позиции
+LotRiskPercent = 25 -> Риск для размера позиции. Рассчитывается на основе свободной маржи и плеча
+MoneyRiskInPercent = 0 -> Значение убытка в процентах, при котором программа закрывает все открытые сделки
+UseRSIBasedIndicator=false -> Использование индикатора на основе RSI
+UseTrendIndicator=true -> Использование индикатора на основе тренда
+UseSMAOnTrendIndicator=true ->Использование скользящих средних для создания сигнала
+UseOneOrTwoSMAOnTrendIndicator=2 -> Использование одной или двух из скользящих средних
+TrailingStep = 50 -> Значение TrailingStop (используйте небольшие значения на низких таймфреймах)
+DistanceStep = 50 -> Начальное значение SL (используйте небольшие значения на низких таймфреймах)
+MagicNumber = 3537 -> Магическое число, установите это значение для каждого торгового окна
+TakeProfit=750 -> Take profit для возможных гэпов
+StopLoss=0 -> Стандартное значение 10000 пунктов
+HandleUserPositions=false -> Перенятие вручную открытых позиций
+StartHour=8 -> Стартовое время для открытия позиций
+EndHour=22 -> Конечное время для открытия позиций
+
+Оптимальные настройки для вашей учетной записи могут быть запрошены через PM.
 
 Area51 Little Helper
 
