@@ -78,3 +78,54 @@ RiskPercent = 50 -> Риск для размера позиции. Рассчи�
 TrailingStep = 50 -> Значение TrailingStop
 DistanceStep = 50 -> Начальное значение SL
 MagicNumber = 3537 -> Установите это значение для каждого торгового окна
+
+Area51 Little Helper
+
+DE:
+Dieser kleine Werkzeug übernimmt manuell eröffnete Positionen und behandelt diese nach den vorgegebenen Einstellungen mit dem dynamischen Stop Loss und Money Management, welches vorhersagt, welche Positionsgröße zunächst verwendet werden soll. Das Programm setzt den Stop Loss dynamisch nach, sobald die Position in Plus kommt. Es werden eventuelle Kommissionen und Swaps berücksichtigt. Pro Symbol sollte es nur in einem Chart-Fenster installiert werden.
+
+Einstellungen:
+
+LotRiskPercent=25 --> Prozentuale Angabe für die Positionsgröße. Wird berechnet anhand der Equity, Hebels und freien Margins. Der Wert darf zwischen 0.1 bis 1000 sein.
+MoneyRiskInPercent=0 --> Der Wert darf von 0 bis 100 sein. Wie viel Kapital darf riskiert werden? Wenn der Wert erreicht wird, alle Positionen des Symbols werden geschlossen. Seien Sie vorsichtig damit.
+TrailingStep=15 -->  Trailing Step für jeweilige Position.
+DistanceStep=15 --> Abstand zur Position + TrailingStep-Größe ab welcher der nächste Trailing Step gesetzt wird.
+TakeProfit=750 --> Take Profit für jede übernommene Position.
+StopLoss=0 --> Stop Loss für jede übernommene Position.
+
+
+Beispiel:
+
+Es wird eine Long-Position bei EURUSD auf dem Niveau von 1.20000 eröffnet. Das Programm setzt ein Take Profit bei 1.20750. Bei einem Spread von 10 Points, einem TrailingStep, sowie den DistanceStep von 15 wird der erste StopLoss in Plus bei 1.20040 gesetzt. Wenn negative Swaps und Kommissionen hinzukommen, so werden diese in Points umgerechnet. Somit wird jede Position im Plus geschlossen.
+
+EN:
+This small tool takes over the manually opened positions and treats them according to the predefined settings with the dynamic stop loss and money management, which predicts which position size should be used for the trade. The program dynamically tracks the stop loss as soon as the position comes into the plus. Possible commissions and swaps are taken into calculation. Per symbol it should only be installed on one chart window.
+
+Settings:
+
+LotRiskPercent = 25 -> Percentage of the item size. Calculated on the basis of equity, leverage and free margins. The value can be between 0.1 and 1000.
+MoneyRiskInPercent = 0 -> The value can be from 0 to 100. How much capital can be risked? Once the value is reached, all positions of the symbol will be closed. Please, be careful with it.
+TrailingStep = 15 -> Trailing step for each position.
+DistanceStep = 15 -> Distance to position + TrailingStep size from which the next trailing step will be set.
+TakeProfit = 750 -> TakeProfit for each taken position.
+StopLoss = 0 -> Stop Loss for each taken position.
+
+Example:
+
+A long position with EURUSD is opened at the level of 1.20000. The program sets a Take Profit at 1.20750. With a spread of 10 points, a TrailingStep as well as the DistanceStep of 15, the first StopLoss in Plus will be set to 1,20040. If negative swaps and commissions are added, they will be converted into points. So each position will be closed always in plus.
+
+RU:
+Этот небольшой инструмент перенимает открытые вручную позиции и обрабатывает их в соответствии с предопределенными настройками с динамическим стоп-лосс и Money Management, который предсказывает, какой размер позиции следует использовать при открытие новой позиции. Данная программа динамически отслеживает стоп-лосс, как только позиция попадает в плюс. Принимаются во внимание возможные комиссии и свопы. На каждый символ программа должа быть установлена только на одном чарте.
+
+Настройки:
+
+LotRiskPercent = 25 -> Процент размера позиции. Рассчитывается на основе капитала, кредитного плеча и свободной маржи. Значение может быть от 0,1 до 1000.
+MoneyRiskInPercent = 0 -> Значение может быть от 0 до 100. Каким количеством капитала можно рисковать? Когда значение достигнуто, все позиции символа будут закрыты. Будьте осторожны с этим.
+TrailingStep = 15 -> Шаг трейлинга для каждой позиции.
+DistanceStep = 15 -> Расстояние до позиции + размер TrailingStep, от которого будет поставлен следующий шаг трейлинга.
+TakeProfit = 750 -> Take profit для каждой выбранной позиции.
+StopLoss = 0 -> стоп-лосс для каждой выбранной позиции.
+
+Пример:
+
+Позиция на повышение на EURUSD открывается на уровне 1.20000. Программа устанавливает Take Profit на уровне 1.20750. Со спредом в 10 пунктов, TrailingStep, а также DistanceStep 15, первый стоп-лосс с плюсом будет установлен на уровне 1.20040. Если добавляются отрицательные свопы и комиссии, они будут преобразоватьсяв пункты, то есть каждая позиция будет в плюсе.
