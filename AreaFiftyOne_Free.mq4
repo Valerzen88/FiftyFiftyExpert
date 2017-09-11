@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.33"
+#property version   "3.35"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -40,13 +40,20 @@ int      DistanceStep=15;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
 extern static string Indicators="Choose strategies";
+extern static string TrendIndicatorStrategy="-------------------";
 extern bool     UseTrendIndicator=true;
 extern bool     UseSMAOnTrendIndicator=true;
-extern int      UseOneOrTwoSMAOnTrendIndicator=2;
+extern int      UseOneOrTwoSMAOnTrendIndicator=1;
+extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
+extern static string RSIBasedStrategy="-------------------";
 extern bool     UseRSIBasedIndicator=false;
+extern static string MACD_DX_MA_Strategy="-------------------";
 extern bool     UseSimpleTrendStrategy=false;
+extern static string SimpleStochasticCrossingStrategy="-------------------";
 extern bool     UseStochasticBasedIndicator=false;
+extern static string ADX_RSI_MA_Strategy="-------------------";
 extern bool     Use5050Strategy=false;
+extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=true;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
@@ -54,7 +61,7 @@ extern static string StartHour_Comment="Available in the full versioin!";
 extern static string EndHour_Comment="Available in the full versioin!";
 int StartHour=0;
 int EndHour=23;
-extern static string OnlyBuyOrSellMarket="";
+extern static string OnlyBuyOrSellMarket="-------------------";
 extern bool OnlyBuy=true;
 extern bool OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
@@ -372,7 +379,7 @@ TempTDIGreen=TDIGreen;
                  }
               }
 
-            if(UseSMAOnTrendIndicator && UseOneOrTwoSMAOnTrendIndicator==2)
+            if(UseSMAOnTrendIndicator && (UseOneOrTwoSMAOnTrendIndicator==2 || UseOneOrTwoSMAOnTrendIndicator==3))
               {
                //using ma50
                if(((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
@@ -402,32 +409,35 @@ TempTDIGreen=TDIGreen;
                   BuyFlag=1;
                  }
               }
-            //using emas
-            if(((MathRound(MA_Second)>MathRound(MA)) || (MathRound(MA_Second-0.5)==MA))
-               && (((MA_Second-MA)>0.5) || ((MA_Second-MA)==1))
-               && ((MathRound(MABack_Second)<MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack2)))
-               && (MathRound(MABack2_Second)<MathRound(MABack2)))
+            if(UseSMAOnTrendIndicator && UseSMAsCrossingOnTrendIndicatorData)
               {
-               if(Debug)
+               //using emas
+               if(((MathRound(MA_Second)>MathRound(MA)) || (MathRound(MA_Second-0.5)==MA))
+                  && (((MA_Second-MA)>0.5) || ((MA_Second-MA)==1))
+                  && ((MathRound(MABack_Second)<MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack2)))
+                  && (MathRound(MABack2_Second)<MathRound(MABack2)))
                  {
-                  Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">MATrend="+DoubleToStr(MathRound(MA))
-                        +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=MABack="+DoubleToStr(MathRound(MABack))
-                        +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=MABack2="+DoubleToStr(MathRound(MABack2)));
+                  if(Debug)
+                    {
+                     Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">MATrend="+DoubleToStr(MathRound(MA))
+                           +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=MABack="+DoubleToStr(MathRound(MABack))
+                           +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=MABack2="+DoubleToStr(MathRound(MABack2)));
+                    }
+                  SellFlag=1;
                  }
-               //SellFlag=1;
-              }
-            if(((MathRound(MA_Second)<MathRound(MA)) || (MathRound(MA_Second+0.5)==MA))
-               && (((MA-MA_Second)>0.5) || ((MA-MA_Second)==1))
-               && ((MathRound(MABack_Second)>MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack)))
-               && (MathRound(MABack2_Second)>MathRound(MABack2)))
-              {
-               if(Debug)
+               if(((MathRound(MA_Second)<MathRound(MA)) || (MathRound(MA_Second+0.5)==MA))
+                  && (((MA-MA_Second)>0.5) || ((MA-MA_Second)==1))
+                  && ((MathRound(MABack_Second)>MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack)))
+                  && (MathRound(MABack2_Second)>MathRound(MABack2)))
                  {
-                  Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<MA="+DoubleToStr(MathRound(MA))
-                        +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>MABack="+DoubleToStr(MathRound(MABack))
-                        +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>MABack2="+DoubleToStr(MathRound(MABack2)));
+                  if(Debug)
+                    {
+                     Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<MA="+DoubleToStr(MathRound(MA))
+                           +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>MABack="+DoubleToStr(MathRound(MABack))
+                           +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>MABack2="+DoubleToStr(MathRound(MABack2)));
+                    }
+                  BuyFlag=1;
                  }
-               //BuyFlag=1;
               }
             if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
            }

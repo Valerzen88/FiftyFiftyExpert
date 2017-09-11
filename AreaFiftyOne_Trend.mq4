@@ -23,15 +23,15 @@ double g_ibuf_77[];
 double gd_92=100.0;
 int gi_104=0;
 extern int InternalKey=7575;
-extern double Smoothing=1.0;
+extern double Smoothing=3.0;
 extern int BarsToLoad=251;
-extern bool HandleOnCandleOpenOnly=true;
+bool HandleOnCandleOpenOnly=false;
 extern int Progression=8;
 extern int Length=3;
 extern int Sensitivity=30;
 extern int Period_MA=23;
 extern int Period_MA_Second=50;
-extern int ModeMA=MODE_LWMA;
+extern int ModeMA=MODE_SMA;
 extern bool UseAlerts=false;
 extern bool ShowAlert=false;
 extern bool SendEMailOnSignal=false;
@@ -145,8 +145,8 @@ int OnInit()
 //+------------------------------------------------------------------+
 int start()
   {
-   bool volume0 = Volume[0]==1;
-   if (!HandleOnCandleOpenOnly) {volume0=true;}
+   bool volume0=true;
+   if(HandleOnCandleOpenOnly) {volume0=Volume[0]==1;}
    int li_12=InternalKey;
    if(li_12==34562788) loadJMA();
    else
@@ -252,7 +252,7 @@ void HandleAlerts()
      }
    if(BuyFlag)
      {
-      if(ShowAlert) 
+      if(ShowAlert)
         {
          Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Buy signal at "+Ask+"! "+CrossingText);
         }
@@ -270,7 +270,7 @@ void HandleAlerts()
      }
    if(SellFlag)
      {
-      if(ShowAlert) 
+      if(ShowAlert)
         {
          Alert(Symbol()+"("+TimeFrameToString(Period())+")"+": Sell signal at "+Bid+"! "+CrossingText);
         }
@@ -853,7 +853,7 @@ int OnCalculate(const int rates_total,
 void OnDeinit(const int reason)
   {
 //--- The first way to get the uninitialization reason code 
-   //Print(__FUNCTION__,"_Uninitalization reason code = ",reason);
+//Print(__FUNCTION__,"_Uninitalization reason code = ",reason);
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
