@@ -227,7 +227,7 @@ void OnTick()
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-         if(OrderSymbol()==Symbol() && (OrderMagicNumber()==0 || OrderMagicNumber() == "" || OrderMagicNumber() == "[0]"))
+         if(OrderSymbol()==Symbol())
            {
             TempLoss=TempLoss+OrderProfit();
            }
