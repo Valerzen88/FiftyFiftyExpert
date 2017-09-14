@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.35"
+#property version   "3.37"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -32,6 +32,7 @@ extern double   LotSize=0.01;
 extern bool     LotAutoSize=false;
 extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
+extern double   MaxDynamicLotSize=0.0;
 //extern static string TrailingStep_Comment="Available in the full version!";
 //extern static string DistanceStep_Comment="Available in the full version!";
 extern static string Positions="Handle positions params";
@@ -57,16 +58,18 @@ extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=false;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
-extern int StartHour=8;
-extern int EndHour=22;
+extern int      StartHour=8;
+extern int      EndHour=22;
 extern static string OnlyBuyOrSellMarket="-------------------";
-extern bool OnlyBuy=true;
-extern bool OnlySell=true;
+extern bool     OnlyBuy=true;
+extern bool     OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
 //extern static string HandleUserPositions_Comment="Available in the full version!";
 extern bool     HandleUserPositions=false;
+extern int      CountCharsInCommentToEscape=0;
 extern static string Common="Create signals only on new candle or on every tick";
 extern bool     HandleOnCandleOpenOnly=true;
+extern static string UsingEAOnDifferentTimeframes="-------------------";
 extern int      MagicNumber=3537;
 
 bool Debug=false;
@@ -278,8 +281,8 @@ void OnTick()
          if((TSL2<TDIYellow) && (TDIGreen>TSL2 && (TDIGreenPrevious<TSL2Previous || TDIGreenPrevious==TSL2Previous))) {BuyFlag=true;}
          if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
 
-         if((TDIYellow<50) && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
-         if((TDIYellow>50) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
+         if((TDIYellow<50) &&(TSL2<TDIYellow)  && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
+         if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
 
          if((SellFlag || BuyFlag) && Debug) {Print("Got signal from RSI-based indicator!");}
         }
@@ -296,7 +299,6 @@ void OnTick()
             double MA_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,0),1);
             double MABack_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,1),1);
             double MABack2_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,2),1);
-            //TODO -> use MA50 and MA23 for signal?
 
             if(Debug)
               {
@@ -598,6 +600,11 @@ void OnTick()
             LotSizeP1=MarketInfo(Symbol(),MODE_MINLOT);
             LotSizeP2=MarketInfo(Symbol(),MODE_MINLOT);
            }
+        }
+
+      if(MaxDynamicLotSize>0 && LotSize>MaxDynamicLotSize)
+        {
+         LotSize=MaxDynamicLotSize;
         }
      }
    if(LotAutoSize==false){LotSize=LotSize;}
@@ -1089,7 +1096,14 @@ void OnTick()
         {
          if(OrderSelect(ff,SELECT_BY_POS,MODE_TRADES))
            {
-            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
+            string OrderCom=OrderComment();
+            if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+              {
+               OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+                 } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+               OrderCom="";
+              }
+            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
               {
                TrP();
               }
@@ -1099,7 +1113,14 @@ void OnTick()
         {
          if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
            {
-            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
+            string OrderCom=OrderComment();
+            if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+              {
+               OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+                 } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+               OrderCom="";
+              }
+            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
               {
                TempProfitUserPosis=TempProfitUserPosis+OrderProfit()+OrderCommission()+OrderSwap();
               }
@@ -1131,7 +1152,14 @@ void HandleUserPositionsFun()
         {
          if(Debug){Print("OrderComment='"+OrderComment()+"'");}
          if(Debug){Print("OrderMagicNumber='"+IntegerToString(OrderMagicNumber())+"'");}
-         if(OrderMagicNumber()==0 && (OrderComment()=="" || OrderComment()=="[0]"))
+         string OrderCom=OrderComment();
+         if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+           {
+            OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+              } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+            OrderCom="";
+           }
+         if(OrderMagicNumber()==0 && (OrderComment()=="" || OrderCom==""))
            {
             if((OrderType()==OP_SELL) && (((OrderOpenPrice()-OrderTakeProfit())!=TakeProfit*Point)
                || ((OrderStopLoss()>OrderOpenPrice()) || OrderStopLoss()==0)))
@@ -1163,7 +1191,9 @@ void HandleUserPositionsFun()
         }
      }
   }
-//add positions function
+//+------------------------------------------------------------------+
+//|add positions function                                            |
+//+------------------------------------------------------------------+													  
 bool AddP()
   {
    int _num=0,_ot=0;

@@ -23,7 +23,7 @@ double g_ibuf_77[];
 double gd_92=100.0;
 int gi_104=0;
 extern int InternalKey=7575;
-extern double Smoothing=3.0;
+extern double Smoothing=1.0;
 extern int BarsToLoad=251;
 bool HandleOnCandleOpenOnly=false;
 extern int Progression=8;

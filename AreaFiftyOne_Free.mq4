@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.35"
+#property version   "3.37"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -29,9 +29,11 @@ extern double LotSize=0.01; // Lot size can be <0.10 in the free version
 extern static string LotAutoSize_Comment="Available in the full version!";
 extern static string LotRiskPercent_Comment="Available in the full version!";
 extern static string MoneyRiskInPercent_Comment="Available in the full version!";
+extern static string MaxDynamicLotSize_Comment="Available in the full version!";
 bool     LotAutoSize=false;
 int      LotRiskPercent=25;
 int      MoneyRiskInPercent=0;
+double   MaxDynamicLotSize=0.0;								  
 extern static string TrailingStep_Comment="Available in the full version!";
 extern static string DistanceStep_Comment="Available in the full version!";
 extern static string Positions="Handle positions params";
@@ -67,8 +69,10 @@ extern bool OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
 extern static string HandleUserPositions_Comment="Available in the full version!";
 bool     HandleUserPositions=false;
+int      CountCharsInCommentToEscape=0;											  
 extern static string Common="Create signals only on new candle or on every tick";
 extern bool     HandleOnCandleOpenOnly=false;
+extern static string UsingEAOnDifferentTimeframes="-------------------";																		
 extern int      MagicNumber=3537;
 
 bool Debug=false;
@@ -84,9 +88,9 @@ string rentCustomerName="";
 /*licence_end*/
 
 int RSI_Period=13;         //8-25
-int RSI_Price=5;           //0-6
+int RSI_Price=0;           //0-6
 int Volatility_Band=34;    //20-40
-int RSI_Price_Line=0;
+int RSI_Price_Line=6;
 int RSI_Price_Type=MODE_SMA;      //0-3
 int Trade_Signal_Line=7;
 int Trade_Signal_Line2=18;
@@ -95,10 +99,10 @@ double over_bought=80;
 double over_sold=20;
 int MAFastPeriod = 7;
 int MASlowPeriod = 21;
-int KPeriod1=34;
-int DPeriod1=23;
-int Slowing1=12;
-int MAMethod1=2;
+int KPeriod1=21;
+int DPeriod1=7;
+int Slowing1=7;
+int MAMethod1=1;
 int PriceField1=1;
 int ma_method=MODE_SMA;
 int price_field=0;
@@ -264,37 +268,25 @@ void OnTick()
      {
       if(UseRSIBasedIndicator)
         {
-         for(int i=1;i<=limit;i++)
-           {
-            //double TDIGreenPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
-            double TDIGreen=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
-            double TDIYellow=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
-            //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
-            double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
-            // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
-            // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
-            // double TDIB3=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
+         int i=0;
+         double TDIGreen=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
+         double TDIGreenPrevious=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
+         double TDIYellow=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
+         double TDIYellowPrevous=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1);
+         //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
+         double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
+         // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
+         // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
+         double TSL2=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
+         double TSL2Previous=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
 
-            if((TDIGreen>68) &&(NormalizeDouble(TDIGreen,3)>NormalizeDouble(TDIRed,3)) &&(NormalizeDouble(NormalizeDouble(TDIGreen,3)-NormalizeDouble(TDIRed,3),1)>=3.5)) SELL=true;
-            if((TDIRed<32) && (NormalizeDouble(TDIGreen,3)<NormalizeDouble(TDIRed,3)) && (NormalizeDouble(NormalizeDouble(TDIRed,3)-NormalizeDouble(TDIGreen,3),1)>=3.5)) BUY=true;
+         if((TSL2<TDIYellow) && (TDIGreen>TSL2 && (TDIGreenPrevious<TSL2Previous || TDIGreenPrevious==TSL2Previous))) {BuyFlag=true;}
+         if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
 
-            //if((SELL==false && BUY ==false) && (TDIRed>TDIGreen) && (TDIRedPlusOne<=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)BUY=true;
-            //if((SELL==false && BUY ==false) && (TDIRed<TDIGreen) && (TDIRedPlusOne>=TDIGreenPlusOne) && (TDIGreen-TDIRed)>=3.5)SELL=true;
+         if((TDIYellow<50) &&(TSL2<TDIYellow)  && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
+         if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
 
-
-/*if(TDIGreen-TDIRed<6){Print("NO Exit !");}*/
-/*  if(TDIGreen-TDIRed>=6){Print("Change of Trend: If you have SELL Position(s),Check Exit Rules!");}
-      if(TDIRed-TDIGreen>=6){Print("Change of Trend: If you have BUY Position(s),Check Exit Rules!");}*/
-/*
-TempTDIGreen=TDIGreen;
-      TempTDIRed=TDIRed;*/
-
-            //entry conditions
-
-            if(BUY==true){BuyFlag=1;break;}
-            if(SELL==true){SellFlag=1;break;}
-           }
-         if((SELL || BUY) && Debug) {Print("Got signal from RSI-based indicator!");}
+         if((SellFlag || BuyFlag) && Debug) {Print("Got signal from RSI-based indicator!");}
         }
 
       if(UseTrendIndicator)
@@ -613,6 +605,11 @@ TempTDIGreen=TDIGreen;
             LotSizeP2=MarketInfo(Symbol(),MODE_MINLOT);
            }
         }
+
+      if(MaxDynamicLotSize>0 && LotSize>MaxDynamicLotSize)
+        {
+         LotSize=MaxDynamicLotSize;
+        }	 
      }
    if(LotAutoSize==false){LotSize=LotSize;}
    if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
@@ -1103,7 +1100,14 @@ TempTDIGreen=TDIGreen;
         {
          if(OrderSelect(ff,SELECT_BY_POS,MODE_TRADES))
            {
-            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
+            string OrderCom=OrderComment();
+            if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+              {
+               OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+                 } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+               OrderCom="";
+              }
+            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
               {
                TrP();
               }
@@ -1113,7 +1117,14 @@ TempTDIGreen=TDIGreen;
         {
          if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
            {
-            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderComment()=="[0]") && OrderMagicNumber()==0)
+            string OrderCom=OrderComment();
+            if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+              {
+               OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+                 } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+               OrderCom="";
+              }
+            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
               {
                TempProfitUserPosis=TempProfitUserPosis+OrderProfit()+OrderCommission()+OrderSwap();
               }
@@ -1121,6 +1132,7 @@ TempTDIGreen=TDIGreen;
         }
      }
    CurrentProfit(TempProfit,TempProfitUserPosis);
+
 
 //not enough money message to continue the martingale
    if((TicketNrBuy<0 || TicketNrSell<0) && GetLastError()==134){err=1;Print("NOT ENOGUGHT MONEY!!");}
@@ -1145,7 +1157,14 @@ void HandleUserPositionsFun()
         {
          if(Debug){Print("OrderComment='"+OrderComment()+"'");}
          if(Debug){Print("OrderMagicNumber='"+IntegerToString(OrderMagicNumber())+"'");}
-         if(OrderMagicNumber()==0 && (OrderComment()=="" || OrderComment()=="[0]"))
+		 string OrderCom=OrderComment();
+         if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+           {
+            OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+              } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+            OrderCom="";
+           }
+         if(OrderMagicNumber()==0 && (OrderComment()=="" || OrderCom==""))
            {
             if((OrderType()==OP_SELL) && (((OrderOpenPrice()-OrderTakeProfit())!=TakeProfit*Point)
                || ((OrderStopLoss()>OrderOpenPrice()) || OrderStopLoss()==0)))
