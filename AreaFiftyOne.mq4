@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.37"
+#property version   "3.38"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -33,6 +33,7 @@ extern bool     LotAutoSize=false;
 extern int      LotRiskPercent=25;
 extern int      MoneyRiskInPercent=0;
 extern double   MaxDynamicLotSize=0.0;
+extern int      MaxMoneyValueToLose=0;
 //extern static string TrailingStep_Comment="Available in the full version!";
 //extern static string DistanceStep_Comment="Available in the full version!";
 extern static string Positions="Handle positions params";
@@ -48,7 +49,7 @@ extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
 extern bool     UseRSIBasedIndicator=false;
-extern static string MACD_DX_MA_Strategy="-------------------";
+extern static string MACD_ADX_MA_Strategy="-------------------";
 extern bool     UseSimpleTrendStrategy=false;
 extern static string SimpleStochasticCrossingStrategy="-------------------";
 extern bool     UseStochasticBasedIndicator=false;
@@ -59,7 +60,7 @@ extern bool     UseStochRSICroosingStrategy=false;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
-extern int      EndHour=22;
+extern int      EndHour=20;
 extern static string OnlyBuyOrSellMarket="-------------------";
 extern bool     OnlyBuy=true;
 extern bool     OnlySell=true;
@@ -99,15 +100,15 @@ double over_sold=20;
 int KPeriod1=21;
 int DPeriod1=7;
 int Slowing1=7;
-int MAMethod1=1;
-int PriceField1=1;
+int MAMethod1=0;
+int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
 int Slippage=3,MaxOrders=4,BreakEven=0;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 double LotSizeP1,LotSizeP2;
-bool AddPositions=false;
+bool AddPositions=true;
 int StopLevel=0;
 double StopLevelDouble=MarketInfo(Symbol(),MODE_STOPLEVEL)*Point();
 double CurrentLoss=0;
@@ -281,10 +282,11 @@ void OnTick()
          if((TSL2<TDIYellow) && (TDIGreen>TSL2 && (TDIGreenPrevious<TSL2Previous || TDIGreenPrevious==TSL2Previous))) {BuyFlag=true;}
          if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
 
-         if((TDIYellow<50) &&(TSL2<TDIYellow)  && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
+         if((TDIYellow<50) && (TSL2<TDIYellow) && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
          if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
 
-         if((SellFlag || BuyFlag) && Debug) {Print("Got signal from RSI-based indicator!");}
+         if(SellFlag && Debug) { Print("Got sell signal from RSI-based indicator!");}
+         if(BuyFlag && Debug) { Print("Got buy signal from RSI-based indicator!");}
         }
       if(UseTrendIndicator)
         {
@@ -525,7 +527,7 @@ void OnTick()
         {
          if(true)//(CheckForSignal)
            {
-            int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=PRICE_CLOSE;
+            int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=0;
             double stochastic1now,stochastic1previous;
             stochastic1now=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i);
             stochastic1previous=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i+1);
@@ -660,7 +662,8 @@ void OnTick()
      {
       CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
      }
-   if(MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
+   if((MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent) 
+   || (MaxMoneyValueToLose>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MaxMoneyValueToLose))
      {
       while(CloseAll()==AT_LEAST_ONE_FAILED)
         {
@@ -1314,14 +1317,14 @@ void ModSL(double ldSL)
         {
          if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,ldSL,OrderTakeProfit()))
            {
-            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,CLR_NONE);
+            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
         }
       if(OrderType()==OP_SELL)
         {
          if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,ldSL,OrderTakeProfit()))
            {
-            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,CLR_NONE);
+            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
         }
      }
