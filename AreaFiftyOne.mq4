@@ -663,7 +663,7 @@ void OnTick()
       CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
      }
    if((MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent) 
-   || (MaxMoneyValueToLose>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MaxMoneyValueToLose))
+   || (MaxMoneyValueToLose>0 && StrToInteger(DoubleToStr(MathAbs(TempLoss),0))>MaxMoneyValueToLose))
      {
       while(CloseAll()==AT_LEAST_ONE_FAILED)
         {
