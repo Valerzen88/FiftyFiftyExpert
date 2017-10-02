@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.37"
+#property version   "3.45"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -34,6 +34,7 @@ bool     LotAutoSize=false;
 int      LotRiskPercent=25;
 int      MoneyRiskInPercent=0;
 double   MaxDynamicLotSize=0.0;								  
+extern int      MaxMoneyValueToLose=0;									  
 extern static string TrailingStep_Comment="Available in the full version!";
 extern static string DistanceStep_Comment="Available in the full version!";
 extern static string Positions="Handle positions params";
@@ -43,16 +44,16 @@ extern int      TakeProfit=750;
 extern int      StopLoss=0;
 extern static string Indicators="Choose strategies";
 extern static string TrendIndicatorStrategy="-------------------";
-extern bool     UseTrendIndicator=true;
+extern bool     UseTrendIndicator=false;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
 extern bool     UseRSIBasedIndicator=false;
-extern static string MACD_DX_MA_Strategy="-------------------";
+extern static string MACD_ADX_MA_Strategy="-------------------";
 extern bool     UseSimpleTrendStrategy=false;
 extern static string SimpleStochasticCrossingStrategy="-------------------";
-extern bool     UseStochasticBasedIndicator=false;
+extern bool     UseStochasticBasedStrategy=false;
 extern static string ADX_RSI_MA_Strategy="-------------------";
 extern bool     Use5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
@@ -69,9 +70,15 @@ extern bool OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
 extern static string HandleUserPositions_Comment="Available in the full version!";
 bool     HandleUserPositions=false;
-int      CountCharsInCommentToEscape=0;											  
-extern static string Common="Create signals only on new candle or on every tick";
-extern bool     HandleOnCandleOpenOnly=false;
+int  CountCharsInCommentToEscape=0;											  
+extern static string SignalHandling="Create signals only on new candle or on every tick";
+extern bool     HandleOnCandleOpenOnly=true;
+extern static string MaxOpenedPositionsOnCandle_Comment="Available in the full versioin!";
+int      MaxOpenedPositionsOnCandle=2;
+extern static string MaxOrdersSettings="Creates position independently of opened positions";
+extern bool     AddPositionsIndependently=false;
+extern static string MaxConcurrentOpenedOrders_Comment="Available in the full versioin!";
+int      MaxConcurrentOpenedOrders=3;
 extern static string UsingEAOnDifferentTimeframes="-------------------";																		
 extern int      MagicNumber=3537;
 
@@ -102,15 +109,14 @@ int MASlowPeriod = 21;
 int KPeriod1=21;
 int DPeriod1=7;
 int Slowing1=7;
-int MAMethod1=1;
-int PriceField1=1;
+int MAMethod1=0;
+int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
-int Slippage=3,MaxOrders=4,BreakEven=0;
+int Slippage=3,BreakEven=0;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 double LotSizeP1,LotSizeP2;
-bool AddPositions=false;
 int StopLevel=0;
 double StopLevelDouble=MarketInfo(Symbol(),MODE_STOPLEVEL)*Point();
 double CurrentLoss=0;
@@ -190,7 +196,8 @@ int OnInit()
            } else {
          if(!IsTesting())
            {
-            Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and username="+rentCustomerName);
+            Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and accountName="+rentCustomerName);
+			Alert("Current accountNumber="+IntegerToString(AccountNumber())+" && accountName="+AccountName());												  
             return(INIT_FAILED);
            }
         }
@@ -238,7 +245,7 @@ void OnDeinit(const int reason)
   {
    if(Debug)
      {
-      if(UseStochasticBasedIndicator){Print("countStochOrders="+IntegerToString(countStochOrders));}
+      if(UseStochasticBasedStrategy){Print("countStochOrders="+IntegerToString(countStochOrders));}
       Print("StopLevelDouble="+DoubleToStr(StopLevelDouble));
       Print("StopLevel="+IntegerToString(StopLevel));
      }
@@ -286,7 +293,8 @@ void OnTick()
          if((TDIYellow<50) &&(TSL2<TDIYellow)  && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
          if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
 
-         if((SellFlag || BuyFlag) && Debug) {Print("Got signal from RSI-based indicator!");}
+         if(SellFlag && Debug) { Print("Got sell signal from RSI-based indicator!");}
+         if(BuyFlag && Debug) { Print("Got buy signal from RSI-based indicator!");}
         }
 
       if(UseTrendIndicator)
@@ -476,7 +484,7 @@ void OnTick()
               }
            }
         }
-      if(UseStochasticBasedIndicator)
+      if(UseStochasticBasedStrategy)
         {
          for(int i=0; i<=2; i++)
            {
@@ -529,7 +537,7 @@ void OnTick()
         {
          if(true)//(CheckForSignal)
            {
-            int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=PRICE_CLOSE;
+            int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=0;
             double stochastic1now,stochastic1previous;
             stochastic1now=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i);
             stochastic1previous=iStochastic(NULL,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i+1);
@@ -665,7 +673,8 @@ void OnTick()
      {
       CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
      }
-   if(MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
+    if((MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
+      || (MaxMoneyValueToLose>0 && StrToInteger(DoubleToStr(MathAbs(TempLoss),0))>MaxMoneyValueToLose))
      {
       while(CloseAll()==AT_LEAST_ONE_FAILED)
         {
@@ -865,13 +874,13 @@ void OnTick()
      }
 //open position
 // 
-   if((AddP() && AddPositions && OP<=MaxOrders) || (OP<=MaxOrders && !AddPositions))
+   if(((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently)) && PositionCanBeOpened())
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(OnlySell==true && !(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && UseStochasticBasedIndicator && TicketNrSellStoch==0)
+         if(OrderDueStoch && UseStochasticBasedStrategy && TicketNrSellStoch==0)
            {
             if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
@@ -896,7 +905,7 @@ void OnTick()
                  }
               }
            }
-         if(OS==1 && OSC==0 && !OrderDueStoch)
+         if(OS==1 /*&& OSC==0 */&& !OrderDueStoch)
            {
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
@@ -976,7 +985,7 @@ void OnTick()
       // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(OnlyBuy==true && !(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && UseStochasticBasedIndicator && TicketNrBuyStoch==0)
+         if(OrderDueStoch && UseStochasticBasedStrategy && TicketNrBuyStoch==0)
            {
             if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
@@ -1001,7 +1010,7 @@ void OnTick()
                  }
               }
            }
-         if(OB==1 && OBC==0 && !OrderDueStoch)
+         if(OB==1 /*&& OBC==0 */&& !OrderDueStoch)
            {
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
@@ -1307,18 +1316,86 @@ void ModSL(double ldSL)
         {
          if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,ldSL,OrderTakeProfit()))
            {
-            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,CLR_NONE);
+            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
         }
       if(OrderType()==OP_SELL)
         {
          if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,ldSL,OrderTakeProfit()))
            {
-            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,CLR_NONE);
+            bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
         }
      }
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool PositionCanBeOpened()
+  {
+   bool positionCanBeOpened=false;
+   if(HandleOnCandleOpenOnly==false && MaxOpenedPositionsOnCandle>0 && OrdersHistoryTotal()>0)
+     {
+      int currentAlreadyOpenedPositions=0;
+      for(int cnt=0;cnt<OrdersHistoryTotal();cnt++)
+        {
+         if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY)==true)
+           {
+            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+              {
+               currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+               if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
+                 {
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                    {
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        positionCanBeOpened=true;
+                       }
+                    }
+                 }
+
+               if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
+                 {
+                  if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                    {
+                     positionCanBeOpened=true;
+                    }
+                 }
+              }
+
+            if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
+              {
+               if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
+                 {
+                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                    {
+                     positionCanBeOpened=true;
+                    }
+                 }
+              }
+
+            if(Period()==PERIOD_MN1)
+              {
+               if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                 {
+                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                    {
+                     positionCanBeOpened=true;
+                    }
+                 }
+              }
+           }
+        }
+        } else {
+      positionCanBeOpened=true;
+     }
+   return positionCanBeOpened;
+  }  
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
