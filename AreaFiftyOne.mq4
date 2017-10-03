@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.45"
+#property version   "3.47"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -70,7 +70,7 @@ extern bool     HandleUserPositions=false;
 extern int      CountCharsInCommentToEscape=0;
 extern static string SignalHandling="Create signals only on new candle or on every tick";
 extern bool     HandleOnCandleOpenOnly=true;
-extern int      MaxOpenedPositionsOnCandle=3;
+//extern int      MaxOpenedPositionsOnCandle=3;
 extern static string MaxOrdersSettings="Creates position independently of opened positions";
 extern bool     AddPositionsIndependently=false;
 extern int      MaxConcurrentOpenedOrders=4;
@@ -263,7 +263,7 @@ void OnTick()
      }
    bool CheckForSignal;
    if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
-   if(HandleOnCandleOpenOnly==false) {CheckForSignal=true;}
+   if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades()) {CheckForSignal=true;}
 
 //double TempTDIGreen=0,TempTDIRed=0;
    if(TradingAllowed && CheckForSignal)
@@ -868,7 +868,7 @@ void OnTick()
 
 //open position
 // 
-   if(((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently)) && PositionCanBeOpened())
+   if((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
@@ -1335,61 +1335,54 @@ void ModSL(double ldSL)
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
-//+------------------------------------------------------------------+
-bool PositionCanBeOpened()
+//+------------------------------------------------------------------+  
+bool CurrentCandleHasNoOpenedTrades() 
   {
    bool positionCanBeOpened=false;
-   if(HandleOnCandleOpenOnly==false && MaxOpenedPositionsOnCandle>0 && OrdersHistoryTotal()>0)
+   int currentAlreadyOpenedPositions=0;
+   if(OrdersTotal()>0) 
      {
-      int currentAlreadyOpenedPositions=0;
-      for(int cnt=0;cnt<OrdersHistoryTotal();cnt++)
+      for(int cnt=0;cnt<OrdersTotal();cnt++)
         {
-         if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY)==true)
+         if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
            {
             if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
               {
-               currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
                if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
                  {
                   if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
                     {
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        positionCanBeOpened=true;
-                       }
+                     positionCanBeOpened=false;
+                       }else{
+                     positionCanBeOpened=true;
                     }
                  }
-
                if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
                  {
                   if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
                     {
+                     positionCanBeOpened=false;
+                       }else{
                      positionCanBeOpened=true;
                     }
                  }
-              }
 
-            if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
-              {
-               if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
+               if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
                  {
-                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                  if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
                     {
+                     positionCanBeOpened=false;
+                       }else{
                      positionCanBeOpened=true;
                     }
                  }
-              }
 
-            if(Period()==PERIOD_MN1)
-              {
-               if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+               if(Period()==PERIOD_MN1)
                  {
-                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
                     {
+                     positionCanBeOpened=false;
+                       }else{
                      positionCanBeOpened=true;
                     }
                  }
@@ -1401,6 +1394,141 @@ bool PositionCanBeOpened()
      }
    return positionCanBeOpened;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+/*bool PositionCanBeOpened()
+  {
+   bool positionCanBeOpened=false;
+   if(HandleOnCandleOpenOnly==false && MaxOpenedPositionsOnCandle>0 && (OrdersHistoryTotal()>0 || OrdersTotal()>0))
+     {
+      int currentAlreadyOpenedPositions=0;
+      for(int cnt=0;cnt<OrdersTotal();cnt++)
+        {
+         if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
+           {
+            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+              {
+               if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
+                 {
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                    {
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        //positionCanBeOpened=true;
+                       }
+                    }
+                 }
+               if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
+                 {
+                  if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
+                    {
+                    Print(TimeHour(Time[0])+"=="+TimeHour(OrderOpenTime()));
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     Print("currentAlreadyOpenedPositions="+currentAlreadyOpenedPositions);
+                     Print("MaxOpenedPositionsOnCandle="+MaxOpenedPositionsOnCandle);
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        positionCanBeOpened=true;
+                          } else {
+                        positionCanBeOpened=false;
+                       }
+                    }
+                 }
+
+               if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
+                 {
+                  if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
+                    {
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        //positionCanBeOpened=true;
+                       }
+                    }
+                 }
+
+               if(Period()==PERIOD_MN1)
+                 {
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                    {
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        //positionCanBeOpened=true;
+                       }
+                    }
+                 }
+              }
+           }
+        }
+      for(int cnt=0;cnt<OrdersHistoryTotal();cnt++)
+        {
+         if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY)==true)
+           {
+            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+              {
+               if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
+                 {
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                    {
+                     Print(TimeMinute(Time[0])+"=="+TimeMinute(OrderOpenTime()));
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        //positionCanBeOpened=true;
+                       }
+                    }
+                 }
+
+               if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
+                 {
+                  if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
+                    {
+                     Print(TimeHour(Time[0])+"=="+TimeHour(OrderOpenTime()));
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     Print("currentAlreadyOpenedPositions="+currentAlreadyOpenedPositions);
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        positionCanBeOpened=true;
+                          } else {
+                        positionCanBeOpened=false;
+                       }
+                    }
+                 }
+
+               if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
+                 {
+                  if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
+                    {
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        //positionCanBeOpened=true;
+                       }
+                    }
+                 }
+
+               if(Period()==PERIOD_MN1)
+                 {
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                    {
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        //positionCanBeOpened=true;
+                       }
+                    }
+                 }
+              }
+           }
+        }
+        } else {
+      positionCanBeOpened=true;
+     }
+   return positionCanBeOpened;
+  }*/
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

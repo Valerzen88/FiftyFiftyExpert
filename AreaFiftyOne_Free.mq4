@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.45"
+#property version   "3.47"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -33,8 +33,8 @@ extern static string MaxDynamicLotSize_Comment="Available in the full version!";
 bool     LotAutoSize=false;
 int      LotRiskPercent=25;
 int      MoneyRiskInPercent=0;
-double   MaxDynamicLotSize=0.0;								  
-extern int      MaxMoneyValueToLose=0;									  
+double   MaxDynamicLotSize=0.0;
+extern int      MaxMoneyValueToLose=0;
 extern static string TrailingStep_Comment="Available in the full version!";
 extern static string DistanceStep_Comment="Available in the full version!";
 extern static string Positions="Handle positions params";
@@ -70,16 +70,16 @@ extern bool OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
 extern static string HandleUserPositions_Comment="Available in the full version!";
 bool     HandleUserPositions=false;
-int  CountCharsInCommentToEscape=0;											  
+int  CountCharsInCommentToEscape=0;
 extern static string SignalHandling="Create signals only on new candle or on every tick";
 extern bool     HandleOnCandleOpenOnly=true;
-extern static string MaxOpenedPositionsOnCandle_Comment="Available in the full versioin!";
-int      MaxOpenedPositionsOnCandle=2;
+//extern static string MaxOpenedPositionsOnCandle_Comment="Available in the full versioin!";
+//int      MaxOpenedPositionsOnCandle=2;
 extern static string MaxOrdersSettings="Creates position independently of opened positions";
 extern bool     AddPositionsIndependently=false;
 extern static string MaxConcurrentOpenedOrders_Comment="Available in the full versioin!";
-int      MaxConcurrentOpenedOrders=3;
-extern static string UsingEAOnDifferentTimeframes="-------------------";																		
+int      MaxConcurrentOpenedOrders=4;
+extern static string UsingEAOnDifferentTimeframes="-------------------";
 extern int      MagicNumber=3537;
 
 bool Debug=false;
@@ -197,7 +197,7 @@ int OnInit()
          if(!IsTesting())
            {
             Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and accountName="+rentCustomerName);
-			Alert("Current accountNumber="+IntegerToString(AccountNumber())+" && accountName="+AccountName());												  
+            Alert("Current accountNumber="+IntegerToString(AccountNumber())+" && accountName="+AccountName());
             return(INIT_FAILED);
            }
         }
@@ -268,7 +268,7 @@ void OnTick()
      }
    bool CheckForSignal;
    if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
-   if(HandleOnCandleOpenOnly==false) {CheckForSignal=true;}
+   if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades()) {CheckForSignal=true;}
 
 //double TempTDIGreen=0,TempTDIRed=0;
    if(TradingAllowed && CheckForSignal)
@@ -617,7 +617,7 @@ void OnTick()
       if(MaxDynamicLotSize>0 && LotSize>MaxDynamicLotSize)
         {
          LotSize=MaxDynamicLotSize;
-        }	 
+        }
      }
    if(LotAutoSize==false){LotSize=LotSize;}
    if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
@@ -673,7 +673,7 @@ void OnTick()
      {
       CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
      }
-    if((MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
+   if((MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
       || (MaxMoneyValueToLose>0 && StrToInteger(DoubleToStr(MathAbs(TempLoss),0))>MaxMoneyValueToLose))
      {
       while(CloseAll()==AT_LEAST_ONE_FAILED)
@@ -874,7 +874,7 @@ void OnTick()
      }
 //open position
 // 
-   if(((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently)) && PositionCanBeOpened())
+   if((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
@@ -905,7 +905,7 @@ void OnTick()
                  }
               }
            }
-         if(OS==1 /*&& OSC==0 */&& !OrderDueStoch)
+         if(OS==1 /*&& OSC==0 */ && !OrderDueStoch)
            {
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
@@ -1010,7 +1010,7 @@ void OnTick()
                  }
               }
            }
-         if(OB==1 /*&& OBC==0 */&& !OrderDueStoch)
+         if(OB==1 /*&& OBC==0 */ && !OrderDueStoch)
            {
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
@@ -1142,7 +1142,6 @@ void OnTick()
      }
    CurrentProfit(TempProfit,TempProfitUserPosis);
 
-
 //not enough money message to continue the martingale
    if((TicketNrBuy<0 || TicketNrSell<0) && GetLastError()==134){err=1;Print("NOT ENOGUGHT MONEY!!");}
   }
@@ -1166,7 +1165,7 @@ void HandleUserPositionsFun()
         {
          if(Debug){Print("OrderComment='"+OrderComment()+"'");}
          if(Debug){Print("OrderMagicNumber='"+IntegerToString(OrderMagicNumber())+"'");}
-		 string OrderCom=OrderComment();
+         string OrderCom=OrderComment();
          if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
            {
             OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
@@ -1331,60 +1330,53 @@ void ModSL(double ldSL)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-bool PositionCanBeOpened()
+bool CurrentCandleHasNoOpenedTrades()
   {
    bool positionCanBeOpened=false;
-   if(HandleOnCandleOpenOnly==false && MaxOpenedPositionsOnCandle>0 && OrdersHistoryTotal()>0)
+   int currentAlreadyOpenedPositions=0;
+   if(OrdersTotal()>0)
      {
-      int currentAlreadyOpenedPositions=0;
-      for(int cnt=0;cnt<OrdersHistoryTotal();cnt++)
+      for(int cnt=0;cnt<OrdersTotal();cnt++)
         {
-         if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY)==true)
+         if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
            {
             if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
               {
-               currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
                if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
                  {
                   if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
                     {
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        positionCanBeOpened=true;
-                       }
+                     positionCanBeOpened=false;
+                       }else{
+                     positionCanBeOpened=true;
                     }
                  }
-
                if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
                  {
                   if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
                     {
+                     positionCanBeOpened=false;
+                       }else{
                      positionCanBeOpened=true;
                     }
                  }
-              }
 
-            if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
-              {
-               if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
+               if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
                  {
-                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                  if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
                     {
+                     positionCanBeOpened=false;
+                       }else{
                      positionCanBeOpened=true;
                     }
                  }
-              }
 
-            if(Period()==PERIOD_MN1)
-              {
-               if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+               if(Period()==PERIOD_MN1)
                  {
-                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
                     {
+                     positionCanBeOpened=false;
+                       }else{
                      positionCanBeOpened=true;
                     }
                  }
@@ -1395,7 +1387,7 @@ bool PositionCanBeOpened()
       positionCanBeOpened=true;
      }
    return positionCanBeOpened;
-  }  
+  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
