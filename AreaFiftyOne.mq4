@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.38"
+#property version   "3.45"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -52,7 +52,7 @@ extern bool     UseRSIBasedIndicator=false;
 extern static string MACD_ADX_MA_Strategy="-------------------";
 extern bool     UseSimpleTrendStrategy=false;
 extern static string SimpleStochasticCrossingStrategy="-------------------";
-extern bool     UseStochasticBasedIndicator=false;
+extern bool     UseStochasticBasedStrategy=false;
 extern static string ADX_RSI_MA_Strategy="-------------------";
 extern bool     Use5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
@@ -68,8 +68,12 @@ extern static string UserPositions="Handle user opened positions as a EA own";
 //extern static string HandleUserPositions_Comment="Available in the full version!";
 extern bool     HandleUserPositions=false;
 extern int      CountCharsInCommentToEscape=0;
-extern static string Common="Create signals only on new candle or on every tick";
+extern static string SignalHandling="Create signals only on new candle or on every tick";
 extern bool     HandleOnCandleOpenOnly=true;
+extern int      MaxOpenedPositionsOnCandle=3;
+extern static string MaxOrdersSettings="Creates position independently of opened positions";
+extern bool     AddPositionsIndependently=false;
+extern int      MaxConcurrentOpenedOrders=4;
 extern static string UsingEAOnDifferentTimeframes="-------------------";
 extern int      MagicNumber=3537;
 
@@ -104,11 +108,10 @@ int MAMethod1=0;
 int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
-int Slippage=3,MaxOrders=4,BreakEven=0;
+int Slippage=3,BreakEven=0;
 int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
 int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
 double LotSizeP1,LotSizeP2;
-bool AddPositions=true;
 int StopLevel=0;
 double StopLevelDouble=MarketInfo(Symbol(),MODE_STOPLEVEL)*Point();
 double CurrentLoss=0;
@@ -237,7 +240,7 @@ void OnDeinit(const int reason)
   {
    if(Debug)
      {
-      if(UseStochasticBasedIndicator){Print("countStochOrders="+IntegerToString(countStochOrders));}
+      if(UseStochasticBasedStrategy){Print("countStochOrders="+IntegerToString(countStochOrders));}
       Print("StopLevelDouble="+DoubleToStr(StopLevelDouble));
       Print("StopLevel="+IntegerToString(StopLevel));
      }
@@ -474,7 +477,7 @@ void OnTick()
               }
            }
         }
-      if(UseStochasticBasedIndicator)
+      if(UseStochasticBasedStrategy)
         {
          for(int i=0; i<=2; i++)
            {
@@ -662,8 +665,8 @@ void OnTick()
      {
       CurrentLoss=NormalizeDouble((TempLoss/AccountBalance())*100,2);
      }
-   if((MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent) 
-   || (MaxMoneyValueToLose>0 && StrToInteger(DoubleToStr(MathAbs(TempLoss),0))>MaxMoneyValueToLose))
+   if((MoneyRiskInPercent>0 && StrToInteger(DoubleToStr(MathAbs(CurrentLoss),0))>MoneyRiskInPercent)
+      || (MaxMoneyValueToLose>0 && StrToInteger(DoubleToStr(MathAbs(TempLoss),0))>MaxMoneyValueToLose))
      {
       while(CloseAll()==AT_LEAST_ONE_FAILED)
         {
@@ -691,6 +694,7 @@ void OnTick()
 //entry conditions verification
    if(SellFlag>0){OS=1;OB=0;}if(BuyFlag>0){OB=1;OS=0;}
    if(HandleUserPositions){HandleUserPositionsFun();}
+
 //conditions to close positions
 /* if(SellFlag>0){CloseBuy=1;}
    if(BuyFlag>0){CloseSell=1;}
@@ -864,13 +868,13 @@ void OnTick()
 
 //open position
 // 
-   if((AddP() && AddPositions && OP<=MaxOrders) || (OP<=MaxOrders && !AddPositions))
+   if(((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently)) && PositionCanBeOpened())
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(OnlySell==true && !(AccountFreeMarginCheck(Symbol(),OP_SELL,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && UseStochasticBasedIndicator && TicketNrSellStoch==0)
+         if(OrderDueStoch && UseStochasticBasedStrategy && TicketNrSellStoch==0)
            {
             if(OrderDueStoch){Print("Sell due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
@@ -895,7 +899,7 @@ void OnTick()
                  }
               }
            }
-         if(OS==1 && OSC==0 && !OrderDueStoch)
+         if(OS==1 /*&& OSC==0*/ && !OrderDueStoch)
            {
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
@@ -975,7 +979,7 @@ void OnTick()
       // && MarketInfo(Symbol(),MODE_TRADEALLOWED)
       if(OnlyBuy==true && !(AccountFreeMarginCheck(Symbol(),OP_BUY,LotSize*3)<=0 || GetLastError()==134))
         {
-         if(OrderDueStoch && UseStochasticBasedIndicator && TicketNrBuyStoch==0)
+         if(OrderDueStoch && UseStochasticBasedStrategy && TicketNrBuyStoch==0)
            {
             if(OrderDueStoch){Print("Buy due Stoch!");countStochOrders=countStochOrders+1;}
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
@@ -1000,7 +1004,7 @@ void OnTick()
                  }
               }
            }
-         if(OB==1 && OBC==0 && !OrderDueStoch)
+         if(OB==1 /*&& OBC==0*/ && !OrderDueStoch)
            {
             if(TP==0)TPI=0;else TPI=Ask+TP*Point;if(SL==0)SLI=Ask-10000*Point;else SLI=Ask-SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY))
@@ -1328,6 +1332,74 @@ void ModSL(double ldSL)
            }
         }
      }
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool PositionCanBeOpened()
+  {
+   bool positionCanBeOpened=false;
+   if(HandleOnCandleOpenOnly==false && MaxOpenedPositionsOnCandle>0 && OrdersHistoryTotal()>0)
+     {
+      int currentAlreadyOpenedPositions=0;
+      for(int cnt=0;cnt<OrdersHistoryTotal();cnt++)
+        {
+         if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY)==true)
+           {
+            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+              {
+               currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+               if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
+                 {
+                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                    {
+                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                       {
+                        positionCanBeOpened=true;
+                       }
+                    }
+                 }
+
+               if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
+                 {
+                  if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
+                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                    {
+                     positionCanBeOpened=true;
+                    }
+                 }
+              }
+
+            if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
+              {
+               if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
+                 {
+                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                    {
+                     positionCanBeOpened=true;
+                    }
+                 }
+              }
+
+            if(Period()==PERIOD_MN1)
+              {
+               if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
+                 {
+                  currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
+                  if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
+                    {
+                     positionCanBeOpened=true;
+                    }
+                 }
+              }
+           }
+        }
+        } else {
+      positionCanBeOpened=true;
+     }
+   return positionCanBeOpened;
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
