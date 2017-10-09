@@ -1,27 +1,34 @@
 Deutsch(neu):
 
-Dieser Expert Advisor generiert Signale bei den Trendänderungen. Die Signalgenerierung kann mithilfe von verschiedenen Strategien stattfinden. 
+Dieser Expert Advisor generiert Signale bei den Trendänderungen. Die Signalgenerierung wird mithilfe von verschiedenen Strategien stattfinden, 
+welche vom Trader ausgewählt und kombiniert werden können. 
 Beim Zustandekommmen einer Position wird diese mit einem Take Profit und Stop Loss versehen. Sofern die Position in Plusbereich sich bewegt, wird
-ein dynamisch nachziehender Stop Loss auf Basis der vordefinierten Werten (TrailingStep und DistanceStep) gesetzt und immer wieder nachgezogen, somit wird erreicht, dass die Postition immer im Plus geschlossen wird.
+ein dynamisch nachziehender Stop Loss auf Basis der vordefinierten Werten (TrailingStep und DistanceStep) gesetzt und immer wieder nachgezogen, 
+somit wird erreicht, dass die Postition immer im Plus geschlossen wird.
 
 Features:
 
-Das Money Management ist dabei so aufgeteilt, dass man eine statische Lot-Größe ausgewählt werden kann oder eine dynamisch kalkulierte Lot-Größe, welche anhand der zur Verfügung stehenden liquiden Mitteln, des Hebels und des freien Margins ausgerechnet wird.
+Das Money Management ist dabei so aufgeteilt, dass eine statische Lot-Größe ausgewählt werden kann oder eine dynamisch kalkulierte Lot-Größe, 
+welche anhand der zur Verfügung stehenden liquiden Mitteln, des Hebels und des freien Margins ausgerechnet wird.
 
 In einem reinen Buy-Markt oder einem Sell-Markt kann man ausgewählen, in welche Richtung die Positionen bei Signalbildung eröffnet werden sollen.
 
-Ein weiteres Feature des Expert Advisors ist die Fähigkeit die manuell eröffnente Positionen des Benutzers nach den Regeln des Handelsroboters zu übernehmen und diese zum erfolgreichen Abschluss zu bringen.
+Ein weiteres Feature des Expert Advisors ist die Fähigkeit die manuell eröffnente Positionen des Benutzers nach den Regeln des Handelsroboters zu übernehmen und 
+diese zum erfolgreichen Abschluss zu bringen.
 
-Der Handelsroter kann auf unterschiedlichen Handelsinstrumenten eingesetzt werden (Somit ist es unwichitg, wieviele Digits der Broker anbietet). Optimale Ergebnisse werden aber  auf EURUSD, NZDUSD, GBPJPY, USDJPY, USDCHF, AUDCAD und GBPUSD erzielt.
+Der Handelsroter kann auf unterschiedlichen Handelsinstrumenten eingesetzt werden (Somit ist es unwichitg, wie viele Digits der Broker anbietet). 
+Optimale Ergebnisse werden aber auf EURUSD, NZDUSD, GBPJPY, USDJPY, USDCHF, AUDCAD und GBPUSD erzielt.
 
-Durch die Zeitfunktion kann man die Arbeitszeit des Handelsroboters regeln. Meistens in der Nacht (GMT Zeit) werden falsche Signale vom Markt generiert, welche in der Regel zu den Drawdowns führen.
+Durch die Zeitfunktion kann man die Arbeitszeit des Handelsroboters regeln. Meistens in der Nacht (GMT Zeit) werden falsche Signale vom Markt generiert, 
+welche in der Regel zu den Drawdowns führen.
 
 Durch die Möglichkeit die sog. MagicNumber sertzen zu können, lässt sich der Handelsroboter auf unterschiedlichen Timeframes eines Handelsinstrumenten einsetzen.
 
 Möglichkeiten der Strategien:
  - Alle Strategien lassen sich gleichzeitig verwenden oder man wählt nur eine aus.
  - Strategien werden anhand der verschiedenen Indikatoren und deren Kombinationen realisiert.
- - Aktuell wird nur eine Position in jewelige Richtung eröffnet. Solange diese aktiv ist, werden neue Signale in diese Richtung ignoriert.
+ - Es besteht die Möglichkeit nur eine Position in jewelige Richtung zu eröffnen oder die Anzahl der maximal möglichen Positionen in beide Richtungen zu beschränken. 
+ Signale über die angegebene maximale Anzahl der Positionen werden ignoriert.
  - Eine Variante, wie man den Handelsroter aktiver nutzen kann, ist, wenn man z.B. auf verschiedenen Chartfenstern die Strategien einzeln nutzt.
  - Die andere Möglichkeit ist es, die ausgewählte Strategie auf einem Handelsinstrument, aber auf unterschiedlichen Timeframes  zu nutzen.
  - Es dürfen verschiedene Timeframes für die Nutzung des Handelsroboters ausgewählt werden. Optimale Timeframes sind aber von M15 bis H4.
@@ -32,8 +39,11 @@ Möglichkeiten der Strategien:
 		LotSize=0.01 -> Feste Größe der Position
 		LotAutoSize=false -> Dynamische Berechnung der Positionsgröße erlauben. LotSize wird dabei ignoriert.
 		LotRiskPercent=25 -> Risiko für die Positionsgröße. Wird anhand des freien Margins, frei zur Verfügung stehenden liquiden Mitteln und des Hebels berechnet.
+	MoneyManagement="";	
 		MoneyRiskInPercent=0 -> Zur Sicherheit kann hier der empfohlene Wert von z.B. 32 eingetragen werden. Beim Erreichen des prozentuallen Wertes werden alle Positionen für alle Chartfenster mit der gleichen MagicNumber sofort geschlossen. Bitte verwenden Sie diese Option mit Bedacht.
+		MaxMoneyValueToLose=0 -> Das andere Sicherheitsmechanismus ist die Angabe des maximalen Betrages, welchen Sie riskieren möchten. Funkionsweise wie bei MoneyRiskInPercent.
 		MaxDynamicLotSize=0.0 -> Die maximal mögliche Lot-Größe bei eingeschalteter LotAutoSize-Funktion kann hier bestimmt werden. Wenn der eingegebene Wert größer als die maximal mögliche Größe des Lots des Handelsinstrumenten ist, so wird dann der maximal Wert für diesen Handelsinstrumenten verwendet.
+		MaxMoneyValueToLose=0 -> Geldwert, welchen Sie maximal riskieren möchten.
 	Positions="Handle positions params";
 		TrailingStep=15 ->  Gibt an, in welchen Schritten der Trailing Step, abhängig von dem Eröffnungspreis der Position, gesetzt werden soll.
 		DistanceStep=15 -> Gibt den Schritt, abhängig von dem aktuellen  Kurs, an,  ab welchen der Trailing Step, nachgezogen werden soll.
@@ -64,8 +74,11 @@ Möglichkeiten der Strategien:
 	UserPositions="Handle user opened positions as a EA own";
 		HandleUserPositions=false -> Diese Funktion übernimmt manuell eröffnete Positionen und behandelt diese nach den vorgegebenen Einstellungen mit dem dynamischen Stop Loss und Money Management, welches vorhersagt, welche Positionsgröße zunächst verwendet werden soll. Es wird  Stop Loss dynamisch nach nachgezogen, sobald die Position in Plus-Bereich kommt. Es werden eventuelle Kommissionen und Swaps berücksichtigt. Pro Symbol sollte es nur in einem Chart-Fenster installiert werden.
 		CountCharsInCommentToEscape=0 -> Wenn der Broker in das Kommentarfeld eigene Informationen setzt, so können diese mit der angegebener Anzahl der Zeichen ignoriert werden.
-	Common="Create signals only on new candle or on every tick";
+	SignalHandling="Create signals only on new candle or on every tick";
 		HandleOnCandleOpenOnly=true -> Wenn true, so wird nur bei der neuen Kerze ein Signal generiert, anderweitig werden Positionen bis zum vollständigen Ablauf der Kerze generiert.
+	MaxOrdersSettings="Positionen unabhängig von bereits eröffneten Positionen handlen";
+		AddPositionsIndependently=false -> Aktiviert die Möglichkeit, zusätzliche Positionen zu eröffnen.
+		MaxConcurrentOpenedOrders=4 -> Maximale Anzahl der zusätzlichen Positionen in beide Richtungen.
 	UsingEAOnDifferentTimeframes="-------------------";
 		MagicNumber=3537 -> MagicNumber ist ein Werkzeug, welches es dem Handelsroboter ermöglicht auf den unterschiedlichen Timeframes eines Handlesinstruments zu arbeiten.
 

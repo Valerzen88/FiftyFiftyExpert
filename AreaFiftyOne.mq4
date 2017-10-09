@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.47"
+#property version   "3.48"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -31,6 +31,7 @@ extern double   LotSize=0.01;
 //extern static string MoneyRiskInPercent_Comment="Available in the full version!";
 extern bool     LotAutoSize=false;
 extern int      LotRiskPercent=25;
+extern static string MoneyManagement="Set MM settings here";
 extern int      MoneyRiskInPercent=0;
 extern double   MaxDynamicLotSize=0.0;
 extern int      MaxMoneyValueToLose=0;
@@ -43,7 +44,7 @@ extern int      TakeProfit=750;
 extern int      StopLoss=0;
 extern static string Indicators="Choose strategies";
 extern static string TrendIndicatorStrategy="-------------------";
-extern bool     UseTrendIndicator=true;
+extern bool     UseTrendIndicator=false;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
@@ -56,7 +57,7 @@ extern bool     UseStochasticBasedStrategy=false;
 extern static string ADX_RSI_MA_Strategy="-------------------";
 extern bool     Use5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
-extern bool     UseStochRSICroosingStrategy=false;
+extern bool     UseStochRSICroosingStrategy=true;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
@@ -866,7 +867,7 @@ void OnTick()
 
 //open position
 // 
-   if((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently))
+   if((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
