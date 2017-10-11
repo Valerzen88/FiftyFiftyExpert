@@ -68,6 +68,7 @@ extern bool     OnlySell=true;
 extern static string UserPositions="Handle user opened positions as a EA own";
 //extern static string HandleUserPositions_Comment="Available in the full version!";
 extern bool     HandleUserPositions=false;
+bool     HandleUserPositionsOnDifferentCharts=false;
 extern int      CountCharsInCommentToEscape=0;
 extern static string SignalHandling="Create signals only on new candle or on every tick";
 extern bool     HandleOnCandleOpenOnly=true;
@@ -1150,6 +1151,12 @@ double OnTester()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+//TODO: Add csv file with ordernummer, magicnumber
+// this csv should check, if for current magicnumber orders are found 
+// then the orders should be handled
+// the fun can be enabled due a param HandleUserPositionsOnDifferentCharts=false/true
+// with this functionallity should reached, that user positions will be handled 
+// with different settings (e.g. TS and DS values)
 void HandleUserPositionsFun()
   {
    for(int j=0;j<OrdersTotal();j++)
@@ -1192,7 +1199,6 @@ void HandleUserPositionsFun()
                        }
                     }
                  }
-
            }
         }
      }

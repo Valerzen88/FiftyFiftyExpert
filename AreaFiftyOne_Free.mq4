@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.47"
+#property version   "3.48"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -30,11 +30,12 @@ extern static string LotAutoSize_Comment="Available in the full version!";
 extern static string LotRiskPercent_Comment="Available in the full version!";
 extern static string MoneyRiskInPercent_Comment="Available in the full version!";
 extern static string MaxDynamicLotSize_Comment="Available in the full version!";
+extern static string MaxMoneyValueToLose_Comment="Available in the full version!";
 bool     LotAutoSize=false;
 int      LotRiskPercent=25;
 int      MoneyRiskInPercent=0;
 double   MaxDynamicLotSize=0.0;
-extern int      MaxMoneyValueToLose=0;
+int      MaxMoneyValueToLose=0;
 extern static string TrailingStep_Comment="Available in the full version!";
 extern static string DistanceStep_Comment="Available in the full version!";
 extern static string Positions="Handle positions params";
@@ -102,8 +103,6 @@ int RSI_Price_Type=MODE_SMA;      //0-3
 int Trade_Signal_Line=7;
 int Trade_Signal_Line2=18;
 int Trade_Signal_Type=MODE_SMA;   //0-3
-double over_bought=80;
-double over_sold=20;
 int MAFastPeriod = 7;
 int MASlowPeriod = 21;
 int KPeriod1=21;
@@ -874,7 +873,7 @@ void OnTick()
      }
 //open position
 // 
-   if((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP<=MaxConcurrentOpenedOrders && !AddPositionsIndependently))
+   if((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
@@ -905,7 +904,7 @@ void OnTick()
                  }
               }
            }
-         if(OS==1 /*&& OSC==0 */ && !OrderDueStoch)
+         if(OS==1 /*&& OSC==0*/ && !OrderDueStoch)
            {
             if(TP==0)TPI=0;else TPI=Bid-TP*Point;if(SL==0)SLI=Bid+10000*Point;else SLI=Bid+SL*Point;
             if(CheckMoneyForTrade(Symbol(),LotSize,OP_SELL))
