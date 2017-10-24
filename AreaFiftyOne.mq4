@@ -11,6 +11,9 @@
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 #resource "\\Indicators\\AreaFiftyOne_Trend.ex4"
+#resource "\\Indicators\\SunTrade\\$hah+.ex4"
+#resource "\\Indicators\\SunTrade\\FL11.ex4"
+#resource "\\Indicators\\SunTrade\\SSRC.ex4"
 
 #define SLIPPAGE              5
 #define NO_ERROR              1
@@ -45,17 +48,20 @@ extern int      StopLoss=0;
 extern static string Indicators="Choose strategies";
 extern static string TrendIndicatorStrategy="-------------------";
 extern bool     UseTrendIndicator=false;
+extern double   Smoothing=3.0;
 extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
 extern bool     UseRSIBasedIndicator=false;
+extern bool     UseCorridorCroosing=false;
 extern static string MACD_ADX_MA_Strategy="-------------------";
 extern bool     UseSimpleTrendStrategy=false;
 extern static string SimpleStochasticCrossingStrategy="-------------------";
 extern bool     UseStochasticBasedStrategy=false;
 extern static string ADX_RSI_MA_Strategy="-------------------";
 extern bool     Use5050Strategy=false;
+extern bool     UseMAOn5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=true;
 bool     AllowPendings=false;
@@ -209,7 +215,7 @@ int OnInit()
    if(UseTrendIndicator)
      {
       handle_ind=0;
-      handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName2+".ex4",0,0);
+      handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0);
       if(handle_ind==INVALID_HANDLE)
         {
          Print("Expert: iCustom call2: Error code=",GetLastError());
@@ -276,14 +282,17 @@ void OnTick()
          double TDIYellow=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
          double TDIYellowPrevous=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1);
          //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
-         double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
+         //double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
          // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
          // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
          double TSL2=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
          double TSL2Previous=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
 
-         if((TSL2<TDIYellow) && (TDIGreen>TSL2 && (TDIGreenPrevious<TSL2Previous || TDIGreenPrevious==TSL2Previous))) {BuyFlag=true;}
-         if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
+         if(UseCorridorCroosing)
+           {
+            if((TSL2<TDIYellow) && (TDIGreen>TSL2 && (TDIGreenPrevious<TSL2Previous || TDIGreenPrevious==TSL2Previous))) {BuyFlag=true;}
+            if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
+           }
 
          if((TDIYellow<50) && (TSL2<TDIYellow) && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
          if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
@@ -295,15 +304,15 @@ void OnTick()
         {
          if(true)//(Volume[0]==1)
            {
-            double Trend=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,0),1);
-            double TrendBack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,1),1);
-            double TrendBack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",0,2),1);
-            double MA=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",1,0),1);
-            double MABack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",1,1),1);
-            double MABack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",1,2),1);
-            double MA_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,0),1);
-            double MABack_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,1),1);
-            double MABack2_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",2,2),1);
+            double Trend=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
+            double TrendBack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,1),1);
+            double TrendBack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,2),1);
+            double MA=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,0),1);
+            double MABack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,1),1);
+            double MABack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,2),1);
+            double MA_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,0),1);
+            double MABack_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,1),1);
+            double MABack2_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,2),1);
 
             if(Debug)
               {
@@ -525,6 +534,24 @@ void OnTick()
                SellFlag=true;
               }
            }
+        }
+      if(UseMAOn5050Strategy)
+        {
+         int buff=150;
+         int i=0;
+         double RSIBuffer[];
+         double MAofRSIBuffer[];
+         ArrayResize(RSIBuffer,buff);
+         ArrayResize(MAofRSIBuffer,buff);
+         for(int j=0; j<buff; j++)
+           {
+            RSIBuffer[j]=iRSI(Symbol(),0,45,PRICE_CLOSE,i);
+            MAofRSIBuffer[j]=iMAOnArray(RSIBuffer,0,21,0,0,j);
+           }
+
+         if(RSIBuffer[i+1]>MAofRSIBuffer[i+1] && MathRound(RSIBuffer[i+1])==MathRound(MAofRSIBuffer[i+1])) {SellFlag=true;}
+         if(RSIBuffer[i+1]<MAofRSIBuffer[i+1] && MathRound(RSIBuffer[i+1])==MathRound(MAofRSIBuffer[i+1])) {BuyFlag=true;}
+
         }
       if(UseStochRSICroosingStrategy)
         {
@@ -1341,11 +1368,11 @@ void ModSL(double ldSL)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+  
-bool CurrentCandleHasNoOpenedTrades() 
+bool CurrentCandleHasNoOpenedTrades()
   {
    bool positionCanBeOpened=false;
    int currentAlreadyOpenedPositions=0;
-   if(OrdersTotal()>0) 
+   if(OrdersTotal()>0)
      {
       for(int cnt=0;cnt<OrdersTotal();cnt++)
         {
