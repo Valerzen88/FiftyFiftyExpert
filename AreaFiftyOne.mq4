@@ -64,6 +64,8 @@ extern bool     Use5050Strategy=false;
 extern bool     UseMAOn5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=true;
+extern static string LongTermJrneyToSunriseStrategy="-------------------";
+extern bool     UseLongTermJourneyToSunriseStrategy=false;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
@@ -126,6 +128,9 @@ double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 string IndicatorName2="AreaFiftyOne_Trend";
+string IndicatorName3="$hah+";
+string IndicatorName4="FL11";
+string IndicatorName5="SSRC";
 bool WrongDirectionBuy=false,WrongDirectionSell=false;
 int WrongDirectionBuyTicketNr=0,WrongDirectionSellTicketNr=0;
 int TicketNrBuyWD=0,TicketNrSellWD=0;
@@ -222,6 +227,30 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
+   if(UseLongTermJourneyToSunriseStrategy)
+     {
+      handle_ind=0;
+      handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
+      if(handle_ind==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call3: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
+      int handle_ind1=0;
+      handle_ind1=(int)iCustom(_Symbol,_Period,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",0,0);
+      if(handle_ind==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call4: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
+      int handle_ind2=0;
+      handle_ind2=(int)iCustom(_Symbol,_Period,"::Indicators\\SunTrade\\"+IndicatorName5+".ex4",0,0);
+      if(handle_ind==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call5: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
+     }
    bool compareContractSizes=false;
    if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
    else {compareContractSizes=false;}
@@ -270,7 +299,7 @@ void OnTick()
    bool CheckForSignal;
    if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
    if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades()) {CheckForSignal=true;}
-
+   
 //double TempTDIGreen=0,TempTDIRed=0;
    if(TradingAllowed && CheckForSignal)
      {
@@ -571,6 +600,30 @@ void OnTick()
                && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<MathRound(stochastic1previous)))
               {
                SellFlag=true;
+              }
+           }
+        }
+      if(UseLongTermJourneyToSunriseStrategy)
+        {
+         for(int i=0;i<5;i++) 
+           {
+            double currentBuyValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",0,i);
+            double currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",1,i);
+            if(currentBuyValue>0.0) 
+              {
+               Print("currentBuyValue["+i+"]="+currentBuyValue);
+               double currentValueStarBuy=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
+               if(currentValueStarBuy>5.0) {
+                  SellFlag=true;
+               }
+              }
+              if(currentSellValue>0.0) 
+              {
+               Print("currentSellValue["+i+"]="+currentSellValue);
+               double currentValueStarSell=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
+               if(currentValueStarSell) {
+                  BuyFlag=true;
+               }
               }
            }
         }
