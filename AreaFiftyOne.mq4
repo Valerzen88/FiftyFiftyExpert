@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2017 VBApps::Valeri Balachnin"
-#property version   "3.48"
+#property version   "3.88"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -66,6 +66,7 @@ extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=true;
 extern static string LongTermJrneyToSunriseStrategy="-------------------";
 extern bool     UseLongTermJourneyToSunriseStrategy=false;
+extern bool     Use2ndLevelSignals=false;
 bool     AllowPendings=false;
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
@@ -299,7 +300,7 @@ void OnTick()
    bool CheckForSignal;
    if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
    if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades()) {CheckForSignal=true;}
-   
+
 //double TempTDIGreen=0,TempTDIRed=0;
    if(TradingAllowed && CheckForSignal)
      {
@@ -605,25 +606,50 @@ void OnTick()
         }
       if(UseLongTermJourneyToSunriseStrategy)
         {
-         for(int i=0;i<5;i++) 
+         for(int i=0;i<25;i++)
            {
-            double currentBuyValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",0,i);
-            double currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",1,i);
-            if(currentBuyValue>0.0) 
+            double currentBuyValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
+            double currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
+            if(currentBuyValue>0.0)
               {
                Print("currentBuyValue["+i+"]="+currentBuyValue);
                double currentValueStarBuy=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
-               if(currentValueStarBuy>5.0) {
-                  SellFlag=true;
-               }
+               if(CompareDoubles(currentValueStarBuy,5.0))
+                 {
+                  BuyFlag=true;
+                 }
               }
-              if(currentSellValue>0.0) 
+            if(currentSellValue>0.0)
               {
                Print("currentSellValue["+i+"]="+currentSellValue);
                double currentValueStarSell=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
-               if(currentValueStarSell) {
-                  BuyFlag=true;
-               }
+               if(CompareDoubles(currentValueStarSell,5.0))
+                 {
+                  SellFlag=true;
+                 }
+              }
+            if(Use2ndLevelSignals) 
+              {
+               currentBuyValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
+               currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
+               if(currentBuyValue>0.0)
+                 {
+                  Print("currentBuyValue["+i+"]="+currentBuyValue);
+                  double currentValueStarBuy=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
+                  if(CompareDoubles(currentValueStarBuy,5.0))
+                    {
+                     BuyFlag=true;
+                    }
+                 }
+               if(currentSellValue>0.0)
+                 {
+                  Print("currentSellValue["+i+"]="+currentSellValue);
+                  double currentValueStarSell=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
+                  if(CompareDoubles(currentValueStarSell,5.0))
+                    {
+                     SellFlag=true;
+                    }
+                 }
               }
            }
         }
