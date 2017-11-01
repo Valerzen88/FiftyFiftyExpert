@@ -612,20 +612,22 @@ void OnTick()
             double currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
             if(currentBuyValue>0.0)
               {
-               Print("currentBuyValue["+i+"]="+currentBuyValue);
                double currentValueStarBuy=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
                if(CompareDoubles(currentValueStarBuy,5.0))
                  {
-                  BuyFlag=true;
+                  //BuyFlag=true;
+                  SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: BUY signal at " + DoubleToStr(Close[0], Digits));
+                  SendNotification("BUY signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy");
                  }
               }
             if(currentSellValue>0.0)
               {
-               Print("currentSellValue["+i+"]="+currentSellValue);
                double currentValueStarSell=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
                if(CompareDoubles(currentValueStarSell,5.0))
                  {
-                  SellFlag=true;
+                  //SellFlag=true;
+                  SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: SELL signal at " + DoubleToStr(Close[0], Digits));
+                  SendNotification("SELL signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy");
                  }
               }
             if(Use2ndLevelSignals) 
@@ -634,20 +636,22 @@ void OnTick()
                currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
                if(currentBuyValue>0.0)
                  {
-                  Print("currentBuyValue["+i+"]="+currentBuyValue);
                   double currentValueStarBuy=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
                   if(CompareDoubles(currentValueStarBuy,5.0))
                     {
-                     BuyFlag=true;
+                     //BuyFlag=true;
+                     SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy(2nd level): BUY signal at " + DoubleToStr(Close[0], Digits));
+                     SendNotification("BUY signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");
                     }
                  }
                if(currentSellValue>0.0)
                  {
-                  Print("currentSellValue["+i+"]="+currentSellValue);
                   double currentValueStarSell=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
                   if(CompareDoubles(currentValueStarSell,5.0))
                     {
-                     SellFlag=true;
+                     //SellFlag=true;
+                     SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: SELL signal at " + DoubleToStr(Close[0], Digits));
+                     SendNotification("SELL signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");
                     }
                  }
               }
@@ -1937,3 +1941,35 @@ bool NewBar()
      }
   }
 //+------------------------------------------------------------------+
+string getTimeframe(int ai_0) {
+   string ls_ret_4;
+   switch (ai_0) {
+   case 1:
+      ls_ret_4 = "M1";
+      break;
+   case 5:
+      ls_ret_4 = "M5";
+      break;
+   case 15:
+      ls_ret_4 = "M15";
+      break;
+   case 30:
+      ls_ret_4 = "M30";
+      break;
+   case 60:
+      ls_ret_4 = "H1";
+      break;
+   case 240:
+      ls_ret_4 = "H4";
+      break;
+   case 1440:
+      ls_ret_4 = "D1";
+      break;
+   case 10080:
+      ls_ret_4 = "W1";
+      break;
+   case 43200:
+      ls_ret_4 = "MN";
+   }
+   return (ls_ret_4);
+}
