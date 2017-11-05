@@ -606,16 +606,20 @@ void OnTick()
         }
       if(UseLongTermJourneyToSunriseStrategy)
         {
-         for(int i=0;i<25;i++)
+        bool signal=false;
+         for(int i=0;i<5;i++)
            {
             double currentBuyValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
             double currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
             if(currentBuyValue>0.0)
               {
                double currentValueStarBuy=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
+               //Print("currentValueStarBuy="+currentValueStarBuy);
                if(CompareDoubles(currentValueStarBuy,5.0))
                  {
                   //BuyFlag=true;
+                  signal=true;
+                  Print("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: BUY signal at " + DoubleToStr(Close[0], Digits));
                   SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: BUY signal at " + DoubleToStr(Close[0], Digits));
                   SendNotification("BUY signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy");
                  }
@@ -623,34 +627,39 @@ void OnTick()
             if(currentSellValue>0.0)
               {
                double currentValueStarSell=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
+               //Print("currentValueStarSell="+currentValueStarSell);
                if(CompareDoubles(currentValueStarSell,5.0))
                  {
                   //SellFlag=true;
+                  signal=true;
+                  Print("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: SELL signal at " + DoubleToStr(Close[0], Digits));
                   SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: SELL signal at " + DoubleToStr(Close[0], Digits));
                   SendNotification("SELL signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy");
                  }
               }
-            if(Use2ndLevelSignals) 
+            if(Use2ndLevelSignals && !signal) 
               {
-               currentBuyValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
-               currentSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
-               if(currentBuyValue>0.0)
+               double current2ndLevelBuyValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
+               double current2ndLevelSellValue=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
+               if(current2ndLevelBuyValue>0.0)
                  {
                   double currentValueStarBuy=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
                   if(CompareDoubles(currentValueStarBuy,5.0))
                     {
                      //BuyFlag=true;
+                     Print("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy(2nd level): BUY signal at " + DoubleToStr(Close[0], Digits));
                      SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy(2nd level): BUY signal at " + DoubleToStr(Close[0], Digits));
                      SendNotification("BUY signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");
                     }
                  }
-               if(currentSellValue>0.0)
+               if(current2ndLevelSellValue>0.0)
                  {
                   double currentValueStarSell=iCustom(Symbol(),0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
                   if(CompareDoubles(currentValueStarSell,5.0))
                     {
                      //SellFlag=true;
-                     SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy: SELL signal at " + DoubleToStr(Close[0], Digits));
+                     Print("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy(2nd level): SELL signal at " + DoubleToStr(Close[0], Digits));
+                     SendMail("Area51 on "+Symbol()+"("+getTimeframe(Period())+")", "Sunrise strategy(2nd level): SELL signal at " + DoubleToStr(Close[0], Digits));
                      SendNotification("SELL signal at " + DoubleToStr(Close[0], Digits)+" -> Area51 on "+Symbol()+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");
                     }
                  }
