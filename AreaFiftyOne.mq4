@@ -461,6 +461,7 @@ void OnTick()
 
    int limit=1,err=0;
    bool BUY=false,SELL=false;
+   SellFlag=false;BuyFlag=false;
    bool TradingAllowed=false;
 /*if(Debug){Print("StartHour>-1="+(StartHour>-1)+"&&EndHour<24="+(EndHour<24)+"&&Hour>StartHour="+(Hour()>StartHour)
    +"||Hour==StartHour="+(Hour()==StartHour)+"&&Hour<EndHour="+(Hour()<EndHour)+"||Hour==EndHour"+(Hour()==EndHour));}*/
@@ -791,10 +792,18 @@ void OnTick()
                      if(signalStr=="Buy") 
                        {
                         OB=1;OS=0;
-                        OpenPosition(symbolNameBuffer[x],OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                        if(IsTesting()) {
+                           Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(Ask,5));
+                        } else {
+                           OpenPosition(symbolNameBuffer[x],OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                        }
                           } else if(signalStr=="Sell") {
                         OS=1;OB=0;
-                        OpenPosition(symbolNameBuffer[x],OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                        if(IsTesting()) {
+                           Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(Bid));
+                        } else {
+                           OpenPosition(symbolNameBuffer[x],OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                        }
                        }
 
                     }
@@ -1932,7 +1941,11 @@ void setAllForTradeAvailableSymbols()
       string symbolName=SymbolName(j,false);
       int tradingAllowed=(int)MarketInfo(symbolName,MODE_TRADEALLOWED);
       int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
-      if(profitCalcMode==0)
+      int marginCalcMode=(int)MarketInfo(symbolName,MODE_MARGINCALCMODE);
+      int tradingAllowedInfo = (int)SymbolInfoInteger(symbolName,SYMBOL_TRADE_MODE);
+      Print("tradingAllowedInfo="+IntegerToString(tradingAllowedInfo));
+      if(IsTesting()) {tradingAllowed=1;}
+      if(profitCalcMode==0 && marginCalcMode==0 && tradingAllowed==1)
         {
          symbolNameBuffer[j]=symbolName;
         }
