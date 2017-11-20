@@ -65,12 +65,15 @@ extern bool     Use5050Strategy=false;
 extern bool     UseMAOn5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=true;
-extern static string LongTermJrneyToSunriseStrategy="-------------------";
+extern static string LongTermJourneyToSunriseStrategy="-------------------";
 extern bool     UseLongTermJourneyToSunriseStrategy=false;
 extern bool     Use2ndLevelSignals=false;
 bool     AllowPendings=false;
 extern static string TradeAllSymbolsFromOneChart="Trade the choosen strategy on all available symbols";
 extern bool     TradeOnAllSymbols=false;
+extern bool   TradeOnlyListOfSelectedSymbols=false;
+extern string   ListOfSelectedSymbols="EURUSD;USDJPY;GBPUSD";
+extern string   SymbolTimeFrame="H4";  
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
 extern int      EndHour=20;
@@ -793,16 +796,16 @@ void OnTick()
                        {
                         OB=1;OS=0;
                         if(IsTesting()) {
-                           Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(Ask,5));
+                           Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_ASK),5));
                         } else {
-                           OpenPosition(symbolNameBuffer[x],OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                           OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
                         }
                           } else if(signalStr=="Sell") {
                         OS=1;OB=0;
                         if(IsTesting()) {
-                           Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(Bid));
+                           Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_BID),5));
                         } else {
-                           OpenPosition(symbolNameBuffer[x],OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                           OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
                         }
                        }
 
@@ -921,7 +924,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
 
 //open position
 // 
-   if((AddP() && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
+   if((AddP(symbolName) && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
@@ -1201,12 +1204,12 @@ void HandleUserPositionsFun()
 //+------------------------------------------------------------------+
 //|add positions function                                            |
 //+------------------------------------------------------------------+													  
-bool AddP()
+bool AddP(string symbolName)
   {
    int _num=0,_ot=0;
    for(int j=0;j<OrdersTotal();j++)
      {
-      if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol() && OrderType()<3 && (OrderMagicNumber()==MagicNumber))
+      if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==symbolName && OrderType()<3 && (OrderMagicNumber()==MagicNumber))
         {
          _num++;if(OrderOpenTime()>_ot) _ot=(int)OrderOpenTime();
         }
@@ -1939,16 +1942,41 @@ void setAllForTradeAvailableSymbols()
    for(int j=0;j<countOfAllSymbols;j++)
      {
       string symbolName=SymbolName(j,false);
-      int tradingAllowed=(int)MarketInfo(symbolName,MODE_TRADEALLOWED);
+      bool tradingAllowed=(bool)MarketInfo(symbolName,MODE_TRADEALLOWED);
       int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
       int marginCalcMode=(int)MarketInfo(symbolName,MODE_MARGINCALCMODE);
-      int tradingAllowedInfo = (int)SymbolInfoInteger(symbolName,SYMBOL_TRADE_MODE);
-      Print("tradingAllowedInfo="+IntegerToString(tradingAllowedInfo));
-      if(IsTesting()) {tradingAllowed=1;}
-      if(profitCalcMode==0 && marginCalcMode==0 && tradingAllowed==1)
+      if(IsTesting()) {tradingAllowed=true;}
+      if(profitCalcMode==0 && marginCalcMode==0 && tradingAllowed)
         {
          symbolNameBuffer[j]=symbolName;
         }
      }
   }
 //+------------------------------------------------------------------+
+int countOpenedPositionsForSymbol(string symbolName) {
+   int count=0;
+   for(int i=0;i<OrdersTotal();i++) {
+       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
+        {
+         if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
+           {
+            count += 1;
+           }
+        }
+   }
+   return count;
+}
+int getOpenedPositionsForSymbol(string symbolName) {
+   int cnt=0,OP=0;
+   for(cnt=0;cnt<OrdersTotal();cnt++)
+     {
+      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
+        {
+         if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==symbolName && ((OrderMagicNumber()==MagicNumber)))
+           {
+            OP=OP+1;
+           }
+        }
+     }
+     return OP;
+}
