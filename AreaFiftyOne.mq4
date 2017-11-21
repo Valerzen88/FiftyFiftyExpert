@@ -786,7 +786,7 @@ void OnTick()
            {
             for(int x=0;x<ArraySize(symbolNameBuffer);x++)
               {
-               if(symbolNameBuffer[x]!="")
+               if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
                  {
                   string signalStr=getSignalForCurrency(symbolNameBuffer[x]);
                   Print(symbolNameBuffer[x]+"="+signalStr);
@@ -896,25 +896,6 @@ void OnTick()
 
 //not enough money message to continue the martingale
    if((TicketNrBuy<0 || TicketNrSell<0) && GetLastError()==134){err=1;Print("NOT ENOGUGHT MONEY!!");}
-  }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-int getOP() 
-  {
-
-   int cnt=0,OP=0;
-   for(cnt=0;cnt<OrdersTotal();cnt++)
-     {
-      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
-        {
-         if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
-           {
-            OP=OP+1;
-           }
-        }
-     }
-   return OP;
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -1949,6 +1930,8 @@ void setAllForTradeAvailableSymbols()
       if(profitCalcMode==0 && marginCalcMode==0 && tradingAllowed)
         {
          symbolNameBuffer[j]=symbolName;
+        } else {
+         symbolNameBuffer[j]=IntegerToString(EMPTY_VALUE);
         }
      }
   }
