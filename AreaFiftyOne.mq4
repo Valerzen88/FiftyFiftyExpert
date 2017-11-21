@@ -73,7 +73,7 @@ extern static string TradeAllSymbolsFromOneChart="Trade the choosen strategy on 
 extern bool     TradeOnAllSymbols=false;
 extern bool   TradeOnlyListOfSelectedSymbols=false;
 extern string   ListOfSelectedSymbols="EURUSD;USDJPY;GBPUSD";
-extern string   SymbolTimeFrame="H4";  
+extern string   SymbolTimeFrame="H4";
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
 extern int      EndHour=20;
@@ -156,6 +156,10 @@ double CurrentTotalLotSize=0.0;
 string symbolNameBuffer[];
 bool SellFlag=false;
 bool BuyFlag=false;
+bool LotSizeIsBiggerThenMaxLot=false;
+int countRemainingMaxLots=0;
+double MaxLot=MarketInfo(Symbol(),MODE_MAXLOT);
+double RemainingLotSize=0.0;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -285,10 +289,10 @@ int OnInit()
       DistanceStep=DistanceStep+StopLevel;
       if(Debug){Print("TrailingStep="+IntegerToString(TrailingStep)+";DistanceStep="+IntegerToString(DistanceStep)+";StopLevel="+IntegerToString(StopLevel));}
      }
-   if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4)
+   if((getContractProfitCalcMode(Symbol())==1 || getContractProfitCalcMode(Symbol())==2 || MarginMode==4)
       && (AllowPendings) && (compareContractSizes==false))
      {AllowPendings=false;Print("Pendings are disabled due CFD or Futures.");}
-      setAllForTradeAvailableSymbols();
+   setAllForTradeAvailableSymbols();
 //---
    return(INIT_SUCCEEDED);
   }
@@ -322,10 +326,9 @@ void OnTick()
    bool compareContractSizes=false;
    if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
    else {compareContractSizes=false;}
-   double RemainingLotSize=0.0;
-   int countRemainingMaxLots=0;
-   bool LotSizeIsBiggerThenMaxLot=false;
-   double MaxLot=MarketInfo(Symbol(),MODE_MAXLOT);
+   countRemainingMaxLots=0;
+   LotSizeIsBiggerThenMaxLot=false;
+   MaxLot=MarketInfo(Symbol(),MODE_MAXLOT);
    if(SymbolStep>0.0)
      {
       MaxLot=NormalizeDouble(MaxLot-MathMod(MaxLot,SymbolStep),countedDecimals);
@@ -337,7 +340,7 @@ void OnTick()
       if(LotRiskPercent<0.1 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
       else
         {
-         if(getContractProfitCalcMode()==0 || (MarginMode==0 && compareContractSizes))
+         if(getContractProfitCalcMode(Symbol())==0 || (MarginMode==0 && compareContractSizes))
            {
             //Print("Fall1:"+(MarginMode==0 && compareContractSizes));
             LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
@@ -346,12 +349,12 @@ void OnTick()
             LotSizeP1 = NormalizeDouble(LotSize*0.625,countedDecimals);
             LotSizeP2 = NormalizeDouble(LotSize*0.5,countedDecimals);
            }
-         else if((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false))
+         else if((getContractProfitCalcMode(Symbol())==1 || getContractProfitCalcMode(Symbol())==2 || MarginMode==4) && (compareContractSizes==false))
            {
             //Print("Fall2:"+((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false)));
             if(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE)==1.0){countedDecimals=0;}
             int Splitter=1000;
-            if(getContractProfitCalcMode()==1){Splitter=100000;}
+            if(getContractProfitCalcMode(Symbol())==1){Splitter=100000;}
             if(MarginMode==4 && MarketInfo(Symbol(),MODE_TICKSIZE)==0.001){Splitter=1000000;}
             if(Digits==3){Faktor=1;}
             if(Digits==2){Faktor=10;}
@@ -474,7 +477,7 @@ void OnTick()
      }
    bool CheckForSignal;
    if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
-   if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades()) {CheckForSignal=true;}
+   if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades(Symbol())) {CheckForSignal=true;}
 
 //double TempTDIGreen=0,TempTDIRed=0;
 //HideTestIndicators(true);
@@ -784,36 +787,9 @@ void OnTick()
         {
          if(TradeOnAllSymbols)
            {
-            for(int x=0;x<ArraySize(symbolNameBuffer);x++)
-              {
-               if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
-                 {
-                  string signalStr=getSignalForCurrency(symbolNameBuffer[x]);
-                  Print(symbolNameBuffer[x]+"="+signalStr);
-                  if(signalStr!="noSignal")
-                    {
-                     if(signalStr=="Buy") 
-                       {
-                        OB=1;OS=0;
-                        if(IsTesting()) {
-                           Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_ASK),5));
-                        } else {
-                           OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
-                        }
-                          } else if(signalStr=="Sell") {
-                        OS=1;OB=0;
-                        if(IsTesting()) {
-                           Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_BID),5));
-                        } else {
-                           OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
-                        }
-                       }
-
-                    }
-                 }
-              }
+            generateSignalsAndPositions("sunTrade");
               } else {
-            if(getSignalForCurrency(Symbol())!="noSignal")
+            if(getSignalForCurrencyAndStrategy(Symbol(),"sunTrade")!="noSignal")
               {
                SellFlag=true;
                  } else {
@@ -831,7 +807,7 @@ void OnTick()
 /* if(SellFlag>0){CloseBuy=1;}
    if(BuyFlag>0){CloseSell=1;}
 */
-   if(TradeOnAllSymbols==false) 
+   if(TradeOnAllSymbols==false)
      {
       //entry conditions verification
       if(SellFlag>0){OS=1;OB=0;}if(BuyFlag>0){OB=1;OS=0;}
@@ -845,9 +821,9 @@ void OnTick()
         {
          if(OrderSymbol()==Symbol() && (OrderMagicNumber()==MagicNumber))
            {
-            if(WrongDirectionBuy==true && OrderType()==OP_SELL){TrP();}
-            else if(WrongDirectionSell==true && OrderType()==OP_BUY){TrP();}
-            else if(WrongDirectionBuy==false && WrongDirectionSell==false){TrP();}
+            if(WrongDirectionBuy==true && OrderType()==OP_SELL){TrP(Symbol());}
+            else if(WrongDirectionSell==true && OrderType()==OP_BUY){TrP(Symbol());}
+            else if(WrongDirectionBuy==false && WrongDirectionSell==false){TrP(Symbol());}
             TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
             if(Debug){Print("TempProfit="+DoubleToStr(TempProfit));}
            }
@@ -870,7 +846,7 @@ void OnTick()
               }
             if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
               {
-               TrP();
+               TrP(Symbol());
               }
            }
         }
@@ -900,7 +876,7 @@ void OnTick()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThenMaxLot,int countRemainingMaxLots,double MaxLot,double RemainingLotSize) 
+void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThenMaxLotT,int countRemainingMaxLotsT,double MaxLotT,double RemainingLotSizeT)
   {
 
 //open position
@@ -917,20 +893,20 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
             if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_BID)-TP*Point;if(SL==0)SLI=MarketInfo(symbolName,MODE_BID)+10000*Point;else SLI=MarketInfo(symbolName,MODE_BID)+SL*Point;
             if(CheckMoneyForTrade(symbolName,LotSize,OP_SELL))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(LotSize))
+               if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(symbolName,LotSize))
                  {
                   TicketNrSellStoch=OrderSend(symbolName,OP_SELL,LotSize,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
                   if(TicketNrSellStoch<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}                 
-                  if(LotSizeIsBiggerThenMaxLot)
+                  if(LotSizeIsBiggerThenMaxLotT)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++)
+                     for(int c=0;c<countRemainingMaxLotsT-1;c++)
                        {
-                        if(OrderSend(symbolName,OP_SELL,MaxLot,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                        if(OrderSend(symbolName,OP_SELL,MaxLotT,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                        }
-                     if(OrderSend(symbolName,OP_SELL,RemainingLotSize,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                     if(OrderSend(symbolName,OP_SELL,RemainingLotSizeT,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
                        {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                     }
                  }
@@ -941,20 +917,20 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
             if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_BID)-TP*Point;if(SL==0)SLI=MarketInfo(symbolName,MODE_BID)+10000*Point;else SLI=MarketInfo(symbolName,MODE_BID)+SL*Point;
             if(CheckMoneyForTrade(symbolName,LotSize,OP_SELL))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(LotSize))
+               if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(symbolName,LotSize))
                  {
                   TicketNrSell=OrderSend(symbolName,OP_SELL,LotSize,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
                   if(TicketNrSell<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrSell));}
-                  if(LotSizeIsBiggerThenMaxLot)
+                  if(LotSizeIsBiggerThenMaxLotT)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++)
+                     for(int c=0;c<countRemainingMaxLotsT-1;c++)
                        {
-                        if(OrderSend(symbolName,OP_SELL,MaxLot,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                        if(OrderSend(symbolName,OP_SELL,MaxLotT,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                        }
-                     if(OrderSend(symbolName,OP_SELL,RemainingLotSize,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
+                     if(OrderSend(symbolName,OP_SELL,RemainingLotSizeT,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
                        {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                     }
                  }
@@ -970,7 +946,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
                  {TicketNrPendingSell=0;}
                if(TicketNrPendingSell==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(symbolName,TempPendingLotSize,OP_SELL)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(TempPendingLotSize))
+                  if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(symbolName,TempPendingLotSize))
                     {
                      TicketNrPendingSell=OrderSend(symbolName,OP_SELLLIMIT,TempPendingLotSize,MarketInfo(symbolName,MODE_BID)+TP/2*Point,Slippage,0,MarketInfo(symbolName,MODE_BID),EAName+"P1S",MagicNumber,0,Red);
                      if(TicketNrPendingSell<0)
@@ -987,7 +963,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
                  {TicketNrPendingSell2=0;}
                if(TicketNrPendingSell2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(symbolName,TempPendingLotSize2,OP_SELL)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(TempPendingLotSize2))
+                  if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(symbolName,TempPendingLotSize2))
                     {
                      TicketNrPendingSell2=OrderSend(symbolName,OP_SELLLIMIT,TempPendingLotSize2,MarketInfo(symbolName,MODE_BID)+TP/1*Point,Slippage,0,MarketInfo(symbolName,MODE_BID),EAName+"P2S",MagicNumber,0,Red);
                      if(TicketNrPendingSell2<0)
@@ -999,7 +975,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
                if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_ASK)+(TP*2)*Point;if(SL==0)SLI=10000*Point;else SLI=MarketInfo(symbolName,MODE_ASK)-(SL*2)*Point;
                if(CheckMoneyForTrade(Symbol(),LotSize,OP_BUY) && IsNewOrderAllowed())
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(LotSize))
+                  if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,LotSize))
                     {
                      int expiryTime=(int)TimeCurrent()+(1209600);
                      TicketNrBuyWD=OrderSend(symbolName,OP_BUYSTOP,LotSize,MarketInfo(symbolName,MODE_ASK)+TP*Point,Slippage,SLI,TPI,EAName+"WD_BUY",MagicNumber,expiryTime,Lime);
@@ -1022,20 +998,20 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
             if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_ASK)+TP*Point;if(SL==0)SLI=MarketInfo(symbolName,MODE_ASK)-10000*Point;else SLI=MarketInfo(symbolName,MODE_ASK)-SL*Point;
             if(CheckMoneyForTrade(symbolName,LotSize,OP_BUY))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(LotSize))
+               if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,LotSize))
                  {
                   TicketNrBuyStoch=OrderSend(symbolName,OP_BUY,LotSize,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
                   if(TicketNrBuyStoch<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
-                  if(LotSizeIsBiggerThenMaxLot)
+                  if(LotSizeIsBiggerThenMaxLotT)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++)
+                     for(int c=0;c<countRemainingMaxLotsT-1;c++)
                        {
-                        if(OrderSend(symbolName,OP_BUY,MaxLot,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                        if(OrderSend(symbolName,OP_BUY,MaxLotT,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                        }
-                     if(OrderSend(symbolName,OP_BUY,RemainingLotSize,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                     if(OrderSend(symbolName,OP_BUY,RemainingLotSizeT,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
                        {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                     }
                  }
@@ -1046,20 +1022,20 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
             if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_ASK)+TP*Point;if(SL==0)SLI=MarketInfo(symbolName,MODE_ASK)-10000*Point;else SLI=MarketInfo(symbolName,MODE_ASK)-SL*Point;
             if(CheckMoneyForTrade(symbolName,LotSize,OP_BUY))
               {
-               if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(LotSize))
+               if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,LotSize))
                  {
                   TicketNrBuy=OrderSend(symbolName,OP_BUY,LotSize,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
                   if(TicketNrBuy<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   //else{Print("Order Sent Successfully, Ticket # is: "+string(TicketNrBuy));}
-                  if(LotSizeIsBiggerThenMaxLot)
+                  if(LotSizeIsBiggerThenMaxLotT)
                     {
-                     for(int c=0;c<countRemainingMaxLots-1;c++)
+                     for(int c=0;c<countRemainingMaxLotsT-1;c++)
                        {
-                        if(OrderSend(symbolName,OP_BUY,MaxLot,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                        if(OrderSend(symbolName,OP_BUY,MaxLotT,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
                           {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                        }
-                     if(OrderSend(symbolName,OP_BUY,RemainingLotSize,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
+                     if(OrderSend(symbolName,OP_BUY,RemainingLotSizeT,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
                        {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                     }
                  }
@@ -1074,7 +1050,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
                  {TicketNrPendingBuy=0;}
                if(TicketNrPendingBuy==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(symbolName,TempPendingLotSize,OP_BUY)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(TempPendingLotSize))
+                  if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,TempPendingLotSize))
                     {
                      TicketNrPendingBuy=OrderSend(symbolName,OP_BUYLIMIT,TempPendingLotSize,MarketInfo(symbolName,MODE_ASK)-TP/2*Point,Slippage,0,MarketInfo(symbolName,MODE_ASK),EAName+"P1B",MagicNumber,0,Red);
                      if(TicketNrPendingBuy<0)
@@ -1091,7 +1067,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
                  {TicketNrPendingBuy2=0;}
                if(TicketNrPendingBuy2==0 && IsNewOrderAllowed() && (CheckMoneyForTrade(symbolName,TempPendingLotSize2,OP_BUY)))
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(TempPendingLotSize2))
+                  if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,TempPendingLotSize2))
                     {
                      TicketNrPendingBuy2=OrderSend(symbolName,OP_BUYLIMIT,TempPendingLotSize2,MarketInfo(symbolName,MODE_ASK)-TP/1*Point,Slippage,0,MarketInfo(symbolName,MODE_ASK),EAName+"P2B",MagicNumber,0,Red);
                      if(TicketNrPendingBuy2<0)
@@ -1103,7 +1079,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
                if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_BID)-(TP*2)*Point;if(SL==0)SLI=MarketInfo(symbolName,MODE_BID)+10000*Point;else SLI=MarketInfo(symbolName,MODE_BID)+(SL*2)*Point;
                if(CheckMoneyForTrade(symbolName,LotSize,OP_SELL) && IsNewOrderAllowed())
                  {
-                  if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(LotSize))
+                  if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(symbolName,LotSize))
                     {
                      int expiryTime=(int)TimeCurrent()+(1209600);
                      TicketNrSellWD=OrderSend(symbolName,OP_SELLSTOP,LotSize,MarketInfo(symbolName,MODE_BID)-TP*Point,Slippage,SLI,TPI,EAName+"WD_SELL",MagicNumber,expiryTime,Red);
@@ -1157,7 +1133,7 @@ void HandleUserPositionsFun()
                || ((OrderStopLoss()>OrderOpenPrice()) || OrderStopLoss()==0)))
               {
                if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
-               if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,SLI,TPI))
+               if(OrderModifyCheck(Symbol(),OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(Symbol(),ORDER_TYPE_SELL,SLI,TPI))
                  {
                   if(OrderTakeProfit()!=TPI && ((OrderStopLoss()<SLI && OrderOpenPrice()<OrderStopLoss()) || OrderStopLoss()==0))
                     {
@@ -1170,7 +1146,7 @@ void HandleUserPositionsFun()
                   || ((OrderStopLoss()<OrderOpenPrice()) || OrderStopLoss()==0)))
                  {
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
-                  if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,SLI,TPI))
+                  if(OrderModifyCheck(Symbol(),OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(Symbol(),ORDER_TYPE_BUY,SLI,TPI))
                     {
                      if(OrderTakeProfit()!=TPI && ((OrderStopLoss()>SLI && OrderOpenPrice()>OrderStopLoss()) || OrderStopLoss()==0))
                        {
@@ -1198,16 +1174,16 @@ bool AddP(string symbolName)
    if(_num==0) return(true);if(_num>0 && ((Time[0]-_ot))>0) return(true);else return(false);
   }
 //trailing stop and breakeven
-void TrP()
+void TrP(string symbolName)
   {
-   int BE=0;int TS=DistanceStep;double pbid,pask,ppoint;ppoint=MarketInfo(OrderSymbol(),MODE_POINT);
+   int BE=0;int TS=DistanceStep;double pbid,pask,ppoint;ppoint=MarketInfo(symbolName,MODE_POINT);
    double commissions=OrderCommission()+OrderSwap();
    double commissionsInPips;
-   double tickValue=MarketInfo(Symbol(),MODE_TICKVALUE);
+   double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
    if(Debug) {Print("tickValue="+DoubleToStr(tickValue,5));}
    if(tickValue==0) {tickValue=0.9;}
    double spread=Ask-Bid;
-   double tickSize=MarketInfo(Symbol(),MODE_TICKSIZE);
+   double tickSize=MarketInfo(symbolName,MODE_TICKSIZE);
    if(Debug) {Print("commissions="+DoubleToStr(commissions,8));}
    commissionsInPips=((commissions/OrderLots()/tickValue)*tickSize)+(spread*2);
    if(Debug){Print("commissionsInPips="+DoubleToStr(commissionsInPips));}
@@ -1227,7 +1203,7 @@ void TrP()
             if((OrderStopLoss()-OrderOpenPrice())<0)
               {
                if(Debug){Print("Fall1");}
-               ModSL(OrderOpenPrice()+0*ppoint+commissionsInPips);
+               ModSL(symbolName,OrderOpenPrice()+0*ppoint+commissionsInPips);
               }
            }
         }
@@ -1246,7 +1222,7 @@ void TrP()
                     }
                   if(pbid>pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
                     {
-                     ModSL(pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                     ModSL(symbolName,pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
                     }
                  }
                return;
@@ -1264,7 +1240,7 @@ void TrP()
             if((OrderOpenPrice()-OrderStopLoss())<0)
               {
                if(Debug){Print("Fall3");}
-               ModSL(OrderOpenPrice()-0*ppoint-commissionsInPips);
+               ModSL(symbolName,OrderOpenPrice()-0*ppoint-commissionsInPips);
               }
            }
         }
@@ -1283,7 +1259,7 @@ void TrP()
                     }
                   if(pask<pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
                     {
-                     ModSL(pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                     ModSL(symbolName,pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
                     }
                  }
                return;
@@ -1293,24 +1269,24 @@ void TrP()
      }
   }
 //stop loss modification function
-void ModSL(double ldSL)
+void ModSL(string symbolName,double ldSL)
   {
    if(Debug)
      {
       Print("ldSL="+DoubleToStr(ldSL,5));
      }
-   if(OrderModifyCheck(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit()))
+   if(OrderModifyCheck(Symbol(),OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit()))
      {
       if(OrderType()==OP_BUY)
         {
-         if(CheckStopLoss_Takeprofit(ORDER_TYPE_BUY,ldSL,OrderTakeProfit()))
+         if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,ldSL,OrderTakeProfit()))
            {
             bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
         }
       if(OrderType()==OP_SELL)
         {
-         if(CheckStopLoss_Takeprofit(ORDER_TYPE_SELL,ldSL,OrderTakeProfit()))
+         if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,ldSL,OrderTakeProfit()))
            {
             bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
@@ -1320,8 +1296,9 @@ void ModSL(double ldSL)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-string getSignalForCurrency(string symbolName)
+string getSignalForCurrencyAndStrategy(string symbolName, string strategyName)
   {
+  if (strategyName=="sunTrade") {
    bool signal=false;
    for(int i=0;i<8;i++)
      {
@@ -1382,6 +1359,7 @@ string getSignalForCurrency(string symbolName)
            }
         }
      }
+     }
    string res="noSignal";
    if(SellFlag) {res="Sell";}
    if(BuyFlag) {res="Buy";}
@@ -1390,7 +1368,7 @@ string getSignalForCurrency(string symbolName)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+  
-bool CurrentCandleHasNoOpenedTrades()
+bool CurrentCandleHasNoOpenedTrades(string symbolName)
   {
    bool positionCanBeOpened=false;
    int currentAlreadyOpenedPositions=0;
@@ -1400,7 +1378,7 @@ bool CurrentCandleHasNoOpenedTrades()
         {
          if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
            {
-            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==symbolName && ((OrderMagicNumber()==MagicNumber)))
               {
                if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
                  {
@@ -1722,9 +1700,9 @@ bool IsNewOrderAllowed()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int getContractProfitCalcMode()
+int getContractProfitCalcMode(string symbolName)
   {
-   int profitCalcMode=(int)MarketInfo(Symbol(),MODE_PROFITCALCMODE);
+   int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
    return profitCalcMode;
   }
 //+------------------------------------------------------------------+
@@ -1751,13 +1729,12 @@ bool CompareDoubles(double number1,double number2)
 //+------------------------------------------------------------------+
 //| die Überprüfung der neuen Ebene-Werte vor der Modifikation der Order         |
 //+------------------------------------------------------------------+
-bool OrderModifyCheck(int ticket,double price,double sl,double tp)
+bool OrderModifyCheck(string symbol, int ticket,double price,double sl,double tp)
   {
 //--- Wählen wir die Order nach dem Ticket
    if(OrderSelect(ticket,SELECT_BY_TICKET))
      {
       //--- Die Größe des Punktes und des Symbol-Namens, nach dem die Pending Order gesetzt wurde
-      string symbol=OrderSymbol();
       double point=SymbolInfoDouble(symbol,SYMBOL_POINT);
       //--- Überprüfen wir - ob es Änderungen im Eröffnungspreis gibt 
       bool PriceOpenChanged=true;
@@ -1783,9 +1760,9 @@ bool OrderModifyCheck(int ticket,double price,double sl,double tp)
    return(false);       // es gibt keinen Sinn, zu modifizieren 
   }
 //+------------------------------------------------------------------+
-bool CheckStopLoss_Takeprofit(ENUM_ORDER_TYPE type,double SLT,double TPT)
+bool CheckStopLoss_Takeprofit(string symbolName, ENUM_ORDER_TYPE type,double SLT,double TPT)
   {
-   int stops_level=(int)SymbolInfoInteger(_Symbol,SYMBOL_TRADE_STOPS_LEVEL);
+   int stops_level=(int)SymbolInfoInteger(symbolName,SYMBOL_TRADE_STOPS_LEVEL);
    if(stops_level!=0)
      {
       PrintFormat("SYMBOL_TRADE_STOPS_LEVEL=%d: StopLoss and TakeProfit must be"+
@@ -1796,30 +1773,30 @@ bool CheckStopLoss_Takeprofit(ENUM_ORDER_TYPE type,double SLT,double TPT)
      {
       case  ORDER_TYPE_BUY:
         {
-         SLT_check=(Bid-SLT>stops_level*_Point);
+         SLT_check=(MarketInfo(symbolName,MODE_BID)-SLT>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!SLT_check)
             PrintFormat("For order %s StopLoss=%.5f must be less than %.5f"+
                         " (Bid=%.5f - SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),SLT,Bid-stops_level*_Point,Bid,stops_level);
-         TPT_check=(TPT-Bid>stops_level*_Point);
+                        EnumToString(type),SLT,MarketInfo(symbolName,MODE_BID)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
+         TPT_check=(TPT-Bid>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!TPT_check)
             PrintFormat("For order %s TakeProfit=%.5f must be greater than %.5f"+
                         " (Bid=%.5f + SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),TPT,Bid+stops_level*_Point,Bid,stops_level);
+                        EnumToString(type),TPT,MarketInfo(symbolName,MODE_BID)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
          return(SLT_check&&TPT_check);
         }
       case  ORDER_TYPE_SELL:
         {
-         SLT_check=(SLT-Ask>stops_level*_Point);
+         SLT_check=(SLT-Ask>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!SLT_check)
             PrintFormat("For order %s StopLoss=%.5f must be greater than %.5f "+
                         " (Ask=%.5f + SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),SLT,Ask+stops_level*_Point,Ask,stops_level);
-         TPT_check=(Ask-TPT>stops_level*_Point);
+                        EnumToString(type),SLT,MarketInfo(symbolName,MODE_ASK)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
+         TPT_check=(MarketInfo(symbolName,MODE_ASK)-TPT>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!TPT_check)
             PrintFormat("For order %s TakeProfit=%.5f must be less than %.5f "+
                         " (Ask=%.5f - SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),TPT,Ask-stops_level*_Point,Ask,stops_level);
+                        EnumToString(type),TPT,MarketInfo(symbolName,MODE_ASK)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
          return(TPT_check&&SLT_check);
         }
       break;
@@ -1830,11 +1807,11 @@ bool CheckStopLoss_Takeprofit(ENUM_ORDER_TYPE type,double SLT,double TPT)
 //+------------------------------------------------------------------+
 //| Check the correctness of the order volume                        |
 //+------------------------------------------------------------------+
-bool CheckVolumeValue(double volume)
+bool CheckVolumeValue(string symbolName, double volume)
   {
 //--- minimal allowed volume for trade operations
    string description="";
-   double min_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MIN);
+   double min_volume=SymbolInfoDouble(symbolName,SYMBOL_VOLUME_MIN);
    if(volume<min_volume)
      {
       PrintFormat("Volume is less than the minimal allowed SYMBOL_VOLUME_MIN=%.2f",min_volume);
@@ -1842,7 +1819,7 @@ bool CheckVolumeValue(double volume)
      }
 
 //--- maximal allowed volume of trade operations
-   double max_volume=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_MAX);
+   double max_volume=SymbolInfoDouble(symbolName,SYMBOL_VOLUME_MAX);
    if(volume>max_volume)
      {
       PrintFormat("Volume is greater than the maximal allowed SYMBOL_VOLUME_MAX=%.2f",max_volume);
@@ -1850,7 +1827,7 @@ bool CheckVolumeValue(double volume)
      }
 
 //--- get minimal step of volume changing
-   double volume_step=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
+   double volume_step=SymbolInfoDouble(symbolName,SYMBOL_VOLUME_STEP);
 
    int ratio=(int)MathRound(volume/volume_step);
    if(MathAbs(ratio*volume_step-volume)>0.0000001)
@@ -1930,26 +1907,14 @@ void setAllForTradeAvailableSymbols()
       if(profitCalcMode==0 && marginCalcMode==0 && tradingAllowed)
         {
          symbolNameBuffer[j]=symbolName;
-        } else {
+           } else {
          symbolNameBuffer[j]=IntegerToString(EMPTY_VALUE);
         }
      }
   }
 //+------------------------------------------------------------------+
-int countOpenedPositionsForSymbol(string symbolName) {
-   int count=0;
-   for(int i=0;i<OrdersTotal();i++) {
-       if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
-        {
-         if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
-           {
-            count += 1;
-           }
-        }
-   }
-   return count;
-}
-int getOpenedPositionsForSymbol(string symbolName) {
+int getOpenedPositionsForSymbol(string symbolName)
+  {
    int cnt=0,OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
      {
@@ -1961,5 +1926,41 @@ int getOpenedPositionsForSymbol(string symbolName) {
            }
         }
      }
-     return OP;
-}
+   return OP;
+  }
+//+------------------------------------------------------------------+
+void generateSignalsAndPositions(string strategyName) 
+  {
+   int OB=0,OS=0;
+   for(int x=0;x<ArraySize(symbolNameBuffer);x++)
+     {
+      if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
+        {
+         string signalStr=getSignalForCurrencyAndStrategy(symbolNameBuffer[x],strategyName);
+         Print(symbolNameBuffer[x]+"="+signalStr);
+         if(signalStr!="noSignal")
+           {
+            if(signalStr=="Buy")
+              {
+               OB=1;OS=0;
+               if(IsTesting())
+                 {
+                  Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_ASK),5));
+                    } else {
+                  OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                 }
+                 } else if(signalStr=="Sell") {
+               OS=1;OB=0;
+               if(IsTesting())
+                 {
+                  Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_BID),5));
+                    } else {
+                  OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+                 }
+              }
+
+           }
+        }
+     }
+  }
+//+------------------------------------------------------------------+
