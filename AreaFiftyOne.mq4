@@ -158,14 +158,16 @@ bool SellFlag=false;
 bool BuyFlag=false;
 bool LotSizeIsBiggerThenMaxLot=false;
 int countRemainingMaxLots=0;
-double MaxLot=MarketInfo(Symbol(),MODE_MAXLOT);
+double MaxLot;
 double RemainingLotSize=0.0;
+string tradeVarsValues[150][25];
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
 //---
+   setTradeVarsValues();
    if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
      {
       LotSize=MarketInfo(Symbol(),MODE_MINLOT);
@@ -789,11 +791,11 @@ void OnTick()
            {
             generateSignalsAndPositions("sunTrade");
               } else {
-              string signalStr = getSignalForCurrencyAndStrategy(Symbol(),"sunTrade");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"sunTrade");
             if(signalStr=="Sell")
               {
                SellFlag=true;
-                 } else if (signalStr=="Buy"){
+                 } else if(signalStr=="Buy"){
                BuyFlag=true;
               }
            }
@@ -1297,74 +1299,75 @@ void ModSL(string symbolName,double ldSL)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-string getSignalForCurrencyAndStrategy(string symbolName, string strategyName)
+string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
   {
-  SellFlag=false;
-  BuyFlag=false;
-  if (strategyName=="sunTrade") {
-   bool signal=false;
-   for(int i=0;i<8;i++)
+   SellFlag=false;
+   BuyFlag=false;
+   if(strategyName=="sunTrade") 
      {
-      double currentSSRCValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName5+".ex4",0,i);
-      double currentBuyValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
-      double currentSellValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
-      if(currentBuyValue>0)
+      bool signal=false;
+      for(int i=0;i<8;i++)
         {
-         double currentValueStarBuy=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,1);
-         if(CompareDoubles(currentValueStarBuy,5.0) && currentSSRCValue<0)
+         double currentSSRCValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName5+".ex4",0,i);
+         double currentBuyValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
+         double currentSellValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
+         if(currentBuyValue>0)
            {
-            signal=true;
-            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
-            if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(Close[0],Digits));}
-            if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(Close[0],Digits));}
-            if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
-            break;
-           }
-        }
-      if(currentSellValue>0)
-        {
-         double currentValueStarSell=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,1);
-         //Print("currentValueStarSell="+currentValueStarSell);
-         if(CompareDoubles(currentValueStarSell,5.0) && currentSSRCValue>0)
-           {
-            signal=true;
-            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
-            if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(Close[0],Digits));}
-            if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(Close[0],Digits));}
-            if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
-            break;
-           }
-        }
-      if(Use2ndLevelSignals && !signal)
-        {
-         double current2ndLevelBuyValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
-         double current2ndLevelSellValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
-         if(current2ndLevelBuyValue>0)
-           {
-            double currentValueStarBuy=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
-            if(CompareDoubles(currentValueStarBuy,5.0))
+            double currentValueStarBuy=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,1);
+            if(CompareDoubles(currentValueStarBuy,5.0) && currentSSRCValue<0)
               {
+               signal=true;
                if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
-               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
+               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(Close[0],Digits));}
+               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(Close[0],Digits));}
+               if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
                break;
               }
            }
-         if(current2ndLevelSellValue>0)
+         if(currentSellValue>0)
            {
-            double currentValueStarSell=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
-            if(CompareDoubles(currentValueStarSell,5.0))
+            double currentValueStarSell=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,1);
+            //Print("currentValueStarSell="+currentValueStarSell);
+            if(CompareDoubles(currentValueStarSell,5.0) && currentSSRCValue>0)
               {
+               signal=true;
                if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
-               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
+               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(Close[0],Digits));}
+               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(Close[0],Digits));}
+               if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
                break;
+              }
+           }
+         if(Use2ndLevelSignals && !signal)
+           {
+            double current2ndLevelBuyValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
+            double current2ndLevelSellValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
+            if(current2ndLevelBuyValue>0)
+              {
+               double currentValueStarBuy=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
+               if(CompareDoubles(currentValueStarBuy,5.0))
+                 {
+                  if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+                  if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(Close[0],Digits));}
+                  if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(Close[0],Digits));}
+                  if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
+                  break;
+                 }
+              }
+            if(current2ndLevelSellValue>0)
+              {
+               double currentValueStarSell=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
+               if(CompareDoubles(currentValueStarSell,5.0))
+                 {
+                  if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+                  if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(Close[0],Digits));}
+                  if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(Close[0],Digits));}
+                  if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
+                  break;
+                 }
               }
            }
         }
-     }
      }
    string res="noSignal";
    if(SellFlag) {res="Sell";}
@@ -1735,7 +1738,7 @@ bool CompareDoubles(double number1,double number2)
 //+------------------------------------------------------------------+
 //| die Überprüfung der neuen Ebene-Werte vor der Modifikation der Order         |
 //+------------------------------------------------------------------+
-bool OrderModifyCheck(string symbol, int ticket,double price,double sl,double tp)
+bool OrderModifyCheck(string symbol,int ticket,double price,double sl,double tp)
   {
 //--- Wählen wir die Order nach dem Ticket
    if(OrderSelect(ticket,SELECT_BY_TICKET))
@@ -1766,7 +1769,7 @@ bool OrderModifyCheck(string symbol, int ticket,double price,double sl,double tp
    return(false);       // es gibt keinen Sinn, zu modifizieren 
   }
 //+------------------------------------------------------------------+
-bool CheckStopLoss_Takeprofit(string symbolName, ENUM_ORDER_TYPE type,double SLT,double TPT)
+bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,double TPT)
   {
    int stops_level=(int)SymbolInfoInteger(symbolName,SYMBOL_TRADE_STOPS_LEVEL);
    if(stops_level!=0)
@@ -1813,7 +1816,7 @@ bool CheckStopLoss_Takeprofit(string symbolName, ENUM_ORDER_TYPE type,double SLT
 //+------------------------------------------------------------------+
 //| Check the correctness of the order volume                        |
 //+------------------------------------------------------------------+
-bool CheckVolumeValue(string symbolName, double volume)
+bool CheckVolumeValue(string symbolName,double volume)
   {
 //--- minimal allowed volume for trade operations
    string description="";
@@ -1900,21 +1903,29 @@ string getTimeframe(int ai_0)
 //+------------------------------------------------------------------+
 void setAllForTradeAvailableSymbols()
   {
-   int countOfAllSymbols=SymbolsTotal(false);
-   ArrayResize(symbolNameBuffer,countOfAllSymbols);
-
-   for(int j=0;j<countOfAllSymbols;j++)
+   if(TradeOnlyListOfSelectedSymbols) 
      {
-      string symbolName=SymbolName(j,false);
-      bool tradingAllowed=(bool)MarketInfo(symbolName,MODE_TRADEALLOWED);
-      int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
-      int marginCalcMode=(int)MarketInfo(symbolName,MODE_MARGINCALCMODE);
-      if(IsTesting()) {tradingAllowed=true;}
-      if(profitCalcMode==0 && marginCalcMode==0 && tradingAllowed)
+      string sep=";";
+      ushort u_sep;
+      u_sep=StringGetCharacter(sep,0);
+      StringSplit(ListOfSelectedSymbols,u_sep,symbolNameBuffer);
+        } else {
+      int countOfAllSymbols=SymbolsTotal(false);
+      ArrayResize(symbolNameBuffer,countOfAllSymbols);
+
+      for(int j=0;j<countOfAllSymbols;j++)
         {
-         symbolNameBuffer[j]=symbolName;
-           } else {
-         symbolNameBuffer[j]=IntegerToString(EMPTY_VALUE);
+         string symbolName=SymbolName(j,false);
+         bool tradingAllowed=(bool)MarketInfo(symbolName,MODE_TRADEALLOWED);
+         int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
+         int marginCalcMode=(int)MarketInfo(symbolName,MODE_MARGINCALCMODE);
+         if(IsTesting()) {tradingAllowed=true;}
+         if(profitCalcMode==0 && marginCalcMode==0 && tradingAllowed)
+           {
+            symbolNameBuffer[j]=symbolName;
+              } else {
+            symbolNameBuffer[j]=IntegerToString(EMPTY_VALUE);
+           }
         }
      }
   }
@@ -1935,7 +1946,7 @@ int getOpenedPositionsForSymbol(string symbolName)
    return OP;
   }
 //+------------------------------------------------------------------+
-void generateSignalsAndPositions(string strategyName) 
+void generateSignalsAndPositions(string strategyName)
   {
    int OB=0,OS=0;
    for(int x=0;x<ArraySize(symbolNameBuffer);x++)
@@ -1966,6 +1977,17 @@ void generateSignalsAndPositions(string strategyName)
 
            }
         }
+     }
+  }
+//+------------------------------------------------------------------+
+void setTradeVarsValues() 
+  {
+   if(TradeOnAllSymbols) 
+     {
+      ArrayResize(tradeVarsValues,ArraySize(symbolNameBuffer));
+      for(int c=0;c<ArraySize(symbolNameBuffer);c++) {
+         tradeVarsValues[c][0] = MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
+      }
      }
   }
 //+------------------------------------------------------------------+
