@@ -1318,9 +1318,9 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
               {
                signal=true;
                if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
-               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
+               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: BUY signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+               if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(iClose(symbolName,0,0),Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
                break;
               }
            }
@@ -1332,9 +1332,9 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
               {
                signal=true;
                if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
-               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(Close[0],Digits));}
-               if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
+               if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+               if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy: SELL signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+               if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(iClose(symbolName,0,0),Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy");}
                break;
               }
            }
@@ -1348,9 +1348,9 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
                if(CompareDoubles(currentValueStarBuy,5.0))
                  {
                   if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
-                  if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(Close[0],Digits));}
-                  if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(Close[0],Digits));}
-                  if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
+                  if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+                  if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): BUY signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+                  if(SendNotificationToPhone){SendNotification("BUY signal at "+DoubleToStr(iClose(symbolName,0,0),Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
                   break;
                  }
               }
@@ -1360,9 +1360,9 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
                if(CompareDoubles(currentValueStarSell,5.0))
                  {
                   if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
-                  if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(Close[0],Digits));}
-                  if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(Close[0],Digits));}
-                  if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(Close[0],Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
+                  if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+                  if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(Period())+")","Sunrise strategy(2nd level): SELL signal at "+DoubleToStr(iClose(symbolName,0,0),Digits));}
+                  if(SendNotificationToPhone){SendNotification("SELL signal at "+DoubleToStr(iClose(symbolName,0,0),Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(Period())+") with Sunrise strategy(2nd level)");}
                   break;
                  }
               }
