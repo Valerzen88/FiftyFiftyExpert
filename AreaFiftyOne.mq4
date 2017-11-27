@@ -1808,27 +1808,29 @@ void setTradeVarsValues()
    if(TradeOnAllSymbols)
      {
       ArrayResize(tradeVarsValues,ArraySize(symbolNameBuffer));
+      double TempLotSize,tempLotStep;
+      int tempCountedDecimals,tempStopLeveL,tempMarginMode,tempTrailingStep,tempDistanceStep;
       for(int c=0;c<ArraySize(symbolNameBuffer);c++)
         {
          tradeVarsValues[c][0]=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
-         if(LotSize<MarketInfo(symbolNameBuffer[c],MODE_MINLOT))
+         if(TempLotSize<MarketInfo(symbolNameBuffer[c],MODE_MINLOT))
            {
-            LotSize=MarketInfo(symbolNameBuffer[c],MODE_MINLOT);
+            TempLotSize=MarketInfo(symbolNameBuffer[c],MODE_MINLOT);
            }
-         if(LotSize>=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT))
+         if(TempLotSize>=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT))
            {
-            LotSize=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
+            TempLotSize=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
            }
-         lotstep=SymbolInfoDouble(symbolNameBuffer[c],SYMBOL_VOLUME_STEP);
-         countedDecimals=(int)-MathLog10(lotstep);
-
-         StopLevel=(int)(MarketInfo(Symbol(),MODE_STOPLEVEL)*1.3);
-        int MarginMode=(int)MarketInfo(Symbol(),MODE_MARGINCALCMODE);
-        if(StopLevel>0)
+         tempLotStep=SymbolInfoDouble(symbolNameBuffer[c],SYMBOL_VOLUME_STEP);
+         tempCountedDecimals=(int)-MathLog10(tempLotStep);
+         tempStopLeveL=(int)(MarketInfo(symbolNameBuffer[c],MODE_STOPLEVEL)*1.3);
+         tempMarginMode=(int)MarketInfo(symbolNameBuffer[c],MODE_MARGINCALCMODE);
+        if(tempStopLeveL>0)
           {
-           TrailingStep=TrailingStep+StopLevel;
-           DistanceStep=DistanceStep+StopLevel;
-           if(Debug){Print("TrailingStep="+IntegerToString(TrailingStep)+";DistanceStep="+IntegerToString(DistanceStep)+";StopLevel="+IntegerToString(StopLevel));}
+           tempTrailingStep=tempTrailingStep+tempStopLevel;
+           tempDistanceStep=tempDistanceStep+tempStopLevel;
+           if(Debug){Print("tempTrailingStep="+IntegerToString(tempTrailingStep)+
+           ";tempDistanceStep="+IntegerToString(tempDistanceStep)+";tempStopLevel="+IntegerToString(tempStopLevel));}
           }
         }
      }
