@@ -1809,7 +1809,7 @@ void setTradeVarsValues()
      {
       ArrayResize(tradeVarsValues,ArraySize(symbolNameBuffer));
       double TempLotSize,tempLotStep;
-      int tempCountedDecimals,tempStopLeveL,tempMarginMode,tempTrailingStep,tempDistanceStep;
+      int tempCountedDecimals,tempStopLevel,tempMarginMode,tempTrailingStep,tempDistanceStep;
       for(int c=0;c<ArraySize(symbolNameBuffer);c++)
         {
          tradeVarsValues[c][0]=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
@@ -1823,9 +1823,9 @@ void setTradeVarsValues()
            }
          tempLotStep=SymbolInfoDouble(symbolNameBuffer[c],SYMBOL_VOLUME_STEP);
          tempCountedDecimals=(int)-MathLog10(tempLotStep);
-         tempStopLeveL=(int)(MarketInfo(symbolNameBuffer[c],MODE_STOPLEVEL)*1.3);
+         tempStopLevel=(int)(MarketInfo(symbolNameBuffer[c],MODE_STOPLEVEL)*1.3);
          tempMarginMode=(int)MarketInfo(symbolNameBuffer[c],MODE_MARGINCALCMODE);
-        if(tempStopLeveL>0)
+        if(tempStopLevel>0)
           {
            tempTrailingStep=tempTrailingStep+tempStopLevel;
            tempDistanceStep=tempDistanceStep+tempStopLevel;
