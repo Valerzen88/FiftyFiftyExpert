@@ -157,7 +157,8 @@ bool LotSizeIsBiggerThenMaxLot=false;
 int countRemainingMaxLots=0;
 double MaxLot;
 double RemainingLotSize=0.0;
-string tradeVarsValues[150][25];
+double tradeDoubleVarsValues[150][5];
+int tradeIntVarsValues[150][10];
 double lotstep;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -403,7 +404,7 @@ void OnTick()
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-         if(TradeOnAllSymbols && OrderMagicNumber()==MagicNumber) 
+         if(TradeOnAllSymbols && OrderMagicNumber()==MagicNumber)
            {
             TempLoss=TempLoss+OrderProfit();
            }
@@ -1429,19 +1430,21 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    ObjectSet("MagicNumber",OBJPROP_XDISTANCE,5);
    ObjectSet("MagicNumber",OBJPROP_YDISTANCE,60);
 
-   ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
-   if(CurrentTotalLotSize>0.0)
-     {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(CurrentTotalLotSize,2),11,"Calibri",clrLightYellow);}
-   else {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(LotSize,2),11,"Calibri",clrLightYellow);}
-   ObjectSet("NextLotSize",OBJPROP_CORNER,1);
-   ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
-   ObjectSet("NextLotSize",OBJPROP_YDISTANCE,80);
+   if(!TradeOnAllSymbols) 
+     {
+      ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
+      if(CurrentTotalLotSize>0.0)
+        {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(CurrentTotalLotSize,2),11,"Calibri",clrLightYellow);}
+      else {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(LotSize,2),11,"Calibri",clrLightYellow);}
+      ObjectSet("NextLotSize",OBJPROP_CORNER,1);
+      ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
+      ObjectSet("NextLotSize",OBJPROP_YDISTANCE,80);
 /*ObjectCreate("EAName",OBJ_LABEL,0,0,0);
    ObjectSetText("EAName","EAName: "+EAName,11,"Calibri",clrGold);
    ObjectSet("EAName",OBJPROP_CORNER,1);
    ObjectSet("EAName",OBJPROP_XDISTANCE,5);
    ObjectSet("EAName",OBJPROP_YDISTANCE,75);*/
-
+     }
    if(CurrentLoss<0.0)
      {
       ObjectCreate("CurrentLoss",OBJ_LABEL,0,0,0);
@@ -1807,12 +1810,12 @@ void setTradeVarsValues()
   {
    if(TradeOnAllSymbols)
      {
-      ArrayResize(tradeVarsValues,ArraySize(symbolNameBuffer));
-      double TempLotSize,tempLotStep;
-      int tempCountedDecimals,tempStopLevel,tempMarginMode,tempTrailingStep,tempDistanceStep;
+      ArrayResize(tradeDoubleVarsValues,ArraySize(symbolNameBuffer));
+      ArrayResize(tradeIntVarsValues,ArraySize(symbolNameBuffer));
+      double TempLotSize=LotSize,tempLotStep;
+      int tempCountedDecimals,tempStopLevel,tempMarginMode,tempTrailingStep=TrailingStep,tempDistanceStep=DistanceStep;
       for(int c=0;c<ArraySize(symbolNameBuffer);c++)
         {
-         tradeVarsValues[c][0]=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
          if(TempLotSize<MarketInfo(symbolNameBuffer[c],MODE_MINLOT))
            {
             TempLotSize=MarketInfo(symbolNameBuffer[c],MODE_MINLOT);
@@ -1821,17 +1824,27 @@ void setTradeVarsValues()
            {
             TempLotSize=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
            }
+         tradeDoubleVarsValues[c][0]=TempLotSize;
          tempLotStep=SymbolInfoDouble(symbolNameBuffer[c],SYMBOL_VOLUME_STEP);
+         tradeDoubleVarsValues[c][1]=tempLotStep;
          tempCountedDecimals=(int)-MathLog10(tempLotStep);
          tempStopLevel=(int)(MarketInfo(symbolNameBuffer[c],MODE_STOPLEVEL)*1.3);
+         tradeIntVarsValues[c][0]=tempCountedDecimals;
+         tradeIntVarsValues[c][1]=tempStopLevel;
          tempMarginMode=(int)MarketInfo(symbolNameBuffer[c],MODE_MARGINCALCMODE);
-        if(tempStopLevel>0)
-          {
-           tempTrailingStep=tempTrailingStep+tempStopLevel;
-           tempDistanceStep=tempDistanceStep+tempStopLevel;
-           if(Debug){Print("tempTrailingStep="+IntegerToString(tempTrailingStep)+
-           ";tempDistanceStep="+IntegerToString(tempDistanceStep)+";tempStopLevel="+IntegerToString(tempStopLevel));}
-          }
+         tradeIntVarsValues[c][1]=tempMarginMode;
+         if(tempStopLevel>0)
+           {
+            tempTrailingStep=tempTrailingStep+tempStopLevel;
+            tempDistanceStep=tempDistanceStep+tempStopLevel;
+            tradeIntVarsValues[c][2]=tempTrailingStep;
+            tradeIntVarsValues[c][3]=tempDistanceStep;
+            if(Debug)
+              {
+               Print("tempTrailingStep="+IntegerToString(tempTrailingStep)+
+                     ";tempDistanceStep="+IntegerToString(tempDistanceStep)+";tempStopLevel="+IntegerToString(tempStopLevel));
+              }
+           }
         }
      }
   }
