@@ -447,249 +447,63 @@ void OnTick()
      {
       if(UseRSIBasedIndicator)
         {
-         int i=0;
-         double TDIGreen=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
-         double TDIGreenPrevious=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
-         double TDIYellow=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
-         double TDIYellowPrevous=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1);
-         //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
-         //double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
-         // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
-         // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
-         double TSL2=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
-         double TSL2Previous=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
-
-         if(UseCorridorCroosing)
+         generateSignalsAndPositions("tdi");
+           } else {
+         string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"tdi");
+         if(signalStr=="Sell")
            {
-            if((TSL2<TDIYellow) && (TDIGreen>TSL2 && (TDIGreenPrevious<TSL2Previous || TDIGreenPrevious==TSL2Previous))) {BuyFlag=true;}
-            if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
+            SellFlag=true;
+              } else if(signalStr=="Buy"){
+            BuyFlag=true;
            }
-
-         if((TDIYellow<50) && (TSL2<TDIYellow) && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
-         if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
-
-         if(SellFlag && Debug) { Print("Got sell signal from RSI-based indicator!");}
-         if(BuyFlag && Debug) { Print("Got buy signal from RSI-based indicator!");}
         }
       if(UseTrendIndicator)
         {
-         if(true)//(Volume[0]==1)
+         generateSignalsAndPositions("trendy");
+           } else {
+         string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"trendy");
+         if(signalStr=="Sell")
            {
-            double Trend=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
-            double TrendBack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,1),1);
-            double TrendBack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,2),1);
-            double MA=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,0),1);
-            double MABack=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,1),1);
-            double MABack2=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,2),1);
-            double MA_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,0),1);
-            double MABack_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,1),1);
-            double MABack2_Second=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,2),1);
-
-            if(Debug)
-              {
-               Print("Trend="+DoubleToStr(Trend));
-               Print("TrendBack="+DoubleToStr(TrendBack));
-               Print("TrendBack2="+DoubleToStr(TrendBack2));
-               Print("MA="+DoubleToStr(MA));
-               Print("MABack="+DoubleToStr(MABack));
-               Print("MABack2="+DoubleToStr(MABack2));
-               Print("MA_Second="+DoubleToStr(MA_Second));
-               Print("MABack_Second="+DoubleToStr(MABack_Second));
-               Print("MABack2_Second="+DoubleToStr(MABack2_Second));
-              }
-            if(!UseSMAOnTrendIndicator)
-              {
-               if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26)))
-                 {
-                  if(Debug)
-                    {
-                     Print("SellSignal!");
-                     Print("Trend="+DoubleToStr(Trend));
-                     Print("TrendBack="+DoubleToStr(TrendBack));
-                    }
-                  SellFlag=1;
-
-                 }
-
-               if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4) && (TrendBack<=8) && (TrendBack2<=5)))
-                 {
-                  if(Debug)
-                    {
-                     Print("BuySignal!");
-                     Print("Trend="+DoubleToStr(Trend));
-                     Print("TrendBack="+DoubleToStr(TrendBack));
-                    }
-                  BuyFlag=1;
-                 }
-              }
-            if(UseSMAOnTrendIndicator && (UseOneOrTwoSMAOnTrendIndicator==1 || UseOneOrTwoSMAOnTrendIndicator==2))
-              {
-               if(((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
-                  && (((MA-Trend)>1) || ((MA-Trend)==1)) && (Trend<14.5 || Trend>16.5)
-                  && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-                  && (MathRound(MABack2)<MathRound(TrendBack2)))
-                 {
-                  if(Debug)
-                    {
-                     Print("SELL=>MA="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
-                           +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
-                           +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-                    }
-                  SellFlag=1;
-                 }
-               if(((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
-                  && (((Trend-MA)>1) || ((Trend-MA)==1)) && (Trend<14.5 || Trend>16.5) && (Trend>4)
-                  && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
-                  && (MathRound(MABack2)>MathRound(TrendBack2)))
-                 {
-                  if(Debug)
-                    {
-                     Print("BUY=>MA="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
-                           +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
-                           +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-                    }
-                  BuyFlag=1;
-                 }
-              }
-
-            if(UseSMAOnTrendIndicator && (UseOneOrTwoSMAOnTrendIndicator==2 || UseOneOrTwoSMAOnTrendIndicator==3))
-              {
-               //using ma50
-               if(((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
-                  && (((MA_Second-Trend)>0.5) || ((MA_Second-Trend)==1)) && (Trend<14.5 || Trend>16.5)
-                  && ((MathRound(MABack_Second)<MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-                  && (MathRound(MABack2_Second)<MathRound(TrendBack2)))
-                 {
-                  if(Debug)
-                    {
-                     Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">Trend="+DoubleToStr(MathRound(Trend))
-                           +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
-                           +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-                    }
-                  SellFlag=1;
-                 }
-               if(((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
-                  && (((Trend-MA_Second)>0.5) || ((Trend-MA_Second)==1)) && (Trend<14.5 || Trend>16.5)
-                  && ((MathRound(MABack_Second)>MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
-                  && (MathRound(MABack2_Second)>MathRound(TrendBack2)))
-                 {
-                  if(Debug)
-                    {
-                     Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<Trend="+DoubleToStr(MathRound(Trend))
-                           +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
-                           +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
-                    }
-                  BuyFlag=1;
-                 }
-              }
-            if(UseSMAOnTrendIndicator && UseSMAsCrossingOnTrendIndicatorData)
-              {
-               //using emas
-               if(((MathRound(MA_Second)>MathRound(MA)) || (MathRound(MA_Second-0.5)==MA))
-                  && (((MA_Second-MA)>0.5) || ((MA_Second-MA)==1))
-                  && ((MathRound(MABack_Second)<MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack2)))
-                  && (MathRound(MABack2_Second)<MathRound(MABack2)))
-                 {
-                  if(Debug)
-                    {
-                     Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">MATrend="+DoubleToStr(MathRound(MA))
-                           +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=MABack="+DoubleToStr(MathRound(MABack))
-                           +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=MABack2="+DoubleToStr(MathRound(MABack2)));
-                    }
-                  SellFlag=1;
-                 }
-               if(((MathRound(MA_Second)<MathRound(MA)) || (MathRound(MA_Second+0.5)==MA))
-                  && (((MA-MA_Second)>0.5) || ((MA-MA_Second)==1))
-                  && ((MathRound(MABack_Second)>MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack)))
-                  && (MathRound(MABack2_Second)>MathRound(MABack2)))
-                 {
-                  if(Debug)
-                    {
-                     Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<MA="+DoubleToStr(MathRound(MA))
-                           +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>MABack="+DoubleToStr(MathRound(MABack))
-                           +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>MABack2="+DoubleToStr(MathRound(MABack2)));
-                    }
-                  BuyFlag=1;
-                 }
-              }
-            if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
+            SellFlag=true;
+              } else if(signalStr=="Buy"){
+            BuyFlag=true;
            }
         }
       if(UseSimpleTrendStrategy)
         {
-         if(true)//(Volume[0]==1)
+         generateSignalsAndPositions("simpleTrend");
+           } else {
+         string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"simpleTrend");
+         if(signalStr=="Sell")
            {
-            double MAFastPrevious1,MAFastPrevious2;
-            double MASlowPrevious1,MASlowPrevious2;
-
-            MAFastPrevious1=iMA(NULL,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,1);
-            MAFastPrevious2=iMA(NULL,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,2);
-            MASlowPrevious1=iMA(NULL,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,1);
-            MASlowPrevious2=iMA(NULL,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,2);
-
-            //fast MA > slow MA.
-            if(MAFastPrevious1>MASlowPrevious1)
-              {
-               //BuyFlag = true;
-               //fast MA crosses over slow MA.
-               if(MAFastPrevious2<MASlowPrevious2)
-                 {
-                  if(iMACD(NULL,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)>0 && 
-                     iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
-                    {
-                     BuyFlag=true;
-                    }
-                 }
-              }
-            //fast MA < slow MA.
-            else if(MAFastPrevious1<MASlowPrevious1)
-              {
-               //SellFlag = true;
-               //fast MA crosses below slow MA.
-               if(MAFastPrevious2>MASlowPrevious2)
-                 {
-                  if(iMACD(NULL,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)<0 && 
-                     iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(NULL,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
-                    {
-                     SellFlag=true;
-                    }
-                 }
-              }
+            SellFlag=true;
+              } else if(signalStr=="Buy"){
+            BuyFlag=true;
            }
         }
       if(UseStochasticBasedStrategy)
         {
-         for(int i=0; i<=2; i++)
+         generateSignalsAndPositions("baseStochi");
+           } else {
+         string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"baseStochi");
+         if(signalStr=="Sell")
            {
-            double stochastic1now,stochastic2now,stochastic1previous,stochastic2previous,stochastic1after,stochastic2after;
-            stochastic1now=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i);
-            stochastic1previous=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i+1);
-            stochastic1after=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i-1);
-            stochastic2now=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i);
-            stochastic2previous=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i+1);
-            stochastic2after=iStochastic(NULL,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i-1);
-
-            if((stochastic1now>stochastic2now) && (stochastic1previous<stochastic2previous) && (stochastic1after>stochastic2after)
-               && ((stochastic1now-stochastic2now)>0.5) && (stochastic1now<70.0))
-              {
-               if(NewBar())
-                 {
-                  BuyFlag=true;
-                 }
-              }
-            if((stochastic1now<stochastic2now) && (stochastic1previous>stochastic2previous) && (stochastic1after<stochastic2after)
-               && ((stochastic2now-stochastic1now)>0.5) && (stochastic1now>30.0))
-              {
-               if(NewBar())
-                 {
-                  SellFlag=true;
-                 }
-              }
+            SellFlag=true;
+              } else if(signalStr=="Buy"){
+            BuyFlag=true;
            }
         }
       if(Use5050Strategy)
         {
-
+         generateSignalsAndPositions("5050");
+           } else {
+         string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"5050");
+         if(signalStr=="Sell")
+           {
+            SellFlag=true;
+              } else if(signalStr=="Buy"){
+            BuyFlag=true;
+           }
         }
       if(UseMAOn5050Strategy)
         {
@@ -1184,22 +998,278 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
    if(strategyName=="5050")
      {
       int i=0;
-      if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>50) && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<52)
-         && ((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==49))
-         && (iMA(NULL,0,34,8,MODE_SMA,PRICE_CLOSE,0)<Ask))
+      if((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))>50) && (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))<52)
+         && ((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==49))
+         && (iMA(symbolName,0,34,8,MODE_SMA,PRICE_CLOSE,0)<MarketInfo(symbolName,MODE_ASK)))
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
         }
-      if((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))<50) && (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i))>48)
-         && ((MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(NULL,0,45,PRICE_CLOSE,i+1))==49))
-         && (iMA(NULL,0,34,8,MODE_SMA,PRICE_CLOSE,0)>Bid))
+      if((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))<50) && (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))>48)
+         && ((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==49))
+         && (iMA(symbolName,0,34,8,MODE_SMA,PRICE_CLOSE,0)>MarketInfo(symbolName,MODE_BID)))
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
         }
-
      }
+   if(strategyName=="baseStochi")
+     {
+      for(int i=0; i<=2; i++)
+        {
+         double stochastic1now,stochastic2now,stochastic1previous,stochastic2previous,stochastic1after,stochastic2after;
+         stochastic1now=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i);
+         stochastic1previous=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i+1);
+         stochastic1after=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i-1);
+         stochastic2now=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i);
+         stochastic2previous=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i+1);
+         stochastic2after=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i-1);
+
+         if((stochastic1now>stochastic2now) && (stochastic1previous<stochastic2previous) && (stochastic1after>stochastic2after)
+            && ((stochastic1now-stochastic2now)>0.5) && (stochastic1now<70.0))
+           {
+            if(NewBar())
+              {
+               if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+               createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
+              }
+           }
+         if((stochastic1now<stochastic2now) && (stochastic1previous>stochastic2previous) && (stochastic1after<stochastic2after)
+            && ((stochastic2now-stochastic1now)>0.5) && (stochastic1now>30.0))
+           {
+            if(NewBar())
+              {
+               if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+               createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
+              }
+           }
+        }
+     }
+   if(strategyName=="simpleTrend")
+     {
+      double MAFastPrevious1,MAFastPrevious2;
+      double MASlowPrevious1,MASlowPrevious2;
+      MAFastPrevious1=iMA(symbolName,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,1);
+      MAFastPrevious2=iMA(symbolName,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,2);
+      MASlowPrevious1=iMA(symbolName,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,1);
+      MASlowPrevious2=iMA(symbolName,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,2);
+
+      //fast MA > slow MA.
+      if(MAFastPrevious1>MASlowPrevious1)
+        {
+         //BuyFlag = true;
+         //fast MA crosses over slow MA.
+         if(MAFastPrevious2<MASlowPrevious2)
+           {
+            if(iMACD(symbolName,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)>0 && 
+               iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
+              {
+               if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+               createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
+
+              }
+           }
+        }
+      //fast MA < slow MA.
+      else if(MAFastPrevious1<MASlowPrevious1)
+        {
+         //SellFlag = true;
+         //fast MA crosses below slow MA.
+         if(MAFastPrevious2>MASlowPrevious2)
+           {
+            if(iMACD(symbolName,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)<0 && 
+               iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
+              {
+               if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+               createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
+              }
+           }
+        }
+     }
+   if(strategyName=="trendy")
+     {
+      double Trend=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
+      double TrendBack=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,1),1);
+      double TrendBack2=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,2),1);
+      double MA=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,0),1);
+      double MABack=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,1),1);
+      double MABack2=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,2),1);
+      double MA_Second=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,0),1);
+      double MABack_Second=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,1),1);
+      double MABack2_Second=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,2),1);
+
+      if(Debug)
+        {
+         Print("Trend="+DoubleToStr(Trend));
+         Print("TrendBack="+DoubleToStr(TrendBack));
+         Print("TrendBack2="+DoubleToStr(TrendBack2));
+         Print("MA="+DoubleToStr(MA));
+         Print("MABack="+DoubleToStr(MABack));
+         Print("MABack2="+DoubleToStr(MABack2));
+         Print("MA_Second="+DoubleToStr(MA_Second));
+         Print("MABack_Second="+DoubleToStr(MABack_Second));
+         Print("MABack2_Second="+DoubleToStr(MABack2_Second));
+        }
+      if(!UseSMAOnTrendIndicator)
+        {
+         if(((Trend<TrendBack || CompareDoubles(Trend,TrendBack)) && ((Trend<26) && (TrendBack>=23)) && (TrendBack2>=26)))
+           {
+            if(Debug)
+              {
+               Print("SellSignal!");
+               Print("Trend="+DoubleToStr(Trend));
+               Print("TrendBack="+DoubleToStr(TrendBack));
+              }
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
+           }
+         if(((Trend>TrendBack || CompareDoubles(Trend,TrendBack)) && (Trend>4) && (TrendBack<=8) && (TrendBack2<=5)))
+           {
+            if(Debug)
+              {
+               Print("BuySignal!");
+               Print("Trend="+DoubleToStr(Trend));
+               Print("TrendBack="+DoubleToStr(TrendBack));
+              }
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
+
+           }
+        }
+      if(UseSMAOnTrendIndicator && (UseOneOrTwoSMAOnTrendIndicator==1 || UseOneOrTwoSMAOnTrendIndicator==2))
+        {
+         if(((MathRound(MA)>MathRound(Trend)) || ((MA-0.5)==Trend))
+            && (((MA-Trend)>1) || ((MA-Trend)==1)) && (Trend<14.5 || Trend>16.5)
+            && ((MathRound(MABack)<MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
+            && (MathRound(MABack2)<MathRound(TrendBack2)))
+           {
+            if(Debug)
+              {
+               Print("SELL=>MA="+DoubleToStr(MathRound(MA))+">Trend="+DoubleToStr(MathRound(Trend))
+                     +"&&MABack="+DoubleToStr(MathRound(MABack))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
+                     +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+              }
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
+
+           }
+         if(((MathRound(MA)<MathRound(Trend)) || ((MA+0.5)==Trend))
+            && (((Trend-MA)>1) || ((Trend-MA)==1)) && (Trend<14.5 || Trend>16.5) && (Trend>4)
+            && ((MathRound(MABack)>MathRound(TrendBack)) || (MathRound(MABack)==MathRound(TrendBack)))
+            && (MathRound(MABack2)>MathRound(TrendBack2)))
+           {
+            if(Debug)
+              {
+               Print("BUY=>MA="+DoubleToStr(MathRound(MA))+"<Trend="+DoubleToStr(MathRound(Trend))
+                     +"&&MABack="+DoubleToStr(MathRound(MABack))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
+                     +"&&MaBack2="+DoubleToStr(MathRound(MABack2))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+              }
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
+
+           }
+        }
+
+      if(UseSMAOnTrendIndicator && (UseOneOrTwoSMAOnTrendIndicator==2 || UseOneOrTwoSMAOnTrendIndicator==3))
+        {
+         //using ma50
+         if(((MathRound(MA_Second)>MathRound(Trend)) || (MathRound(MA_Second-0.5)==Trend))
+            && (((MA_Second-Trend)>0.5) || ((MA_Second-Trend)==1)) && (Trend<14.5 || Trend>16.5)
+            && ((MathRound(MABack_Second)<MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
+            && (MathRound(MABack2_Second)<MathRound(TrendBack2)))
+           {
+            if(Debug)
+              {
+               Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">Trend="+DoubleToStr(MathRound(Trend))
+                     +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=TrendBack="+DoubleToStr(MathRound(TrendBack))
+                     +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+              }
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
+
+           }
+         if(((MathRound(MA_Second)<MathRound(Trend)) || (MathRound(MA_Second+0.5)==Trend))
+            && (((Trend-MA_Second)>0.5) || ((Trend-MA_Second)==1)) && (Trend<14.5 || Trend>16.5)
+            && ((MathRound(MABack_Second)>MathRound(TrendBack)) || (MathRound(MABack_Second)==MathRound(TrendBack)))
+            && (MathRound(MABack2_Second)>MathRound(TrendBack2)))
+           {
+            if(Debug)
+              {
+               Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<Trend="+DoubleToStr(MathRound(Trend))
+                     +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>TrendBack="+DoubleToStr(MathRound(TrendBack))
+                     +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>TrendBack2="+DoubleToStr(MathRound(TrendBack2)));
+              }
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
+           }
+        }
+      if(UseSMAOnTrendIndicator && UseSMAsCrossingOnTrendIndicatorData)
+        {
+         //using emas
+         if(((MathRound(MA_Second)>MathRound(MA)) || (MathRound(MA_Second-0.5)==MA))
+            && (((MA_Second-MA)>0.5) || ((MA_Second-MA)==1))
+            && ((MathRound(MABack_Second)<MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack2)))
+            && (MathRound(MABack2_Second)<MathRound(MABack2)))
+           {
+            if(Debug)
+              {
+               Print("SELL=>MA_Second="+DoubleToStr(MathRound(MA_Second))+">MATrend="+DoubleToStr(MathRound(MA))
+                     +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"<=MABack="+DoubleToStr(MathRound(MABack))
+                     +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"<=MABack2="+DoubleToStr(MathRound(MABack2)));
+              }
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
+           }
+         if(((MathRound(MA_Second)<MathRound(MA)) || (MathRound(MA_Second+0.5)==MA))
+            && (((MA-MA_Second)>0.5) || ((MA-MA_Second)==1))
+            && ((MathRound(MABack_Second)>MathRound(MABack)) || (MathRound(MABack_Second)==MathRound(MABack)))
+            && (MathRound(MABack2_Second)>MathRound(MABack2)))
+           {
+            if(Debug)
+              {
+               Print("BUY=>MA_Second="+DoubleToStr(MathRound(MA_Second))+"<MA="+DoubleToStr(MathRound(MA))
+                     +"&&MABack_Second="+DoubleToStr(MathRound(MABack_Second))+"=>MABack="+DoubleToStr(MathRound(MABack))
+                     +"&&MaBack2_Second="+DoubleToStr(MathRound(MABack2_Second))+"=>MABack2="+DoubleToStr(MathRound(MABack2)));
+              }
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
+           }
+        }
+      if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
+     }
+   if(strategyName=="tdi")
+     {
+      int i=0;
+      double TDIGreen=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
+      double TDIGreenPrevious=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
+      double TDIYellow=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
+      double TDIYellowPrevous=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1);
+      //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
+      //double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
+      // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
+      // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
+      double TSL2=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
+      double TSL2Previous=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
+
+      if(UseCorridorCroosing)
+        {
+         if((TSL2<TDIYellow) && (TDIGreen>TSL2 && (TDIGreenPrevious<TSL2Previous || TDIGreenPrevious==TSL2Previous))) {BuyFlag=true;}
+         if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
+        }
+
+      if((TDIYellow<50) && (TSL2<TDIYellow) && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
+      if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
+
+      if(SellFlag && Debug) { Print("Got sell signal from RSI-based indicator!");}
+      if(BuyFlag && Debug) { Print("Got buy signal from RSI-based indicator!");}
+      if(!SendOnlyNotificationsNoTrades)
+        {
+         if(BuyFlag){SellFlag=false;createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);}
+         if(SellFlag){BuyFlag=false;createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);}
+           } else {SellFlag=false;BuyFlag=false;
+        }
+     }
+
    string res="noSignal";
    if(SellFlag) {res="Sell";}
    if(BuyFlag) {res="Buy";}
