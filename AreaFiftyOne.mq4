@@ -547,7 +547,7 @@ void OnTick()
      }
 //HideTestIndicators(false);
 
-   if(HandleUserPositions){HandleUserPositionsFun();}
+   if(HandleUserPositions && !TradeOnAllSymbols){HandleUserPositionsFun();}
 
 //conditions to close positions
 /* if(SellFlag>0){CloseBuy=1;}
@@ -558,71 +558,53 @@ void OnTick()
       //entry conditions verification
       if(SellFlag>0){OS=1;OB=0;}if(BuyFlag>0){OB=1;OS=0;}
       OpenPosition(Symbol(),OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
-     }
 
-   double TempProfit=0;
-   for(int j=0;j<OrdersTotal();j++)
-     {
-      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+      double TempProfitUserPosis=0.0;
+      if(HandleUserPositions)
         {
-         if(OrderSymbol()==Symbol() && (OrderMagicNumber()==MagicNumber))
+         for(int ff=0;ff<OrdersTotal();ff++)
            {
-            TrP(Symbol());
-            TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
-            if(Debug){Print("TempProfit="+DoubleToStr(TempProfit));}
-           }
-        }
-     }
-
-   double TempProfitUserPosis=0.0;
-   if(HandleUserPositions)
-     {
-      for(int ff=0;ff<OrdersTotal();ff++)
-        {
-         if(OrderSelect(ff,SELECT_BY_POS,MODE_TRADES))
-           {
-            string OrderCom=OrderComment();
-            if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+            if(OrderSelect(ff,SELECT_BY_POS,MODE_TRADES))
               {
-               OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
-                 } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
-               OrderCom="";
-              }
-            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
-              {
-               TrP(Symbol());
+               string OrderCom=OrderComment();
+               if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+                 {
+                  OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+                    } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+                  OrderCom="";
+                 }
+               if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
+                 {
+                  TrP(Symbol());
+                 }
               }
            }
-        }
-      for(int f=0;f<OrdersTotal();f++)
-        {
-         if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
+         for(int f=0;f<OrdersTotal();f++)
            {
-            string OrderCom=OrderComment();
-            if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+            if(OrderSelect(f,SELECT_BY_POS,MODE_TRADES))
               {
-               OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
-                 } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
-               OrderCom="";
-              }
-            if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
-              {
-               TempProfitUserPosis=TempProfitUserPosis+OrderProfit()+OrderCommission()+OrderSwap();
+               string OrderCom=OrderComment();
+               if((StringLen(OrderCom)-CountCharsInCommentToEscape)>0 || (StringLen(OrderCom)-CountCharsInCommentToEscape==0))
+                 {
+                  OrderCom=StringSubstr(OrderCom,StringLen(OrderCom)-CountCharsInCommentToEscape,StringLen(OrderCom));
+                    } else if((StringLen(OrderCom)-CountCharsInCommentToEscape)<0) {
+                  OrderCom="";
+                 }
+               if(OrderSymbol()==Symbol() && (OrderComment()=="" || OrderCom=="") && OrderMagicNumber()==0)
+                 {
+                  TempProfitUserPosis=TempProfitUserPosis+OrderProfit()+OrderCommission()+OrderSwap();
+                 }
               }
            }
+         CurrentProfit(checkForMod(Symbol()),TempProfitUserPosis);
         }
      }
-   CurrentProfit(TempProfit,TempProfitUserPosis);
-
-//not enough money message to continue the martingale
-   if((TicketNrBuy<0 || TicketNrSell<0) && GetLastError()==134){err=1;Print("NOT ENOGUGHT MONEY!!");}
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
 void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThenMaxLotT,int countRemainingMaxLotsT,double MaxLotT,double RemainingLotSizeT)
   {
-
 //open position
 // 
    if((AddP(symbolName) && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
@@ -684,6 +666,9 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
            }
         }
      }
+   CurrentProfit(checkForMod(symbolName),0.0);
+//not enough money message to continue the martingale
+   if((TicketNrBuy<0 || TicketNrSell<0) && GetLastError()==134){Print("NOT ENOGUGHT MONEY!!");}
   }
 //+------------------------------------------------------------------+
 //| Tester function                                                  |
@@ -1946,5 +1931,24 @@ void createNotifications(string symbolName,string direction,int period,string ad
    if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
    if(SendNotificationToPhone){SendNotification(direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),Digits)+" -> Area51 on "+symbolName+"("+getTimeframe(period)+") with "+strategyName+" strategy");}
 
+  }
+//+------------------------------------------------------------------+
+
+double checkForMod(string symbolName) 
+  {
+   double TempProfit=0.0;
+   for(int j=0;j<OrdersTotal();j++)
+     {
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+        {
+         if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
+           {
+            TrP(symbolName);
+            TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
+            if(Debug){Print("TempProfit="+DoubleToStr(TempProfit));}
+           }
+        }
+     }
+   return TempProfit;
   }
 //+------------------------------------------------------------------+
