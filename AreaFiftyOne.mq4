@@ -166,6 +166,7 @@ int OnInit()
   {
 //---
    setTradeVarsValues();
+   setAllForTradeAvailableSymbols();
 
    if(Debug)
      {
@@ -268,8 +269,6 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
-
-   setAllForTradeAvailableSymbols();
 //---
    return(INIT_SUCCEEDED);
   }
@@ -295,87 +294,6 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
-
-//risk management
-   double SymbolStep=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
-   int MarginMode=(int)MarketInfo(Symbol(),MODE_MARGINCALCMODE);
-   bool compareContractSizes=false;
-   if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
-   else {compareContractSizes=false;}
-   countRemainingMaxLots=0;
-   LotSizeIsBiggerThenMaxLot=false;
-   MaxLot=MarketInfo(Symbol(),MODE_MAXLOT);
-   if(SymbolStep>0.0)
-     {
-      MaxLot=NormalizeDouble(MaxLot-MathMod(MaxLot,SymbolStep),countedDecimals);
-     }
-
-   if(LotAutoSize)
-     {
-      int Faktor=100;
-      if(LotRiskPercent<0.1 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
-      else
-        {
-         if(getContractProfitCalcMode(Symbol())==0 || (MarginMode==0 && compareContractSizes))
-           {
-            //Print("Fall1:"+(MarginMode==0 && compareContractSizes));
-            LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
-                                    (Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT),countedDecimals);
-            //Print("LotSize="+LotSize);
-           }
-         else if((getContractProfitCalcMode(Symbol())==1 || getContractProfitCalcMode(Symbol())==2 || MarginMode==4) && (compareContractSizes==false))
-           {
-            //Print("Fall2:"+((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false)));
-            if(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE)==1.0){countedDecimals=0;}
-            int Splitter=1000;
-            if(getContractProfitCalcMode(Symbol())==1){Splitter=100000;}
-            if(MarginMode==4 && MarketInfo(Symbol(),MODE_TICKSIZE)==0.001){Splitter=1000000;}
-            if(Digits==3){Faktor=1;}
-            if(Digits==2){Faktor=10;}
-            LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Faktor*Point)/
-                                    (Ask*MarketInfo(Symbol(),MODE_TICKSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT)/Splitter,countedDecimals);
-            //Print("LotSize2="+LotSize);
-            if(SymbolStep>0.0)
-              {
-               LotSize=LotSize-MathMod(LotSize,SymbolStep);
-              }
-              } else {
-            Print("Cannot calculate the right auto lot size!");
-            LotSize=MarketInfo(Symbol(),MODE_MINLOT);
-           }
-        }
-
-      if(MaxDynamicLotSize>0 && LotSize>MaxDynamicLotSize)
-        {
-         LotSize=MaxDynamicLotSize;
-        }
-     }
-   if(LotAutoSize==false){LotSize=LotSize;}
-   if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
-     {
-      LotSize=MarketInfo(Symbol(),MODE_MINLOT);
-      if(SymbolStep>0.0)
-        {
-         LotSize=NormalizeDouble(LotSize-MathMod(LotSize,SymbolStep),countedDecimals);
-        }
-     }
-   if(LotSize>MaxLot)
-     {
-      countRemainingMaxLots=(int)(LotSize/MaxLot);
-      RemainingLotSize=MathMod(LotSize,MaxLot);
-      LotSizeIsBiggerThenMaxLot=true;
-      CurrentTotalLotSize=LotSize;
-      LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
-      if(SymbolStep>0.0)
-        {
-         LotSize=NormalizeDouble(LotSize-MathMod(LotSize,SymbolStep),countedDecimals);
-        }
-     }
-
-   if(Debug)
-     {
-      Print("LotSize="+DoubleToStr(LotSize,countedDecimals));
-     }
 
 //---//
 
@@ -408,22 +326,6 @@ void OnTick()
          Print("Order close failed - retrying error: #"+IntegerToString(GetLastError()));
         }
      }
-
-//positions initialization
-   int cnt=0,OP=0,OS=0,OB=0,CloseSell=0,OSC=0,OBC=0,CloseBuy=0;OP=0;
-   for(cnt=0;cnt<OrdersTotal();cnt++)
-     {
-      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
-        {
-         if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
-           {
-            OP=OP+1;
-            if(OrderType()==OP_SELL)OSC=OSC+1;
-            if(OrderType()==OP_BUY)OBC=OBC+1;
-           }
-        }
-     }
-   if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
 
 //---//
 
@@ -555,6 +457,21 @@ void OnTick()
 */
    if(TradeOnAllSymbols==false)
      {
+      //positions initialization
+      int cnt=0,OP=0,OS=0,OB=0,CloseSell=0,OSC=0,OBC=0,CloseBuy=0;OP=0;
+      for(cnt=0;cnt<OrdersTotal();cnt++)
+        {
+         if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
+           {
+            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
+              {
+               OP=OP+1;
+               if(OrderType()==OP_SELL)OSC=OSC+1;
+               if(OrderType()==OP_BUY)OBC=OBC+1;
+              }
+           }
+        }
+      if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
       //entry conditions verification
       if(SellFlag>0){OS=1;OB=0;}if(BuyFlag>0){OB=1;OS=0;}
       OpenPosition(Symbol(),OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
@@ -1876,6 +1793,88 @@ void setTradeVarsValues()
       ArrayResize(tradeIntVarsValues,ArraySize(symbolNameBuffer));
       double TempLotSize=LotSize,tempLotStep;
       int tempCountedDecimals,tempStopLevel,tempMarginMode,tempTrailingStep=TrailingStep,tempDistanceStep=DistanceStep;
+
+      //risk management
+      double SymbolStep=SymbolInfoDouble(Symbol(),SYMBOL_VOLUME_STEP);
+      int MarginMode=(int)MarketInfo(Symbol(),MODE_MARGINCALCMODE);
+      bool compareContractSizes=false;
+      if(CompareDoubles(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE),100000.0)) {compareContractSizes=true;}
+      else {compareContractSizes=false;}
+      countRemainingMaxLots=0;
+      LotSizeIsBiggerThenMaxLot=false;
+      MaxLot=MarketInfo(Symbol(),MODE_MAXLOT);
+      if(SymbolStep>0.0)
+        {
+         MaxLot=NormalizeDouble(MaxLot-MathMod(MaxLot,SymbolStep),countedDecimals);
+        }
+
+      if(LotAutoSize)
+        {
+         int Faktor=100;
+         if(LotRiskPercent<0.1 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
+         else
+           {
+            if(getContractProfitCalcMode(Symbol())==0 || (MarginMode==0 && compareContractSizes))
+              {
+               //Print("Fall1:"+(MarginMode==0 && compareContractSizes));
+               LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
+                                       (Ask*MarketInfo(Symbol(),MODE_LOTSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT),countedDecimals);
+               //Print("LotSize="+LotSize);
+              }
+            else if((getContractProfitCalcMode(Symbol())==1 || getContractProfitCalcMode(Symbol())==2 || MarginMode==4) && (compareContractSizes==false))
+              {
+               //Print("Fall2:"+((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || MarginMode==4) && (compareContractSizes==false)));
+               if(SymbolInfoDouble(Symbol(),SYMBOL_TRADE_CONTRACT_SIZE)==1.0){countedDecimals=0;}
+               int Splitter=1000;
+               if(getContractProfitCalcMode(Symbol())==1){Splitter=100000;}
+               if(MarginMode==4 && MarketInfo(Symbol(),MODE_TICKSIZE)==0.001){Splitter=1000000;}
+               if(Digits==3){Faktor=1;}
+               if(Digits==2){Faktor=10;}
+               LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Faktor*Point)/
+                                       (Ask*MarketInfo(Symbol(),MODE_TICKSIZE)*MarketInfo(Symbol(),MODE_MINLOT)))*MarketInfo(Symbol(),MODE_MINLOT)/Splitter,countedDecimals);
+               //Print("LotSize2="+LotSize);
+               if(SymbolStep>0.0)
+                 {
+                  LotSize=LotSize-MathMod(LotSize,SymbolStep);
+                 }
+                 } else {
+               Print("Cannot calculate the right auto lot size!");
+               LotSize=MarketInfo(Symbol(),MODE_MINLOT);
+              }
+           }
+
+         if(MaxDynamicLotSize>0 && LotSize>MaxDynamicLotSize)
+           {
+            LotSize=MaxDynamicLotSize;
+           }
+        }
+      if(LotAutoSize==false){LotSize=LotSize;}
+      if(LotSize<MarketInfo(Symbol(),MODE_MINLOT))
+        {
+         LotSize=MarketInfo(Symbol(),MODE_MINLOT);
+         if(SymbolStep>0.0)
+           {
+            LotSize=NormalizeDouble(LotSize-MathMod(LotSize,SymbolStep),countedDecimals);
+           }
+        }
+      if(LotSize>MaxLot)
+        {
+         countRemainingMaxLots=(int)(LotSize/MaxLot);
+         RemainingLotSize=MathMod(LotSize,MaxLot);
+         LotSizeIsBiggerThenMaxLot=true;
+         CurrentTotalLotSize=LotSize;
+         LotSize=MarketInfo(Symbol(),MODE_MAXLOT);
+         if(SymbolStep>0.0)
+           {
+            LotSize=NormalizeDouble(LotSize-MathMod(LotSize,SymbolStep),countedDecimals);
+           }
+        }
+
+      if(Debug)
+        {
+         Print("LotSize="+DoubleToStr(LotSize,countedDecimals));
+        }
+
       for(int c=0;c<ArraySize(symbolNameBuffer);c++)
         {
          if(TempLotSize<MarketInfo(symbolNameBuffer[c],MODE_MINLOT))
@@ -1934,7 +1933,7 @@ void createNotifications(string symbolName,string direction,int period,string ad
   }
 //+------------------------------------------------------------------+
 
-double checkForMod(string symbolName) 
+double checkForMod(string symbolName)
   {
    double TempProfit=0.0;
    for(int j=0;j<OrdersTotal();j++)
