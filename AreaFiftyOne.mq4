@@ -1791,9 +1791,8 @@ void setTradeVarsValues()
      {
       ArrayResize(tradeDoubleVarsValues,ArraySize(symbolNameBuffer));
       ArrayResize(tradeIntVarsValues,ArraySize(symbolNameBuffer));
-      double TempLotSize=LotSize,tempSymbolLotStep,tempMaxLot;
+      double TempLotSize=LotSize,tempSymbolLotStep;
       int tempCountedDecimals,tempStopLevel,tempMarginMode,tempTrailingStep=TrailingStep,tempDistanceStep=DistanceStep;
-
 
       for(int c=0;c<ArraySize(symbolNameBuffer);c++)
         {
@@ -1834,22 +1833,24 @@ void setTradeVarsValues()
                countRemainingMaxLots=0;
                LotSizeIsBiggerThenMaxLot=false;
                MaxLot=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
+               tradeDoubleVarsValues[c][2]=MaxLot;
                if(tempSymbolLotStep>0.0)
                  {
                   MaxLot=NormalizeDouble(MaxLot-MathMod(MaxLot,tempSymbolLotStep),countedDecimals);
                  }
-
+               tradeDoubleVarsValues[c][2]=MaxLot;
                if(LotAutoSize)
                  {
                   int Faktor=100;
                   if(LotRiskPercent<0.1 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
                   else
                     {
-                     if(getContractProfitCalcMode(Symbol())==0 || (tempMarginMode==0 && compareContractSizes))
+                     if(getContractProfitCalcMode(symbolNameBuffer[c])==0 || (tempMarginMode==0 && compareContractSizes))
                        {
                         //Print("Fall1:"+(tempMarginMode==0 && compareContractSizes));
                         LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
-                                                (Ask*MarketInfo(symbolNameBuffer[c],MODE_LOTSIZE)*MarketInfo(symbolNameBuffer[c],MODE_MINLOT)))*MarketInfo(symbolNameBuffer[c],MODE_MINLOT),countedDecimals);
+                                                (Ask*MarketInfo(symbolNameBuffer[c],MODE_LOTSIZE)*MarketInfo(symbolNameBuffer[c],MODE_MINLOT)))
+                                                *MarketInfo(symbolNameBuffer[c],MODE_MINLOT),countedDecimals);
                         //Print("LotSize="+LotSize);
                        }
                      else if((getContractProfitCalcMode(Symbol())==1 || getContractProfitCalcMode(Symbol())==2 || tempMarginMode==4) && (compareContractSizes==false))
@@ -1862,7 +1863,8 @@ void setTradeVarsValues()
                         if(Digits==3){Faktor=1;}
                         if(Digits==2){Faktor=10;}
                         LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Faktor*Point)/
-                                                (Ask*MarketInfo(symbolNameBuffer[c],MODE_TICKSIZE)*MarketInfo(symbolNameBuffer[c],MODE_MINLOT)))*MarketInfo(symbolNameBuffer[c],MODE_MINLOT)/Splitter,countedDecimals);
+                                                (Ask*MarketInfo(symbolNameBuffer[c],MODE_TICKSIZE)*MarketInfo(symbolNameBuffer[c],MODE_MINLOT)))
+                                                *MarketInfo(symbolNameBuffer[c],MODE_MINLOT)/Splitter,countedDecimals);
                         //Print("LotSize2="+LotSize);
                         if(tempSymbolLotStep>0.0)
                           {
@@ -1891,16 +1893,20 @@ void setTradeVarsValues()
                if(LotSize>MaxLot)
                  {
                   countRemainingMaxLots=(int)(LotSize/MaxLot);
+                  tradeDoubleVarsValues[c][3]=countRemainingMaxLots;
                   RemainingLotSize=MathMod(LotSize,MaxLot);
+                  tradeDoubleVarsValues[c][4]=RemainingLotSize;
                   LotSizeIsBiggerThenMaxLot=true;
+                  tradeIntVarsValues[c][4]=LotSizeIsBiggerThenMaxLot;
                   CurrentTotalLotSize=LotSize;
+                  tradeDoubleVarsValues[c][5]=CurrentTotalLotSize;
                   LotSize=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
                   if(tempSymbolLotStep>0.0)
                     {
                      LotSize=NormalizeDouble(LotSize-MathMod(LotSize,tempSymbolLotStep),countedDecimals);
                     }
                  }
-
+                tradeDoubleVarsValues[c][6]=LotSize;
                if(Debug)
                  {
                   Print("LotSize="+DoubleToStr(LotSize,countedDecimals));
