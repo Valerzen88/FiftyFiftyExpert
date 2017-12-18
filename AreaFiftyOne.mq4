@@ -46,6 +46,7 @@ extern int      TrailingStep=15;
 extern int      DistanceStep=15;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
+extern int      MaxSpread=25;
 extern static string Indicators="Choose strategies";
 extern static string TrendIndicatorStrategy="-------------------";
 extern bool     UseTrendIndicator=false;
@@ -294,10 +295,6 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
-
-//---//
-
-//Money Management
    double TempLoss=0;
    for(int j=0;j<OrdersTotal();j++)
      {
@@ -524,7 +521,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
   {
 //open position
 // 
-   if((AddP(symbolName) && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
+   if(((getCurrentSpreadForSymbol(symbolName)<=MaxSpread) && AddP(symbolName) && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
       //&& MarketInfo(Symbol(),MODE_TRADEALLOWED)
@@ -1951,3 +1948,7 @@ double checkForMod(string symbolName)
    return TempProfit;
   }
 //+------------------------------------------------------------------+
+
+int getCurrentSpreadForSymbol(string symbolName) {
+   return (int)MarketInfo(symbolName,MODE_SPREAD);   
+}
