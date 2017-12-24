@@ -490,6 +490,10 @@ void OnTick()
       if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
       //entry conditions verification
       if(SellFlag>0){OS=1;OB=0;}if(BuyFlag>0){OB=1;OS=0;}
+      LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[0][4];
+      RemainingLotSize=tradeDoubleVarsValues[0][4];
+      countRemainingMaxLots=(int)tradeDoubleVarsValues[0][3];
+      MaxLot=tradeDoubleVarsValues[0][2];
       OpenPosition(Symbol(),OP,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
 
       double TempProfitUserPosis=0.0;
@@ -539,7 +543,6 @@ void OnTick()
 void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThenMaxLotT,int countRemainingMaxLotsT,double MaxLotT,double RemainingLotSizeT)
   {
 //open position
-// 
    if(((getCurrentSpreadForSymbol(symbolName)<=MaxSpread) && AddP(symbolName) && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
       // && TempTDIGreen>RSI_Top_Value && (TempTDIGreen-TempTDIRed)>=3.5
@@ -548,7 +551,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
         {
          if(OS==1 /*&& OSC==0*/)
            {
-            if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_BID)-TP*Point;if(SL==0)SLI=MarketInfo(symbolName,MODE_BID)+10000*Point;else SLI=MarketInfo(symbolName,MODE_BID)+SL*Point;
+            if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_BID)-TP*MarketInfo(symbolName,MODE_POINT);if(SL==0)SLI=MarketInfo(symbolName,MODE_BID)+10000*MarketInfo(symbolName,MODE_POINT);else SLI=MarketInfo(symbolName,MODE_BID)+SL*MarketInfo(symbolName,MODE_POINT);
             if(CheckMoneyForTrade(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],OP_SELL))
               {
                if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]))
@@ -575,7 +578,7 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
         {
          if(OB==1 /*&& OBC==0*/)
            {
-            if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_ASK)+TP*Point;if(SL==0)SLI=MarketInfo(symbolName,MODE_ASK)-10000*Point;else SLI=MarketInfo(symbolName,MODE_ASK)-SL*Point;
+            if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_ASK)+TP*MarketInfo(symbolName,MODE_POINT);if(SL==0)SLI=MarketInfo(symbolName,MODE_ASK)-10000*MarketInfo(symbolName,MODE_POINT);else SLI=MarketInfo(symbolName,MODE_ASK)-SL*MarketInfo(symbolName,MODE_POINT);
             if(CheckMoneyForTrade(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],OP_BUY))
               {
                if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]))
@@ -1755,6 +1758,10 @@ void generateSignalsAndPositions(string strategyName)
                  {
                   Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_ASK),5));
                     } else {
+                  LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[x][4];
+                  RemainingLotSize=tradeDoubleVarsValues[x][4];
+                  countRemainingMaxLots=(int)tradeDoubleVarsValues[x][3];
+                  MaxLot=tradeDoubleVarsValues[x][2];
                   OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
                  }
                  } else if(signalStr=="Sell") {
@@ -1763,6 +1770,10 @@ void generateSignalsAndPositions(string strategyName)
                  {
                   Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_BID),5));
                     } else {
+                  LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[x][4];
+                  RemainingLotSize=tradeDoubleVarsValues[x][4];
+                  countRemainingMaxLots=(int)tradeDoubleVarsValues[x][3];
+                  MaxLot=tradeDoubleVarsValues[x][2];
                   OpenPosition(symbolNameBuffer[x],getOpenedPositionsForSymbol(symbolNameBuffer[x]),OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,getTradeDoubleValue(x,1),RemainingLotSize);
                  }
               }
