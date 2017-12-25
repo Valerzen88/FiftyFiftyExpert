@@ -73,6 +73,7 @@ extern static string TradeAllSymbolsFromOneChart="Trade the choosen strategy on 
 extern bool     TradeOnAllSymbols=false;
 extern bool   TradeOnlyListOfSelectedSymbols=false;
 extern string   ListOfSelectedSymbols="EURUSD;USDJPY;GBPUSD";
+extern bool     TradeFromSignalToSignal=false;
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
 extern int      EndHour=20;
@@ -128,10 +129,7 @@ int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
 int Slippage=3,BreakEven=0;
-int TicketNrPendingSell=0,TicketNrPendingSell2=0,TicketNrSell=0;
-int TicketNrPendingBuy=0,TicketNrPendingBuy2=0,TicketNrBuy=0;
-int StopLevel=0;
-double StopLevelDouble=MarketInfo(Symbol(),MODE_STOPLEVEL)*Point();
+int TicketNrSell=0,TicketNrBuy=0;
 double CurrentLoss=0;
 double TP=TakeProfit,SL=StopLoss;
 double SLI=0,TPI=0;
@@ -143,8 +141,6 @@ string IndicatorName4="FL11";
 string IndicatorName5="SSRC";
 string IndicatorName6="NB-channel";
 int handle_ind;
-int countedDecimals=2;
-double CurrentTotalLotSize=0.0;
 string symbolNameBuffer[];
 bool SellFlag=false;
 bool BuyFlag=false;
@@ -175,7 +171,6 @@ int OnInit()
       Print("MODE_MINLOT=",MarketInfo(Symbol(),MODE_MINLOT),", Symbol=",Symbol());
       Print("MODE_LOTSTEP=",MarketInfo(Symbol(),MODE_LOTSTEP),", Symbol=",Symbol());
       Print("MODE_MAXLOT=",MarketInfo(Symbol(),MODE_MAXLOT),", Symbol=",Symbol());
-      Print("countedDecimals="+IntegerToString(countedDecimals));
      }
    if(trial_lic)
      {
@@ -198,7 +193,7 @@ int OnInit()
         {
          if(TimeCurrent()>rentExpiryDate)
            {
-            Alert("Your license is expired. Please contact us.");
+            Alert("Your license is expired. Please contact us under info@vbapps.co.");
               } else {
             ObjectCreate("RentVersion",OBJ_LABEL,0,0,0);
             ObjectSetText("RentVersion","Your version is valid till: "+TimeToStr(rentExpiryDate),11,"Calibri",clrAqua);
@@ -274,11 +269,6 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
-   if(Debug)
-     {
-      Print("StopLevelDouble="+DoubleToStr(StopLevelDouble));
-      Print("StopLevel="+IntegerToString(StopLevel));
-     }
    ObjectDelete("CurProfit");
    ObjectDelete("NextLotSize");
    ObjectDelete("CurrentLoss");
@@ -542,6 +532,17 @@ void OnTick()
 //+------------------------------------------------------------------+
 void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThenMaxLotT,int countRemainingMaxLotsT,double MaxLotT,double RemainingLotSizeT)
   {
+    if(TradeFromSignalToSignal)
+                 {
+                 if (OS==1) {
+                  Print("Trade from signal to signal=SELL. Close Buy");
+                  ClosePreviousSignalTrade(symbolName,OS,0);
+                 }
+                 if (OB==1) {
+                                 Print("Trade from signal to signal=BUY. Close Sell");
+                                 ClosePreviousSignalTrade(symbolName,0,OB);
+                                }
+                 }
 //open position
    if(((getCurrentSpreadForSymbol(symbolName)<=MaxSpread) && AddP(symbolName) && AddPositionsIndependently && OP<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
@@ -605,6 +606,25 @@ void OpenPosition(string symbolName,int OP,int OS,int OB,bool LotSizeIsBiggerThe
    CurrentProfit(checkForMod(symbolName),0.0);
 //not enough money message to continue the martingale
    if((TicketNrBuy<0 || TicketNrSell<0) && GetLastError()==134){Print("NOT ENOGUGHT MONEY!!");}
+  }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void ClosePreviousSignalTrade(string symbolName,int OS,int OB)
+  {
+   bool closed=false;
+   for(int cnt=0;cnt<OrdersTotal();cnt++)
+     {
+      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES))
+        {
+         if(OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber)
+           {
+            Print("OrderSymbol==symbolName&&OrderMagic==MagicNumber");
+            if(OrderType()==OP_BUY && OS==1){Print("Close BUY with number="+OrderTicket());closed=OrderClose(OrderTicket(),OrderLots(),MarketInfo(symbolName,MODE_BID),Slippage,Red);}
+            if(OrderType()==OP_SELL && OB==1){Print("Close SELL with number="+OrderTicket());closed=OrderClose(OrderTicket(),OrderLots(),MarketInfo(symbolName,MODE_ASK),Slippage,Red);}
+           }
+        }
+     }
   }
 //+------------------------------------------------------------------+
 //| Tester function                                                  |
@@ -689,6 +709,8 @@ bool AddP(string symbolName)
 void TrP(string symbolName)
   {
    int BE=0;int TS=DistanceStep;double pbid,pask,ppoint;ppoint=MarketInfo(symbolName,MODE_POINT);
+   TS=tradeIntVarsValues[getSymbolArrayIndex(symbolName)][3];
+   int TRS=tradeIntVarsValues[getSymbolArrayIndex(symbolName)][2];
    double commissions=OrderCommission()+OrderSwap();
    double commissionsInPips;
    double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
@@ -703,7 +725,7 @@ void TrP(string symbolName)
    if(DebugTrace)
      {
       Print("commissionsInPips(Ticket="+IntegerToString(OrderTicket())+")="+DoubleToStr(commissionsInPips,5)
-            +";DistanceStep="+IntegerToString(TS)+";TrailingStep="+IntegerToString(TrailingStep));
+            +";DistanceStep="+IntegerToString(TS)+";TrailingStep="+IntegerToString(TRS));
      }
    if(OrderType()==OP_BUY)
      {
@@ -723,18 +745,18 @@ void TrP(string symbolName)
         {
          if((pbid-OrderOpenPrice())>TS*ppoint)
            {
-            if(OrderStopLoss()<(pbid-((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3)))
+            if(OrderStopLoss()<(pbid-((TS+TRS-1)*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3)))
               {
-               if((pbid-((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))>OrderOpenPrice())
+               if((pbid-((TS+TRS-1)*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3))>OrderOpenPrice())
                  {
                   if(Debug)
                     {
                      Print("Fall2: "+"Ask="+DoubleToStr(pbid,5)+";TS="+IntegerToString(TS)+
                            ";commissionInPips="+DoubleToStr(commissionsInPips,5));
                     }
-                  if(pbid>pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
+                  if(pbid>pbid-(TS*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3))
                     {
-                     ModSL(symbolName,pbid-(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                     ModSL(symbolName,pbid-(TS*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3));
                     }
                  }
                return;
@@ -760,18 +782,18 @@ void TrP(string symbolName)
         {
          if(OrderOpenPrice()-pask>TS*ppoint)
            {
-            if(OrderStopLoss()>(pask+((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3)) || OrderStopLoss()==0)
+            if(OrderStopLoss()>(pask+((TS+TRS-1)*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3)) || OrderStopLoss()==0)
               {
-               if((pask+((TS+TrailingStep-1)*ppoint+commissionsInPips+StopLevelDouble*1.3))<OrderOpenPrice())
+               if((pask+((TS+TRS-1)*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3))<OrderOpenPrice())
                  {
                   if(Debug)
                     {
                      Print("Fall4: "+"Ask="+DoubleToStr(pask,5)+";TS="+IntegerToString(TS)+
                            ";commissionInPips="+DoubleToStr(commissionsInPips,5));
                     }
-                  if(pask<pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3))
+                  if(pask<pask+(TS*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3))
                     {
-                     ModSL(symbolName,pask+(TS*ppoint+commissionsInPips+StopLevelDouble*1.3));
+                     ModSL(symbolName,pask+(TS*ppoint+commissionsInPips+tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][7]*1.3));
                     }
                  }
                return;
@@ -1431,8 +1453,8 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    if(!TradeOnAllSymbols)
      {
       ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
-      if(CurrentTotalLotSize>0.0)
-        {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(CurrentTotalLotSize,2),11,"Calibri",clrLightYellow);}
+      if(tradeDoubleVarsValues[0][5]>0.0)
+        {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][5],2),11,"Calibri",clrLightYellow);}
       else {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][6],2),11,"Calibri",clrLightYellow);}
       ObjectSet("NextLotSize",OBJPROP_CORNER,1);
       ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
@@ -1864,7 +1886,7 @@ void setTradeVarsValues()
       tradeDoubleVarsValues[c][2]=MaxLot;
       if(tempSymbolLotStep>0.0)
         {
-         MaxLot=NormalizeDouble(MaxLot-MathMod(MaxLot,tempSymbolLotStep),countedDecimals);
+         MaxLot=NormalizeDouble(MaxLot-MathMod(MaxLot,tempSymbolLotStep),tempCountedDecimals);
         }
       tradeDoubleVarsValues[c][2]=MaxLot;
       if(LotAutoSize)
@@ -1878,21 +1900,21 @@ void setTradeVarsValues()
                //Print("Fall1:"+(tempMarginMode==0 && compareContractSizes));
                LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Point*Faktor)/
                                        (MarketInfo(symbolNameBuffer[c],MODE_ASK)*MarketInfo(symbolNameBuffer[c],MODE_LOTSIZE)*MarketInfo(symbolNameBuffer[c],MODE_MINLOT)))
-                                       *MarketInfo(symbolNameBuffer[c],MODE_MINLOT),countedDecimals);
+                                       *MarketInfo(symbolNameBuffer[c],MODE_MINLOT),tempCountedDecimals);
                //Print("LotSize="+LotSize);
               }
-            else if((getContractProfitCalcMode(Symbol())==1 || getContractProfitCalcMode(Symbol())==2 || tempMarginMode==4) && (compareContractSizes==false))
+            else if((getContractProfitCalcMode(symbolNameBuffer[c])==1 || getContractProfitCalcMode(symbolNameBuffer[c])==2 || tempMarginMode==4) && (compareContractSizes==false))
               {
                //Print("Fall2:"+((getContractProfitCalcMode()==1 || getContractProfitCalcMode()==2 || tempMarginMode==4) && (compareContractSizes==false)));
-               if(SymbolInfoDouble(symbolNameBuffer[c],SYMBOL_TRADE_CONTRACT_SIZE)==1.0){countedDecimals=0;}
+               if(SymbolInfoDouble(symbolNameBuffer[c],SYMBOL_TRADE_CONTRACT_SIZE)==1.0){tempCountedDecimals=0;}
                int Splitter=1000;
-               if(getContractProfitCalcMode(Symbol())==1){Splitter=100000;}
+               if(getContractProfitCalcMode(symbolNameBuffer[c])==1){Splitter=100000;}
                if(tempMarginMode==4 && MarketInfo(symbolNameBuffer[c],MODE_TICKSIZE)==0.001){Splitter=1000000;}
                if((int)MarketInfo(symbolNameBuffer[c],MODE_DIGITS)==3){Faktor=1;}
                if((int)MarketInfo(symbolNameBuffer[c],MODE_DIGITS)==2){Faktor=10;}
                LotSize=NormalizeDouble(MathFloor((AccountFreeMargin()*AccountLeverage()*LotRiskPercent*Faktor*Point)/
                                        (MarketInfo(symbolNameBuffer[c],MODE_ASK)*MarketInfo(symbolNameBuffer[c],MODE_TICKSIZE)*MarketInfo(symbolNameBuffer[c],MODE_MINLOT)))
-                                       *MarketInfo(symbolNameBuffer[c],MODE_MINLOT)/Splitter,countedDecimals);
+                                       *MarketInfo(symbolNameBuffer[c],MODE_MINLOT)/Splitter,tempCountedDecimals);
                //Print("LotSize2="+LotSize);
                if(tempSymbolLotStep>0.0)
                  {
@@ -1903,7 +1925,6 @@ void setTradeVarsValues()
                LotSize=MarketInfo(symbolNameBuffer[c],MODE_MINLOT);
               }
            }
-
          if(MaxDynamicLotSize>0 && LotSize>MaxDynamicLotSize)
            {
             LotSize=MaxDynamicLotSize;
@@ -1915,7 +1936,7 @@ void setTradeVarsValues()
          LotSize=MarketInfo(symbolNameBuffer[c],MODE_MINLOT);
          if(tempSymbolLotStep>0.0)
            {
-            LotSize=NormalizeDouble(LotSize-MathMod(LotSize,tempSymbolLotStep),countedDecimals);
+            LotSize=NormalizeDouble(LotSize-MathMod(LotSize,tempSymbolLotStep),tempCountedDecimals);
            }
         }
       if(LotSize>MaxLot)
@@ -1926,20 +1947,20 @@ void setTradeVarsValues()
          tradeDoubleVarsValues[c][4]=RemainingLotSize;
          LotSizeIsBiggerThenMaxLot=true;
          tradeIntVarsValues[c][4]=LotSizeIsBiggerThenMaxLot;
-         CurrentTotalLotSize=LotSize;
+         double CurrentTotalLotSize=LotSize;
          tradeDoubleVarsValues[c][5]=CurrentTotalLotSize;
          LotSize=MarketInfo(symbolNameBuffer[c],MODE_MAXLOT);
          if(tempSymbolLotStep>0.0)
            {
-            LotSize=NormalizeDouble(LotSize-MathMod(LotSize,tempSymbolLotStep),countedDecimals);
+            LotSize=NormalizeDouble(LotSize-MathMod(LotSize,tempSymbolLotStep),tempCountedDecimals);
            }
         }
       tradeDoubleVarsValues[c][6]=LotSize;
       if(Debug)
         {
-         Print("LotSize="+DoubleToStr(LotSize,countedDecimals));
+         Print("LotSize="+DoubleToStr(LotSize,tempCountedDecimals));
         }
-
+      tradeDoubleVarsValues[c][7]=MarketInfo(symbolNameBuffer[c],MODE_STOPLEVEL)*MarketInfo(symbolNameBuffer[c],MODE_POINT);
      }
   }
 //+------------------------------------------------------------------+
@@ -1977,7 +1998,10 @@ double checkForMod(string symbolName)
         {
          if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
            {
-            TrP(symbolName);
+            if(!TradeFromSignalToSignal)
+              {
+               TrP(symbolName);
+              }
             TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
             if(Debug){Print("TempProfit="+DoubleToStr(TempProfit));}
            }
