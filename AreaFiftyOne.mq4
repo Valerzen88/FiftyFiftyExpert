@@ -14,7 +14,7 @@
 #resource "\\Indicators\\SunTrade\\$hah+.ex4"
 #resource "\\Indicators\\SunTrade\\FL11.ex4"
 #resource "\\Indicators\\SunTrade\\SSRC.ex4"
-#resource "\\Indicators\\SunTrade\\NB-channel.ex4"
+//#resource "\\Indicators\\SunTrade\\NB-channel.ex4"
 
 #define SLIPPAGE              5
 #define NO_ERROR              1
@@ -71,8 +71,9 @@ extern bool     UseLongTermJourneyToSunriseStrategy=false;
 extern bool     Use2ndLevelSignals=false;
 extern static string TradeAllSymbolsFromOneChart="Trade the choosen strategy on all available symbols";
 extern bool     TradeOnAllSymbols=false;
-extern bool   TradeOnlyListOfSelectedSymbols=false;
+extern bool     TradeOnlyListOfSelectedSymbols=false;
 extern string   ListOfSelectedSymbols="EURUSD;USDJPY;GBPUSD";
+extern string   ListOfSelectedTimeframesForSymbols="H4;D1;D1";
 extern bool     TradeFromSignalToSignal=false;
 extern static string TimeSettings="Trading time";
 extern int      StartHour=8;
@@ -142,6 +143,7 @@ string IndicatorName5="SSRC";
 string IndicatorName6="NB-channel";
 int handle_ind;
 string symbolNameBuffer[];
+string symbolTimeframeBuffer[];
 bool SellFlag=false;
 bool BuyFlag=false;
 bool LotSizeIsBiggerThenMaxLot=false;
@@ -254,13 +256,13 @@ int OnInit()
          Print("Expert: iCustom call5: Error code=",GetLastError());
          return(INIT_FAILED);
         }
-      int handle_ind3=0;
+      /*int handle_ind3=0;
       handle_ind3=(int)iCustom(_Symbol,_Period,"::Indicators\\SunTrade\\"+IndicatorName6+".ex4",0,0);
       if(handle_ind3==INVALID_HANDLE)
         {
          Print("Expert: iCustom call6: Error code=",GetLastError());
          return(INIT_FAILED);
-        }
+        }*/
      }
    HideTestIndicators(false);
 //---
@@ -340,7 +342,7 @@ void OnTick()
            {
             generateSignalsAndPositions("tdi");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"tdi");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"tdi");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -355,7 +357,7 @@ void OnTick()
            {
             generateSignalsAndPositions("trendy");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"trendy");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"trendy");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -370,7 +372,7 @@ void OnTick()
            {
             generateSignalsAndPositions("simpleTrend");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"simpleTrend");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"simpleTrend");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -385,7 +387,7 @@ void OnTick()
            {
             generateSignalsAndPositions("baseStochi");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"baseStochi");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"baseStochi");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -400,7 +402,7 @@ void OnTick()
            {
             generateSignalsAndPositions("5050");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"5050");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"5050");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -415,7 +417,7 @@ void OnTick()
            {
             generateSignalsAndPositions("MAOn5050");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"MAOn5050");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"MAOn5050");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -430,7 +432,7 @@ void OnTick()
            {
             generateSignalsAndPositions("stochCroosingRSI");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"stochCroosingRSI");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"stochCroosingRSI");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -445,7 +447,7 @@ void OnTick()
            {
             generateSignalsAndPositions("sunTrade");
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),"sunTrade");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"sunTrade");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -853,7 +855,7 @@ void ModSL(string symbolName,double ldSL)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
+string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,string strategyName)
   {
    HideTestIndicators(true);
    SellFlag=false;
@@ -864,12 +866,12 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
       bool signal=false;
       for(int i=0;i<8;i++)
         {
-         double currentSSRCValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName5+".ex4",0,i);
-         double currentBuyValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
-         double currentSellValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
+         double currentSSRCValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName5+".ex4",0,i);
+         double currentBuyValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
+         double currentSellValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
          if(currentBuyValue>0)
            {
-            double currentValueStarBuy=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,1);
+            double currentValueStarBuy=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,1);
             if(CompareDoubles(currentValueStarBuy,5.0) && currentSSRCValue<0)
               {
                signal=true;
@@ -880,7 +882,7 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
            }
          if(currentSellValue>0)
            {
-            double currentValueStarSell=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,1);
+            double currentValueStarSell=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,1);
             //Print("currentValueStarSell="+currentValueStarSell);
             if(CompareDoubles(currentValueStarSell,5.0) && currentSSRCValue>0)
               {
@@ -892,11 +894,11 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
            }
          if(Use2ndLevelSignals && !signal)
            {
-            double current2ndLevelBuyValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
-            double current2ndLevelSellValue=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
+            double current2ndLevelBuyValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
+            double current2ndLevelSellValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
             if(current2ndLevelBuyValue>0)
               {
-               double currentValueStarBuy=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
+               double currentValueStarBuy=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",0,0);
                if(CompareDoubles(currentValueStarBuy,5.0))
                  {
                   if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
@@ -906,7 +908,7 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
               }
             if(current2ndLevelSellValue>0)
               {
-               double currentValueStarSell=iCustom(symbolName,0,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
+               double currentValueStarSell=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName3+".ex4",1,0);
                if(CompareDoubles(currentValueStarSell,5.0))
                  {
                   if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
@@ -921,17 +923,17 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
      {
       int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=0;
       double stochastic1now,stochastic1previous;
-      stochastic1now=iStochastic(symbolName,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i);
-      stochastic1previous=iStochastic(symbolName,0,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i+1);
+      stochastic1now=iStochastic(symbolName,symbolTimeframe,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i);
+      stochastic1previous=iStochastic(symbolName,symbolTimeframe,KPeriod2,DPeriod2,Slowing1,MAMethod2,PriceField2,0,i+1);
 
-      if((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))<MathRound(stochastic1now))
-         && (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))>MathRound(stochastic1previous)))
+      if((MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))<MathRound(stochastic1now))
+         && (MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))>MathRound(stochastic1previous)))
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
         }
-      if((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))>MathRound(stochastic1now))
-         && (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))<MathRound(stochastic1previous)))
+      if((MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))>MathRound(stochastic1now))
+         && (MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))<MathRound(stochastic1previous)))
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
@@ -965,16 +967,16 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
    if(strategyName=="5050")
      {
       int i=0;
-      if((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))>50) && (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))<52)
-         && ((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==49))
-         && (iMA(symbolName,0,34,8,MODE_SMA,PRICE_CLOSE,0)<MarketInfo(symbolName,MODE_ASK)))
+      if((MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))>50) && (MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))<52)
+         && ((MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i+1))==49))
+         && (iMA(symbolName,symbolTimeframe,34,8,MODE_SMA,PRICE_CLOSE,0)<MarketInfo(symbolName,MODE_ASK)))
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
         }
-      if((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))<50) && (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i))>48)
-         && ((MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(symbolName,0,45,PRICE_CLOSE,i+1))==49))
-         && (iMA(symbolName,0,34,8,MODE_SMA,PRICE_CLOSE,0)>MarketInfo(symbolName,MODE_BID)))
+      if((MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))<50) && (MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i))>48)
+         && ((MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i+1))==50) || (MathRound(iRSI(symbolName,symbolTimeframe,45,PRICE_CLOSE,i+1))==49))
+         && (iMA(symbolName,symbolTimeframe,34,8,MODE_SMA,PRICE_CLOSE,0)>MarketInfo(symbolName,MODE_BID)))
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
@@ -985,12 +987,12 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
       for(int i=0; i<=2; i++)
         {
          double stochastic1now,stochastic2now,stochastic1previous,stochastic2previous,stochastic1after,stochastic2after;
-         stochastic1now=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i);
-         stochastic1previous=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i+1);
-         stochastic1after=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i-1);
-         stochastic2now=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i);
-         stochastic2previous=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i+1);
-         stochastic2after=iStochastic(symbolName,0,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i-1);
+         stochastic1now=iStochastic(symbolName,symbolTimeframe,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i);
+         stochastic1previous=iStochastic(symbolName,symbolTimeframe,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i+1);
+         stochastic1after=iStochastic(symbolName,symbolTimeframe,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,0,i-1);
+         stochastic2now=iStochastic(symbolName,symbolTimeframe,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i);
+         stochastic2previous=iStochastic(symbolName,symbolTimeframe,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i+1);
+         stochastic2after=iStochastic(symbolName,symbolTimeframe,KPeriod1,DPeriod1,Slowing1,MAMethod1,PriceField1,1,i-1);
 
          if((stochastic1now>stochastic2now) && (stochastic1previous<stochastic2previous) && (stochastic1after>stochastic2after)
             && ((stochastic1now-stochastic2now)>0.5) && (stochastic1now<70.0))
@@ -1016,10 +1018,10 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
      {
       double MAFastPrevious1,MAFastPrevious2;
       double MASlowPrevious1,MASlowPrevious2;
-      MAFastPrevious1=iMA(symbolName,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,1);
-      MAFastPrevious2=iMA(symbolName,0,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,2);
-      MASlowPrevious1=iMA(symbolName,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,1);
-      MASlowPrevious2=iMA(symbolName,0,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,2);
+      MAFastPrevious1=iMA(symbolName,symbolTimeframe,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,1);
+      MAFastPrevious2=iMA(symbolName,symbolTimeframe,MAFastPeriod,0,MODE_EMA,PRICE_CLOSE,2);
+      MASlowPrevious1=iMA(symbolName,symbolTimeframe,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,1);
+      MASlowPrevious2=iMA(symbolName,symbolTimeframe,MASlowPeriod,0,MODE_EMA,PRICE_CLOSE,2);
 
       //fast MA > slow MA.
       if(MAFastPrevious1>MASlowPrevious1)
@@ -1028,8 +1030,8 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
          //fast MA crosses over slow MA.
          if(MAFastPrevious2<MASlowPrevious2)
            {
-            if(iMACD(symbolName,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)>0 && 
-               iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
+            if(iMACD(symbolName,symbolTimeframe,12,26,9,PRICE_CLOSE,MODE_MAIN,1)>0 && 
+               iADX(symbolName,symbolTimeframe,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(symbolName,symbolTimeframe,14,PRICE_CLOSE,MODE_MAIN,1)<33)
               {
                if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
                createNotifications(symbolName,"BUY",Period(),additionalText,strategyName);
@@ -1044,8 +1046,8 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
          //fast MA crosses below slow MA.
          if(MAFastPrevious2>MASlowPrevious2)
            {
-            if(iMACD(symbolName,0,12,26,9,PRICE_CLOSE,MODE_MAIN,1)<0 && 
-               iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(symbolName,0,14,PRICE_CLOSE,MODE_MAIN,1)<33)
+            if(iMACD(symbolName,symbolTimeframe,12,26,9,PRICE_CLOSE,MODE_MAIN,1)<0 && 
+               iADX(symbolName,symbolTimeframe,14,PRICE_CLOSE,MODE_MAIN,1)>20 && iADX(symbolName,symbolTimeframe,14,PRICE_CLOSE,MODE_MAIN,1)<33)
               {
                if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
                createNotifications(symbolName,"SELL",Period(),additionalText,strategyName);
@@ -1055,15 +1057,15 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
      }
    if(strategyName=="trendy")
      {
-      double Trend=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
-      double TrendBack=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,1),1);
-      double TrendBack2=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,2),1);
-      double MA=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,0),1);
-      double MABack=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,1),1);
-      double MABack2=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,2),1);
-      double MA_Second=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,0),1);
-      double MABack_Second=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,1),1);
-      double MABack2_Second=NormalizeDouble(iCustom(symbolName,0,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,2),1);
+      double Trend=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
+      double TrendBack=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,1),1);
+      double TrendBack2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,2),1);
+      double MA=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,0),1);
+      double MABack=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,1),1);
+      double MABack2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,2),1);
+      double MA_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,0),1);
+      double MABack_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,1),1);
+      double MABack2_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,2),1);
 
       if(Debug)
         {
@@ -1207,16 +1209,16 @@ string getSignalForCurrencyAndStrategy(string symbolName,string strategyName)
    if(strategyName=="tdi")
      {
       int i=0;
-      double TDIGreen=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
-      double TDIGreenPrevious=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
-      double TDIYellow=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
-      double TDIYellowPrevous=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1);
+      double TDIGreen=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
+      double TDIGreenPrevious=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
+      double TDIYellow=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
+      double TDIYellowPrevous=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1);
       //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
       //double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
       // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
       // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
-      double TSL2=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
-      double TSL2Previous=iCustom(symbolName,0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
+      double TSL2=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
+      double TSL2Previous=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
 
       if(UseCorridorCroosing)
         {
@@ -1256,7 +1258,7 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
         {
          if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
            {
-            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==symbolName && ((OrderMagicNumber()==MagicNumber)))
+            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
               {
                if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
                  {
@@ -1737,40 +1739,54 @@ bool NewBar()
      }
   }
 //+------------------------------------------------------------------+
-string getTimeframe(int ai_0)
+string getTimeframeFromMinutes(int ai_0)
   {
-   string ls_ret_4;
+   string timeFrame;
    switch(ai_0)
      {
       case 1:
-         ls_ret_4="M1";
+         timeFrame="M1";
          break;
       case 5:
-         ls_ret_4="M5";
+         timeFrame="M5";
          break;
       case 15:
-         ls_ret_4="M15";
+         timeFrame="M15";
          break;
       case 30:
-         ls_ret_4="M30";
+         timeFrame="M30";
          break;
       case 60:
-         ls_ret_4="H1";
+         timeFrame="H1";
          break;
       case 240:
-         ls_ret_4="H4";
+         timeFrame="H4";
          break;
       case 1440:
-         ls_ret_4="D1";
+         timeFrame="D1";
          break;
       case 10080:
-         ls_ret_4="W1";
+         timeFrame="W1";
          break;
       case 43200:
-         ls_ret_4="MN";
+         timeFrame="MN";
      }
-   return (ls_ret_4);
+   return (timeFrame);
   }
+int getTimeframeFromString(string timeFrameFromString)
+  {
+   int timeFrame=0;
+   if(timeFrameFromString=="M1"){timeFrame=1;}
+   if(timeFrameFromString=="M5"){timeFrame=5;}
+   if(timeFrameFromString=="M15"){timeFrame=15;}
+   if(timeFrameFromString=="M30"){timeFrame=30;}
+   if(timeFrameFromString=="H1"){timeFrame=60;}
+   if(timeFrameFromString=="H4"){timeFrame=240;}
+   if(timeFrameFromString=="D1"){timeFrame=1440;}
+   if(timeFrameFromString=="W1"){timeFrame=10080;}
+   if(timeFrameFromString=="MN"){timeFrame=43200;}
+   return (timeFrame);
+  }  
 //+------------------------------------------------------------------+
 int getOpenedPositionsForSymbol(string symbolName)
   {
@@ -1795,7 +1811,7 @@ void generateSignalsAndPositions(string strategyName)
      {
       if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
         {
-         string signalStr=getSignalForCurrencyAndStrategy(symbolNameBuffer[x],strategyName);
+         string signalStr=getSignalForCurrencyAndStrategy(symbolNameBuffer[x],getTimeframeFromString(symbolTimeframeBuffer[x]),strategyName);
          if(signalStr!="noSignal")
            {
             if(signalStr=="Buy")
@@ -1803,7 +1819,7 @@ void generateSignalsAndPositions(string strategyName)
                OB=1;OS=0;
                if(IsTesting())
                  {
-                  Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_ASK),5));
+                  Print("Signal for buy on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_ASK),(int)MarketInfo(symbolNameBuffer[x],MODE_DIGITS)));
                     } else {
                   LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[x][4];
                   RemainingLotSize=tradeDoubleVarsValues[x][4];
@@ -1815,7 +1831,7 @@ void generateSignalsAndPositions(string strategyName)
                OS=1;OB=0;
                if(IsTesting())
                  {
-                  Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_BID),5));
+                  Print("Signal for sell on "+symbolNameBuffer[x]+" on "+DoubleToStr(MarketInfo(symbolNameBuffer[x],MODE_BID),(int)MarketInfo(symbolNameBuffer[x],MODE_DIGITS)));
                     } else {
                   LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[x][4];
                   RemainingLotSize=tradeDoubleVarsValues[x][4];
@@ -1838,6 +1854,7 @@ void setAllForTradeAvailableSymbols()
       ushort u_sep;
       u_sep=StringGetCharacter(sep,0);
       StringSplit(ListOfSelectedSymbols,u_sep,symbolNameBuffer);
+      StringSplit(ListOfSelectedTimeframesForSymbols,u_sep,symbolTimeframeBuffer);
         } else if(TradeOnAllSymbols) {
       int countOfAllSymbols=SymbolsTotal(false);
       ArrayResize(symbolNameBuffer,countOfAllSymbols);
@@ -2051,9 +2068,9 @@ int getCurrentSpreadForSymbol(string symbolName)
 //+------------------------------------------------------------------+
 void createNotifications(string symbolName,string direction,int period,string additionalText,string strategyName)
   {
-   if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframe(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
-   if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframe(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
-   if(SendNotificationToPhone){SendNotification(direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS))+" -> Area51 on "+symbolName+"("+getTimeframe(period)+") with "+strategyName+" strategy");}
+   if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
+   if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
+   if(SendNotificationToPhone){SendNotification(direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS))+" -> Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+") with "+strategyName+" strategy");}
 
   }
 //+------------------------------------------------------------------+
