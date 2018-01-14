@@ -70,6 +70,9 @@ extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=true;
 extern static string UseNightAsianBlockStrategy="-------------------";;
 extern bool     UseNightAsianBlock=false;
+extern int      GapFromBlock=60;
+extern int      CandleCountInBlock=12;
+extern int      MaxBlockSizeInPoints=300;
 extern static string LongTermJourneyToSunriseStrategy="-------------------";
 extern bool     UseLongTermJourneyToSunriseStrategy=false;
 extern bool     Use2ndLevelSignals=false;
@@ -988,32 +991,33 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
       // block time period from 23:00 till 02:00 (close of M15 candle)
       if(TimeHour(TimeCurrent())==2 && TimeMinute(TimeCurrent())==15)
         {
-         int i=13;
+         int i=CandleCountInBlock+1;
          double priceMax=-1000000;
          double priceMin=1000000;
          double priceHigh=0;
          double priceLow=0;
          while(i>=1)
            {
-            priceHigh=High[i];
-            priceLow=Low[i];
+            priceHigh=NormalizeDouble(High[i],(int)MarketInfo(symbolName, MODE_DIGITS));
+            priceLow=NormalizeDouble(Low[i],(int)MarketInfo(symbolName, MODE_DIGITS));
             if(priceMax<priceHigh) priceMax=priceHigh;
             if(priceMin>priceLow) priceMin=priceLow;
             i--;
            }
          //--- get minimum stop level 
          double minstoplevel=MarketInfo(symbolName,MODE_STOPLEVEL);
-         // Print("Minimum Stop Level=",minstoplevel," points");
-         double priceBuy=priceHigh+60*Point;
-         double priceSell=priceLow-60*Point;
+         double priceBuy=priceMax+GapFromBlock*Point;
+         double priceSell=priceMin-GapFromBlock*Point;
          //--- calculated SL and TP prices must be normalized 
-         double stoplossBuy=NormalizeDouble(priceMin-((60+minstoplevel)*Point),Digits);
-         double takeprofitBuy=NormalizeDouble(priceBuy+((60+minstoplevel+700)*Point),Digits);
-         double stoplossSell=NormalizeDouble(priceMax+((60+minstoplevel)*Point),Digits);
-         double takeprofitSell=NormalizeDouble(priceSell-((60+minstoplevel+700)*Point),Digits);
-         // Print("priceBuy="+priceBuy+";priceSell="+priceSell+";stoplossBuy="+stoplossBuy+";stoplossSell="+stoplossSell+";takeprofitBuy="+takeprofitBuy+";takeprofitSell="+takeprofitSell);
-         bool pendingBuyCheck=OrderSend(Symbol(),OP_BUYSTOP,getTradeDoubleValue(0,6),priceBuy,3,0,takeprofitBuy,"Area51Night",MagicNumber,TimeCurrent()+75600,clrGreen);
-         bool pendingSellCheck=OrderSend(Symbol(),OP_SELLSTOP,getTradeDoubleValue(0,6),priceSell,3,0,takeprofitSell,"Area51Night",MagicNumber,TimeCurrent()+75600,clrRed);
+         double stoplossBuy=NormalizeDouble(priceMin-((GapFromBlock+minstoplevel)*MarketInfo(symbolName,MODE_POINT)),(int)MarketInfo(symbolName,MODE_DIGITS));
+         double takeprofitBuy=NormalizeDouble(priceBuy+((GapFromBlock+minstoplevel+TP)*MarketInfo(symbolName,MODE_POINT)),(int)MarketInfo(symbolName,MODE_DIGITS));
+         double stoplossSell=NormalizeDouble(priceMax+((GapFromBlock+minstoplevel)*MarketInfo(symbolName,MODE_POINT)),(int)MarketInfo(symbolName,MODE_DIGITS));
+         double takeprofitSell=NormalizeDouble(priceSell-((GapFromBlock+minstoplevel+TP)*MarketInfo(symbolName,MODE_POINT)),(int)MarketInfo(symbolName,MODE_DIGITS));
+         if((priceBuy-priceSell)<MaxBlockSizeInPoints*Point && !SendOnlyNotificationsNoTrades)
+           {
+            bool pendingBuyCheck=OrderSend(Symbol(),OP_BUYSTOP,getTradeDoubleValue(0,6),priceBuy,3,0,takeprofitBuy,"Area51Night",MagicNumber,TimeCurrent()+75600,clrGreen);
+            bool pendingSellCheck=OrderSend(Symbol(),OP_SELLSTOP,getTradeDoubleValue(0,6),priceSell,3,0,takeprofitSell,"Area51Night",MagicNumber,TimeCurrent()+75600,clrRed);
+           }
         }
      }
    if(strategyName=="stochCroosingRSI")
