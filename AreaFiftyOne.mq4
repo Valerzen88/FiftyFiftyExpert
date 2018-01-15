@@ -931,7 +931,8 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
          double currentBuyValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
          double currentSellValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
          double lastEhlersFisherValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName7+".ex4",10,1);
-         if(currentBuyValue>0 && lastEhlersFisherValue==1)
+         double priceFromSMA=iMA(symbolName,symbolTimeframe,120,0,3,0,0);
+         if(currentBuyValue>0 && lastEhlersFisherValue==1 && priceFromSMA>Bid)
            {
             SunriseSL=currentBuyValue;
             signal=true;
@@ -940,7 +941,7 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
             break;
               } else {SunriseSL=0;
            }
-         if(currentSellValue>0 && lastEhlersFisherValue==-1)
+         if(currentSellValue>0 && lastEhlersFisherValue==-1 && priceFromSMA<Bid)
            {
             SunriseSL=currentSellValue;
             signal=true;
