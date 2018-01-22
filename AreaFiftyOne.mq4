@@ -73,6 +73,8 @@ extern bool     UseNightAsianBlock=false;
 extern int      GapFromBlock=60;
 extern int      CandleCountInBlock=12;
 extern int      MaxBlockSizeInPoints=300;
+extern static string IchimokuClouds="-------------------";
+extern bool     UseIchimokuClouds=false;
 extern static string LongTermJourneyToSunriseStrategy="-------------------";
 extern bool     UseLongTermJourneyToSunriseStrategy=false;
 extern bool     Use2ndLevelSignals=false;
@@ -140,6 +142,9 @@ int MAMethod1=0;
 int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
+int Tenkan = 9; // Tenkan line period. The fast "moving average".
+int Kijun = 26; // Kijun line period. The slow "moving average".
+int Senkou= 52; // Senkou period. Used for Kumo (Cloud) spans.
 int Slippage=3,BreakEven=0;
 int TicketNrSell=0,TicketNrBuy=0;
 double CurrentLoss=0;
@@ -509,6 +514,21 @@ void OnTick()
             generateSignalsAndPositions("nightAsianBlock");
               } else {
             string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"nightAsianBlock");
+            if(signalStr=="Sell")
+              {
+               SellFlag=true;
+                 } else if(signalStr=="Buy"){
+               BuyFlag=true;
+              }
+           }
+        }
+      if(UseIchimokuClouds)
+        {
+         if(TradeOnAllSymbols)
+           {
+            generateSignalsAndPositions("ichimoku");
+              } else {
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"ichimoku");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -930,18 +950,17 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
         {
          double currentBuyValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",4,i);
          double currentSellValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",5,i);
-         double lastEhlersFisherValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName7+".ex4",10,1);
-         double priceFromSMA=iMA(symbolName,symbolTimeframe,120,0,3,0,0);
-         if(currentBuyValue>0 && lastEhlersFisherValue==1 && priceFromSMA>Bid)
+         double lastEhlersFisherValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName7+".ex4",25,10,1);
+         //double priceFromSMA=iMA(symbolName,symbolTimeframe,120,15,3,4,0);
+         if(currentBuyValue>0 && lastEhlersFisherValue==1 /*&& priceFromSMA<Ask*/)
            {
             SunriseSL=currentBuyValue;
             signal=true;
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
             createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
             break;
-              } else {SunriseSL=0;
            }
-         if(currentSellValue>0 && lastEhlersFisherValue==-1 && priceFromSMA<Bid)
+         else if(currentSellValue>0 && lastEhlersFisherValue==-1 /*&& priceFromSMA>Bid*/)
            {
             SunriseSL=currentSellValue;
             signal=true;
@@ -954,7 +973,7 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
            {
             double current2ndLevelBuyValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",2,i);
             double current2ndLevelSellValue=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName4+".ex4",3,i);
-            if(current2ndLevelBuyValue>0 && lastEhlersFisherValue==1)
+            if(current2ndLevelBuyValue>0 && lastEhlersFisherValue==1 /*&& priceFromSMA<Ask*/)
               {
                SL=current2ndLevelBuyValue;
                if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
@@ -962,7 +981,7 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
                break;
                  } else {SunriseSL=0;
               }
-            if(current2ndLevelSellValue>0 && lastEhlersFisherValue==-1)
+            if(current2ndLevelSellValue>0 && lastEhlersFisherValue==-1 /*&& priceFromSMA>Bid*/)
               {
                SunriseSL=current2ndLevelSellValue;
                if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
@@ -971,6 +990,32 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
                  } else {SunriseSL=0;
               }
            }
+        }
+     }
+   if(strategyName=="ichimoku")
+     {
+      double tenkanSenCurr= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,0);
+      double kijunSenCurr = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,0);
+      double tenkanSenPrev= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,1);
+      double kijunSenPrev = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,1);
+      double senkouSpanA= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANA,0);
+      double senkouSpanB= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANB,0);
+
+      //Print(tenkanSenCurr+"<>"+kijunSenCurr+" && ("+tenkanSenPrev+"=="+kijunSenPrev+" || "+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
+      if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5) 
+         || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
+         && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+        {
+         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+        }
+
+      if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5) 
+         || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
+         && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
+        {
+         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
      }
    if(strategyName=="solarWind")
@@ -999,8 +1044,8 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
          double priceLow=0;
          while(i>=1)
            {
-            priceHigh=NormalizeDouble(High[i],(int)MarketInfo(symbolName, MODE_DIGITS));
-            priceLow=NormalizeDouble(Low[i],(int)MarketInfo(symbolName, MODE_DIGITS));
+            priceHigh=NormalizeDouble(High[i],(int)MarketInfo(symbolName,MODE_DIGITS));
+            priceLow=NormalizeDouble(Low[i],(int)MarketInfo(symbolName,MODE_DIGITS));
             if(priceMax<priceHigh) priceMax=priceHigh;
             if(priceMin>priceLow) priceMin=priceLow;
             i--;
