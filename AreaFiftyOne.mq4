@@ -142,8 +142,8 @@ int MAMethod1=0;
 int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
-int Tenkan = 9; // Tenkan line period. The fast "moving average".
-int Kijun = 26; // Kijun line period. The slow "moving average".
+int Tenkan = 7; // Tenkan line period. The fast "moving average".
+int Kijun = 32; // Kijun line period. The slow "moving average".
 int Senkou= 52; // Senkou period. Used for Kumo (Cloud) spans.
 int Slippage=3,BreakEven=0;
 int TicketNrSell=0,TicketNrBuy=0;
@@ -1000,9 +1000,11 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
       double kijunSenPrev = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,1);
       double senkouSpanA= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANA,0);
       double senkouSpanB= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANB,0);
+      double ma=iMA(symbolName,symbolTimeframe,15,10,3,4,1);
+      double maPrev=iMA(symbolName,symbolTimeframe,15,10,3,4,2);
 
       //Print(tenkanSenCurr+"<>"+kijunSenCurr+" && ("+tenkanSenPrev+"=="+kijunSenPrev+" || "+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
-      if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5) 
+      if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
          || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
          && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
         {
@@ -1010,13 +1012,28 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
 
-      if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5) 
+      if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
          || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
          && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
+
+      /*if(tenkanSenCurr>ma && tenkanSenPrev<maPrev && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+         || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
+         && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5))) 
+        {
+         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+        }
+      if(tenkanSenCurr<ma && tenkanSenPrev>maPrev && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+         || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
+         && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5))) 
+        {
+         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+        }*/
      }
    if(strategyName=="solarWind")
      {
