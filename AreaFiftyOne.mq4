@@ -142,8 +142,8 @@ int MAMethod1=0;
 int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
-int Tenkan = 7; // Tenkan line period. The fast "moving average".
-int Kijun = 32; // Kijun line period. The slow "moving average".
+int Tenkan = 3; // Tenkan line period. The fast "moving average".
+int Kijun = 45; // Kijun line period. The slow "moving average".
 int Senkou= 52; // Senkou period. Used for Kumo (Cloud) spans.
 int Slippage=3,BreakEven=0;
 int TicketNrSell=0,TicketNrBuy=0;
@@ -994,16 +994,18 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
      }
    if(strategyName=="ichimoku")
      {
-      double tenkanSenCurr= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,0);
+      double tenkanSenCurr = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,0);
       double kijunSenCurr = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,0);
-      double tenkanSenPrev= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,1);
+      double tenkanSenPrev = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,1);
       double kijunSenPrev = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,1);
-      double senkouSpanA= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANA,0);
-      double senkouSpanB= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANB,0);
-      double ma=iMA(symbolName,symbolTimeframe,15,10,3,4,1);
-      double maPrev=iMA(symbolName,symbolTimeframe,15,10,3,4,2);
+      double tenkanSenPrev2 = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,2);
+      double senkouSpanA = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANA,0);
+      double senkouSpanB = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANB,0);
+      double ma=iMA(symbolName,symbolTimeframe,21,9,3,4,0);
+      double maPrev=iMA(symbolName,symbolTimeframe,21,9,3,4,1);
+      double maPrev2=iMA(symbolName,symbolTimeframe,21,9,3,4,2);
 
-      //Print(tenkanSenCurr+"<>"+kijunSenCurr+" && ("+tenkanSenPrev+"=="+kijunSenPrev+" || "+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
+     // Print(tenkanSenCurr+"<>"+kijunSenCurr+" && " + tenkanSenCurr + "<>" + ma + "&& ("+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
       if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
          || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
          && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
@@ -1020,20 +1022,20 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
 
-      /*if(tenkanSenCurr>ma && tenkanSenPrev<maPrev && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+      if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)<NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
          || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
          && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5))) 
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
-      if(tenkanSenCurr<ma && tenkanSenPrev>maPrev && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+      if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)>NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
          || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
          && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5))) 
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-        }*/
+        }
      }
    if(strategyName=="solarWind")
      {
