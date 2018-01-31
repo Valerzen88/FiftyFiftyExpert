@@ -17,6 +17,7 @@
 #resource "\\Indicators\\SunTrade\\Ehlers_Fisher.ex4"
 //#resource "\\Indicators\\SunTrade\\SSRC.ex4"
 //#resource "\\Indicators\\SunTrade\\NB-channel.ex4"
+#resource "\\Indicators\\MagicTrend.ex4"
 
 #define SLIPPAGE              5
 #define NO_ERROR              1
@@ -75,6 +76,18 @@ extern int      CandleCountInBlock=12;
 extern int      MaxBlockSizeInPoints=300;
 extern static string IchimokuClouds="-------------------";
 extern bool     UseIchimokuClouds=false;
+extern int      Tenkan=24; // Tenkan line period. The fast "moving average".
+extern int      Kijun=48; // Kijun line period. The slow "moving average".
+extern int      Senkou=240;  // Senkou period. Used for Kumo (Cloud) spans.
+extern int      IchimokuMAPeriod=12;
+extern int      IchimokuMAShift=9;
+extern bool     UseIchimokuCrossing=true;
+extern bool     UseIchimokuMACrossing=true;
+extern bool     UseIchimokuADXMA=false;
+extern static string MagicTrendStrategy="-------------------";
+extern bool     UseMagicTrendStrategy=false;
+extern int      CCPeriod=120;
+extern int      ATRPeriod=5;
 extern static string LongTermJourneyToSunriseStrategy="-------------------";
 extern bool     UseLongTermJourneyToSunriseStrategy=false;
 extern bool     Use2ndLevelSignals=false;
@@ -142,9 +155,6 @@ int MAMethod1=0;
 int PriceField1=0;
 int ma_method=MODE_SMA;
 int price_field=0;
-int Tenkan = 3; // Tenkan line period. The fast "moving average".
-int Kijun = 45; // Kijun line period. The slow "moving average".
-int Senkou= 52; // Senkou period. Used for Kumo (Cloud) spans.
 int Slippage=3,BreakEven=0;
 int TicketNrSell=0,TicketNrBuy=0;
 double CurrentLoss=0;
@@ -160,6 +170,7 @@ string IndicatorName4="FL11";
 //string IndicatorName5="SSRC";
 //string IndicatorName6="NB-channel";
 string IndicatorName7="Ehlers_Fisher";
+string IndicatorName8="TrendMagic";
 int handle_ind;
 string symbolNameBuffer[];
 string symbolTimeframeBuffer[];
@@ -297,6 +308,16 @@ int OnInit()
       if(handle_ind1==INVALID_HANDLE)
         {
          Print("Expert: iCustom call4: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
+     }
+   if(UseMagicTrendStrategy)
+     {
+      int handle_ind8=0;
+      handle_ind8=(int)iCustom(_Symbol,_Period,"::Indicators\\SunTrade\\"+IndicatorName8+".ex4",0,0);
+      if(handle_ind8==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call8: Error code=",GetLastError());
          return(INIT_FAILED);
         }
      }
@@ -499,6 +520,21 @@ void OnTick()
             generateSignalsAndPositions("solarWind");
               } else {
             string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"solarWind");
+            if(signalStr=="Sell")
+              {
+               SellFlag=true;
+                 } else if(signalStr=="Buy"){
+               BuyFlag=true;
+              }
+           }
+        }
+      if(UseMagicTrendStrategy)
+        {
+         if(TradeOnAllSymbols)
+           {
+            generateSignalsAndPositions("magicTrend");
+              } else {
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"magicTrend");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -994,44 +1030,91 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
      }
    if(strategyName=="ichimoku")
      {
-      double tenkanSenCurr = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,0);
+      double tenkanSenCurr= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,0);
       double kijunSenCurr = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,0);
-      double tenkanSenPrev = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,1);
+      double tenkanSenPrev= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,1);
       double kijunSenPrev = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,1);
-      double tenkanSenPrev2 = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,2);
+      double tenkanSenPrev2=iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,2);
       double senkouSpanA = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANA,0);
       double senkouSpanB = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANB,0);
-      double ma=iMA(symbolName,symbolTimeframe,21,9,3,4,0);
-      double maPrev=iMA(symbolName,symbolTimeframe,21,9,3,4,1);
-      double maPrev2=iMA(symbolName,symbolTimeframe,21,9,3,4,2);
+      double ma=iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,0);
+      double maPrev=iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,1);
+      double maPrev2=iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,2);
+      double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MAIN,0),5);
+      double adxLinePrev = NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MAIN,1),5);
+      double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_PLUSDI,0),5);
+      double adxDMinus= NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MINUSDI,0),5);
+      double ma34Curr = NormalizeDouble(iMA(symbolName,symbolTimeframe,34,0,MODE_EMA,5,0),5);
 
-     // Print(tenkanSenCurr+"<>"+kijunSenCurr+" && " + tenkanSenCurr + "<>" + ma + "&& ("+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
-      if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-         || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
-         && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+      if(UseIchimokuADXMA)
+        {
+         if(adxLineCurr>20 && adxDPlus>adxDMinus && NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5)
+            && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5)
+            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+           {
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+           }
+         if(adxLineCurr>20 && adxDPlus<adxDMinus && NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5)
+            && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)>NormalizeDouble(senkouSpanA,5)
+            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)>senkouSpanB,5)))
+           {
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           }
+        }
+
+      // Print(tenkanSenCurr+"<>"+kijunSenCurr+" && " + tenkanSenCurr + "<>" + ma + "&& ("+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
+      if(UseIchimokuCrossing)
+        {
+         if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+            || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+           {
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+           }
+
+         if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+            || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
+           {
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           }
+        }
+      if(UseIchimokuMACrossing)
+        {
+         if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)<NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+            || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+           {
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+           }
+         if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)>NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
+            || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
+           {
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           }
+        }
+     }
+   if(strategyName=="magicTrend")
+     {
+      double lastValueLow=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName8+".ex4",1,0);
+      double prevValueLow=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName8+".ex4",1,1);
+      double lastValueHigh=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName8+".ex4",0,0);
+      double prevValueHigh=iCustom(symbolName,symbolTimeframe,"::Indicators\\SunTrade\\"+IndicatorName8+".ex4",0,1);
+      if(lastValueLow>prevValueLow)
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
-
-      if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-         || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
-         && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
-        {
-         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
-         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-        }
-
-      if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)<NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-         || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
-         && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5))) 
-        {
-         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
-         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
-        }
-      if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)>NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-         || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
-         && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5))) 
+      else if(lastValueHigh<prevValueHigh)
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
@@ -1413,6 +1496,9 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
   }
 //+------------------------------------------------------------------+
 //|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//|                                                                  |
 //+------------------------------------------------------------------+  
 bool CurrentCandleHasNoOpenedTrades(string symbolName)
   {
@@ -1478,6 +1564,9 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
      }
    return positionCanBeOpened;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -1694,6 +1783,9 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    if(!IsTesting() && rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 int getTicketCurrentType(int TicketNr)
   {
    int res=-1;
@@ -1706,6 +1798,9 @@ int getTicketCurrentType(int TicketNr)
      }
    return res;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 int CloseAll()
   {
@@ -1759,6 +1854,9 @@ int CloseAll()
    return(rv);
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //| Überprüft - ob noch eine Order gesetzt werden kann               |
 //+------------------------------------------------------------------+
@@ -1779,11 +1877,17 @@ bool IsNewOrderAllowed()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 int getContractProfitCalcMode(string symbolName)
   {
    int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
    return profitCalcMode;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 bool CheckMoneyForTrade(string symb,double lots,int type)
   {
@@ -1799,11 +1903,17 @@ bool CheckMoneyForTrade(string symb,double lots,int type)
    return(true);
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 bool CompareDoubles(double number1,double number2)
   {
    if(NormalizeDouble(number1-number2,5)==0) return(true);
    else return(false);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //| die Überprüfung der neuen Ebene-Werte vor der Modifikation der Order         |
@@ -1838,6 +1948,9 @@ bool OrderModifyCheck(string symbol,int ticket,double price,double sl,double tp)
 //--- kommen bis zu Ende, Änderungen für die Order nicht gibt
    return(false);       // es gibt keinen Sinn, zu modifizieren 
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,double TPT)
   {
@@ -1889,6 +2002,9 @@ bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,
    return false;
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //| Check the correctness of the order volume                        |
 //+------------------------------------------------------------------+
@@ -1934,6 +2050,9 @@ bool CheckVolumeValue(string symbolName,double volume)
 //Print(description);
    return(true);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+-----------------------------------------------------------------+
 
 bool NewBar()
@@ -1956,6 +2075,9 @@ bool NewBar()
       return(false);
      }
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 string getTimeframeFromMinutes(int ai_0)
   {
@@ -1997,6 +2119,9 @@ string getTimeframeFromMinutes(int ai_0)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 int getTimeframeFromString(string timeFrameFromString)
   {
    int timeFrame=0;
@@ -2011,6 +2136,9 @@ int getTimeframeFromString(string timeFrameFromString)
    if(timeFrameFromString=="MN"){timeFrame=43200;}
    return (timeFrame);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 int getOpenedPositionsForSymbol(string symbolName)
   {
@@ -2030,6 +2158,9 @@ int getOpenedPositionsForSymbol(string symbolName)
      }
    return OP;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 void generateSignalsAndPositions(string strategyName)
   {
@@ -2076,6 +2207,9 @@ void generateSignalsAndPositions(string strategyName)
      }
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 void setAllForTradeAvailableSymbols()
   {
    if(TradeOnlyListOfSelectedSymbols)
@@ -2108,6 +2242,9 @@ void setAllForTradeAvailableSymbols()
       symbolNameBuffer[0]=Symbol();
      }
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 void setTradeVarsValues()
   {
@@ -2244,6 +2381,9 @@ void setTradeVarsValues()
      }
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 int getTradeIntVarValue(int arrayIndex,int valueIndex)
   {
    return tradeIntVarsValues[arrayIndex][valueIndex];
@@ -2251,10 +2391,16 @@ int getTradeIntVarValue(int arrayIndex,int valueIndex)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 double getTradeDoubleValue(int arrayIndex,int valueIndex)
   {
    return tradeDoubleVarsValues[arrayIndex][valueIndex];
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -2267,6 +2413,9 @@ int getSymbolArrayIndex(string symbolName)
      }
    return symbolNameIndex;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 
 double checkForMod(string symbolName)
@@ -2295,11 +2444,17 @@ double checkForMod(string symbolName)
    return TempProfit;
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 
 int getCurrentSpreadForSymbol(string symbolName)
   {
    return (int)MarketInfo(symbolName,MODE_SPREAD);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //|                                                                  |
