@@ -183,6 +183,8 @@ double RemainingLotSize=0.0;
 double tradeDoubleVarsValues[150][10];
 int tradeIntVarsValues[150][10];
 double lotstep;
+bool CloseBuyTrade=false;
+bool CloseSellTrade=false;
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -1051,7 +1053,7 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
          if(adxLineCurr>20 && adxDPlus>adxDMinus && NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5)
             && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
             && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanB,5)))
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
             createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
@@ -1059,11 +1061,13 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
          if(adxLineCurr>20 && adxDPlus<adxDMinus && NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5)
             && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
             && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)>NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)>senkouSpanB,5)))
+            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)>NormalizeDouble(senkouSpanB,5)))
            {
             if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
             createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
            }
+          // TODO add closing rules
+          
         }
 
       // Print(tenkanSenCurr+"<>"+kijunSenCurr+" && " + tenkanSenCurr + "<>" + ma + "&& ("+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
@@ -1071,7 +1075,8 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
         {
          if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
             || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5)
+            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanB,5)))
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
             createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
@@ -1079,7 +1084,8 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
 
          if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
             || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5)
+            || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
            {
             if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
             createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
@@ -1089,14 +1095,16 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
         {
          if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)<NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
             || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_ASK)<senkouSpanB,5)))
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5)
+            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanB,5)))
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
             createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
            }
          if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)>NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
             || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5) || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
+            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5)
+            || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
            {
             if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
             createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
@@ -1491,6 +1499,8 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
    string res="noSignal";
    if(SellFlag) {res="Sell";}
    if(BuyFlag) {res="Buy";}
+   if(CloseBuyTrade){ClosePreviousSignalTrade(symbolName,0,1);}
+   if(CloseSellTrade){ClosePreviousSignalTrade(symbolName,1,0);}
 // HideTestIndicators(false); <- reactivate before publish!
    return res;
   }
