@@ -1032,60 +1032,77 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
      }
    if(strategyName=="ichimoku")
      {
-      double tenkanSenCurr= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,0);
-      double kijunSenCurr = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,0);
-      double tenkanSenPrev= iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,1);
-      double kijunSenPrev = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,1);
-      double tenkanSenPrev2=iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,2);
-      double senkouSpanA = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANA,0);
-      double senkouSpanB = iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANB,0);
-      double ma=iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,0);
-      double maPrev=iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,1);
-      double maPrev2=iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,2);
-      double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MAIN,0),5);
-      double adxLinePrev = NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MAIN,1),5);
-      double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_PLUSDI,0),5);
-      double adxDMinus= NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MINUSDI,0),5);
-      double ma34Curr = NormalizeDouble(iMA(symbolName,symbolTimeframe,34,0,MODE_EMA,5,0),5);
+      int digits = (int)MarketInfo(symbolName,MODE_DIGITS);
+      double ask = NormalizeDouble(MarketInfo(symbolName,MODE_ASK),digits);
+      double bid = NormalizeDouble(MarketInfo(symbolName,MODE_BID),digits);
+      double tenkanSenCurr = NormalizeDouble(iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,0),digits);
+      double kijunSenCurr = NormalizeDouble(iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,0),digits);
+      double tenkanSenPrev = NormalizeDouble(iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,1),digits);
+      double kijunSenPrev = NormalizeDouble(iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_KIJUNSEN,1),digits);
+      double tenkanSenPrev2 = NormalizeDouble(iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_TENKANSEN,2),digits);
+      double senkouSpanA = NormalizeDouble(iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANA,0),digits);
+      double senkouSpanB = NormalizeDouble(iIchimoku(symbolName,symbolTimeframe,Tenkan,Kijun,Senkou,MODE_SENKOUSPANB,0),digits);
+      double ma=NormalizeDouble(iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,0),digits);
+      double maPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,1),digits);
+      double maPrev2=NormalizeDouble(iMA(symbolName,symbolTimeframe,IchimokuMAPeriod,IchimokuMAShift,3,4,2),digits);
+      double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MAIN,0),digits);
+      double adxLinePrev = NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MAIN,1),digits);
+      double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_PLUSDI,0),digits);
+      double adxDMinus= NormalizeDouble(iADX(symbolName,symbolTimeframe,14,5,MODE_MINUSDI,0),digits);
+      double ma34Curr = NormalizeDouble(iMA(symbolName,symbolTimeframe,34,0,MODE_EMA,5,0),digits);
 
       if(UseIchimokuADXMA)
         {
-         if(adxLineCurr>20 && adxDPlus>adxDMinus && NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5)
-            && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanB,5)))
+         if(adxLineCurr>20 && adxDPlus>adxDMinus && tenkanSenCurr>kijunSenCurr
+            && senkouSpanA<senkouSpanB
+            && (ask<senkouSpanA || ask<senkouSpanB))
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
             createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
            }
-         if(adxLineCurr>20 && adxDPlus<adxDMinus && NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5)
-            && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)>NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)>NormalizeDouble(senkouSpanB,5)))
+         if(adxLineCurr>20 && adxDPlus<adxDMinus && tenkanSenCurr<kijunSenCurr
+            && senkouSpanA>senkouSpanB
+            && (bid>senkouSpanA || bid>senkouSpanB))
            {
             if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
             createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
            }
-          // TODO add closing rules
-          
+         // TODO add closing rules
+     // if(UseIchimokuADXMA2) {
+      
+         
+      //}
+/*
+          Buy
+- ADX(21/4) > 20
+- -DI < +DI
+- MA34/0/3/4 < TenkanSen(12/26/52)
+- SenkouSpanA < SenkouSpanB
+- SenkouSpanA > Preis || SenkouSpanB > Preis
+- SL -> Tief der letzten 34 Kerzen
+
+Sell
+- ADX(21/4) > 20
+- -DI > +DI
+- MA34/0/3/4 > TenkanSen(12/26/52)
+- SenkouSpanA > SenkouSpanB
+- SenkouSpanA > Preis || SenkouSpanB > Preis
+- SL -> Hoch der letzten 34 Kerzen
+
+*/
+
         }
 
       // Print(tenkanSenCurr+"<>"+kijunSenCurr+" && " + tenkanSenCurr + "<>" + ma + "&& ("+tenkanSenPrev+"<>"+kijunSenPrev+") && "+senkouSpanA+"<>"+senkouSpanB);
       if(UseIchimokuCrossing)
         {
-         if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-            || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanB,5)))
+         if(tenkanSenCurr>kijunSenCurr && (tenkanSenPrev==kijunSenPrev || tenkanSenPrev<kijunSenPrev) && senkouSpanA<senkouSpanB && (ask<senkouSpanA || ask<senkouSpanB))
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
             createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
            }
 
-         if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(kijunSenCurr,5) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-            || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
+         if(tenkanSenCurr<kijunSenCurr && (tenkanSenPrev==kijunSenPrev || tenkanSenPrev>kijunSenPrev) && senkouSpanA>senkouSpanB && (bid>senkouSpanA || bid>senkouSpanB))
            {
             if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
             createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
@@ -1093,18 +1110,12 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
         }
       if(UseIchimokuMACrossing)
         {
-         if(NormalizeDouble(tenkanSenCurr,5)>NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)<NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-            || NormalizeDouble(tenkanSenPrev,5)<NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)<NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)<NormalizeDouble(senkouSpanB,5)))
+         if(tenkanSenCurr>ma && (tenkanSenPrev<maPrev || tenkanSenPrev2<maPrev2) && (tenkanSenPrev==kijunSenPrev || tenkanSenPrev<kijunSenPrev) && senkouSpanA<senkouSpanB && (ask<senkouSpanA || ask<senkouSpanB))
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
             createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
            }
-         if(NormalizeDouble(tenkanSenCurr,5)<NormalizeDouble(ma,5) && (NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(maPrev,5) || NormalizeDouble(tenkanSenPrev2,5)>NormalizeDouble(maPrev2,5)) && (NormalizeDouble(tenkanSenPrev,5)==NormalizeDouble(kijunSenPrev,5)
-            || NormalizeDouble(tenkanSenPrev,5)>NormalizeDouble(kijunSenPrev,5)) && NormalizeDouble(senkouSpanA,5)>NormalizeDouble(senkouSpanB,5)
-            && (NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanA,5)
-            || NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)>NormalizeDouble(senkouSpanB,5)))
+         if(tenkanSenCurr<ma && (tenkanSenPrev>maPrev || tenkanSenPrev2>maPrev2) && (tenkanSenPrev==kijunSenPrev || tenkanSenPrev>kijunSenPrev) && senkouSpanA>senkouSpanB && (bid>senkouSpanA || bid>senkouSpanB))
            {
             if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
             createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
