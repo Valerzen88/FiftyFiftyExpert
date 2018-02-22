@@ -18,6 +18,7 @@
 //#resource "\\Indicators\\SunTrade\\SSRC.ex4"
 //#resource "\\Indicators\\SunTrade\\NB-channel.ex4"
 #resource "\\Indicators\\MagicTrend.ex4"
+#resource "\\Indicators\\HMA_Color.ex4"
 
 #define SLIPPAGE              5
 #define NO_ERROR              1
@@ -49,6 +50,8 @@ extern int      TrailingStep=15;
 extern int      DistanceStep=15;
 extern int      TakeProfit=750;
 extern int      StopLoss=0;
+extern int      MinAmount=150;
+extern int      SetSLToMinAmountUnder=100;
 extern int      MaxSpread=25;
 extern static string Indicators="Choose strategies";
 extern static string TrendIndicatorStrategy="-------------------";
@@ -86,16 +89,19 @@ extern bool     UseIchimokuMACrossing=true;
 extern bool     UseIchimokuADXMA=false;
 extern static string UseADX50PlusStrategy="-------------------";
 extern bool     UseADX50Plus=false;
+extern int      ADX50PlusPeriod=34;
 extern static string MagicTrendStrategy="-------------------";
 extern bool     UseMagicTrendStrategy=false;
 extern int      CCPeriod=120;
 extern int      ATRPeriod=5;
+extern static string HMAStrategy="-------------------";
+extern bool     UseHMAStrategy=false;
 extern static string LongTermJourneyToSunriseStrategy="-------------------";
 extern bool     UseLongTermJourneyToSunriseStrategy=false;
 extern bool     Use2ndLevelSignals=false;
 bool     UseOnlySolarWindSignals=false;
 extern int      AdditionalSL=250;
-extern bool     MakeCloseTradeAlwaysInPlus=false;
+extern bool     MakeCloseTradeAlwaysInProfit=false;
 extern int      MaxCandleAfterSignal=10;
 extern static string TradeAllSymbolsFromOneChart="Trade the choosen strategy on all available symbols";
 extern bool     TradeOnAllSymbols=false;
@@ -173,6 +179,7 @@ string IndicatorName4="FL11";
 //string IndicatorName6="NB-channel";
 string IndicatorName7="Ehlers_Fisher";
 string IndicatorName8="MagicTrend";
+string IndicatorName9="HMA_Color";
 int handle_ind;
 string symbolNameBuffer[];
 string symbolTimeframeBuffer[];
@@ -322,6 +329,16 @@ int OnInit()
       if(handle_ind8==INVALID_HANDLE)
         {
          Print("Expert: iCustom call8: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
+     }
+   if(UseHMAStrategy)
+     {
+      int handle_ind9=0;
+      handle_ind9=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName9+".ex4",0,0);
+      if(handle_ind9==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call9: Error code=",GetLastError());
          return(INIT_FAILED);
         }
      }
@@ -585,6 +602,21 @@ void OnTick()
             generateSignalsAndPositions("adx50");
               } else {
             string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"adx50");
+            if(signalStr=="Sell")
+              {
+               SellFlag=true;
+                 } else if(signalStr=="Buy"){
+               BuyFlag=true;
+              }
+           }
+        }
+      if(UseHMAStrategy)
+        {
+         if(TradeOnAllSymbols)
+           {
+            generateSignalsAndPositions("hmaColor");
+              } else {
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"hmaColor");
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -1156,14 +1188,58 @@ Sell
            }
         }
      }
+   if(strategyName=="hmaColor")
+     {
+      int hmaPeriodSlow=80,hmaPeriodFast=12;
+      double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,0),digits);
+      double adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MINUSDI,0),digits);
+      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,1,0),digits);
+      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,1,1),digits);
+      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,1,2),digits);
+      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,0),digits);
+      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1),digits);
+      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,2),digits);
+      double hmaCurrFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,1,0),digits);
+      double hmaPrevFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,1,1),digits);
+      double hmaPrev2Fast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,1,2),digits);
+      double hmaCurrFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,0),digits);
+      double hmaPrevFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1),digits);
+      double hmaPrev2Fast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,2),digits);
+      /*Print("hmaCurrSlow1="+hmaCurrSlow1);
+      Print("hmaCurrFast1="+hmaCurrFast1);
+      Print("hmaCurrSlow3="+hmaCurrSlow3);
+      Print("hmaCurrFast3="+hmaCurrFast3);*/
+      if(/*adxDPlus>adxDMinus && */hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1>hmaCurrSlow1 && (hmaCurrFast1!=EMPTY_VALUE && hmaCurrSlow1<hmaCurrFast1)
+      && ((hmaCurrFast1!=EMPTY_VALUE && (hmaPrevFast1==EMPTY_VALUE || hmaPrev2Fast1==EMPTY_VALUE) 
+      || ((hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE) && hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1!=EMPTY_VALUE))))
+        {
+         Print("BUY:hmaCurrSlow1="+hmaCurrSlow1);
+         Print("BUY:hmaCurrFast1="+hmaCurrFast1);
+         Print("BUY:hmaCurrSlow3="+hmaCurrSlow3);
+         Print("BUY:hmaCurrFast3="+hmaCurrFast3);
+         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+        }
+      if(/*adxDPlus<adxDMinus && */hmaCurrSlow3!=EMPTY_VALUE && hmaCurrFast3<hmaCurrSlow3 && (hmaCurrFast3!=EMPTY_VALUE && hmaCurrSlow1>hmaCurrFast3)
+      && ((hmaCurrFast3!=EMPTY_VALUE && (hmaPrevFast3==EMPTY_VALUE || hmaPrev2Fast3==EMPTY_VALUE)
+      || ((hmaPrevSlow3==EMPTY_VALUE || hmaPrev2Slow3==EMPTY_VALUE) && hmaCurrSlow3!=EMPTY_VALUE && hmaCurrFast3!=EMPTY_VALUE))))
+        {
+         Print("SELL:hmaCurrSlow1="+hmaCurrSlow1);
+         Print("SELL:hmaCurrFast1="+hmaCurrFast1);
+         Print("SELL:hmaCurrSlow3="+hmaCurrSlow3);
+         Print("SELL:hmaCurrFast3="+hmaCurrFast3);
+         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+        }
+     }
    if(strategyName=="adx50")
      {
-      double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,50,5,MODE_PLUSDI,0),digits);
-      double adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,50,5,MODE_MINUSDI,0),digits);
-      double adxDPlusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,50,5,MODE_PLUSDI,1),digits);
-      double adxDMinusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,50,5,MODE_MINUSDI,1),digits);
-      double adxDPlusPrev2=NormalizeDouble(iADX(symbolName,symbolTimeframe,50,5,MODE_PLUSDI,2),digits);
-      double adxDMinusPrev2=NormalizeDouble(iADX(symbolName,symbolTimeframe,50,5,MODE_MINUSDI,2),digits);
+      double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,0),digits);
+      double adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MINUSDI,0),digits);
+      double adxDPlusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,1),digits);
+      double adxDMinusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MINUSDI,1),digits);
+      double adxDPlusPrev2=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,2),digits);
+      double adxDMinusPrev2=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MINUSDI,2),digits);
       if(adxDPlus>adxDMinus && (adxDPlusPrev<adxDMinusPrev || adxDPlusPrev2<adxDMinusPrev2))
         {
          Print("BUY:adxDPlus="+adxDPlus);
@@ -2372,7 +2448,7 @@ double checkForMod(string symbolName)
         {
          if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
            {
-            if(TradeFromSignalToSignal && MakeCloseTradeAlwaysInPlus && ((OrderType()==OP_BUY && OrderStopLoss()<OrderOpenPrice())
+            if(TradeFromSignalToSignal && MakeCloseTradeAlwaysInProfit && ((OrderType()==OP_BUY && OrderStopLoss()<OrderOpenPrice())
                || (OrderType()==OP_SELL && OrderStopLoss()>OrderOpenPrice())))
               {
                TrP(symbolName);
@@ -2384,6 +2460,13 @@ double checkForMod(string symbolName)
             TempProfit=TempProfit+OrderProfit()+OrderCommission()+OrderSwap();
             if(Debug){Print("TempProfit="+DoubleToStr(TempProfit));}
            }
+        }
+     }
+   if(MakeCloseTradeAlwaysInProfit && MinAmount>0 && SetSLToMinAmountUnder>0)
+     {
+      if(TempProfit>(MinAmount+SetSLToMinAmountUnder))
+        {
+
         }
      }
    return TempProfit;
