@@ -1190,28 +1190,30 @@ Sell
      }
    if(strategyName=="hmaColor")
      {
-      int hmaPeriodSlow=80,hmaPeriodFast=12;
+      int hmaPeriodSlow=80,hmaPeriodFast=18;
+      double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MAIN,0),digits);
+      double adxLinePrev = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MAIN,1),digits);
       double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,0),digits);
       double adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MINUSDI,0),digits);
-      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,1,0),digits);
-      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,1,1),digits);
-      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,1,2),digits);
-      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,0),digits);
-      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1),digits);
-      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,2),digits);
-      double hmaCurrFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,1,0),digits);
-      double hmaPrevFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,1,1),digits);
-      double hmaPrev2Fast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,1,2),digits);
-      double hmaCurrFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,0),digits);
-      double hmaPrevFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1),digits);
-      double hmaPrev2Fast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,2),digits);
-      /*Print("hmaCurrSlow1="+hmaCurrSlow1);
+      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1,0),digits);
+      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1,1),digits);
+      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1,2),digits);
+      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,3,0),digits);
+      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,3,1),digits);
+      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,3,2),digits);
+      double hmaCurrFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1,0),digits);
+      double hmaPrevFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1,1),digits);
+      double hmaPrev2Fast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1,2),digits);
+      double hmaCurrFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,3,0),digits);
+      double hmaPrevFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,3,1),digits);
+      double hmaPrev2Fast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,3,2),digits);
+/*Print("hmaCurrSlow1="+hmaCurrSlow1);
       Print("hmaCurrFast1="+hmaCurrFast1);
       Print("hmaCurrSlow3="+hmaCurrSlow3);
       Print("hmaCurrFast3="+hmaCurrFast3);*/
-      if(/*adxDPlus>adxDMinus && */hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1>hmaCurrSlow1 && (hmaCurrFast1!=EMPTY_VALUE && hmaCurrSlow1<hmaCurrFast1)
-      && ((hmaCurrFast1!=EMPTY_VALUE && (hmaPrevFast1==EMPTY_VALUE || hmaPrev2Fast1==EMPTY_VALUE) 
-      || ((hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE) && hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1!=EMPTY_VALUE))))
+      if(adxDPlus>adxDMinus && hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1>hmaCurrSlow1 && (hmaCurrFast1!=EMPTY_VALUE && hmaCurrSlow1<hmaCurrFast1)
+         &&((hmaCurrFast1!=EMPTY_VALUE && (hmaPrevFast1==EMPTY_VALUE || hmaPrev2Fast1==EMPTY_VALUE)
+         || ((hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE) && hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1!=EMPTY_VALUE))))
         {
          Print("BUY:hmaCurrSlow1="+hmaCurrSlow1);
          Print("BUY:hmaCurrFast1="+hmaCurrFast1);
@@ -1220,9 +1222,9 @@ Sell
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
-      if(/*adxDPlus<adxDMinus && */hmaCurrSlow3!=EMPTY_VALUE && hmaCurrFast3<hmaCurrSlow3 && (hmaCurrFast3!=EMPTY_VALUE && hmaCurrSlow1>hmaCurrFast3)
-      && ((hmaCurrFast3!=EMPTY_VALUE && (hmaPrevFast3==EMPTY_VALUE || hmaPrev2Fast3==EMPTY_VALUE)
-      || ((hmaPrevSlow3==EMPTY_VALUE || hmaPrev2Slow3==EMPTY_VALUE) && hmaCurrSlow3!=EMPTY_VALUE && hmaCurrFast3!=EMPTY_VALUE))))
+      if(adxDPlus<adxDMinus && hmaCurrSlow3!=EMPTY_VALUE && hmaCurrFast3<hmaCurrSlow3 && (hmaCurrFast3!=EMPTY_VALUE && hmaCurrSlow1>hmaCurrFast3)
+         &&((hmaCurrFast3!=EMPTY_VALUE && (hmaPrevFast3==EMPTY_VALUE || hmaPrev2Fast3==EMPTY_VALUE)
+         || ((hmaPrevSlow3==EMPTY_VALUE || hmaPrev2Slow3==EMPTY_VALUE) && hmaCurrSlow3!=EMPTY_VALUE && hmaCurrFast3!=EMPTY_VALUE))))
         {
          Print("SELL:hmaCurrSlow1="+hmaCurrSlow1);
          Print("SELL:hmaCurrFast1="+hmaCurrFast1);
@@ -2462,11 +2464,42 @@ double checkForMod(string symbolName)
            }
         }
      }
-   if(MakeCloseTradeAlwaysInProfit && MinAmount>0 && SetSLToMinAmountUnder>0)
+   for(int j=0;j<OrdersTotal();j++)
      {
-      if(TempProfit>(MinAmount+SetSLToMinAmountUnder))
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-
+         if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
+           {
+            if(MakeCloseTradeAlwaysInProfit && MinAmount>0 && SetSLToMinAmountUnder>0)
+              {
+               if(TempProfit>(MinAmount+SetSLToMinAmountUnder))
+                 {
+                  if(OrderType()==OP_SELL && OrderStopLoss()>OrderOpenPrice())
+                    {
+                     if(TP==0)TPI=0;else TPI=OrderOpenPrice()-TP*Point;if(SL==0)SLI=OrderOpenPrice()+10000*Point;else SLI=OrderOpenPrice()+SL*Point;
+                     if(OrderModifyCheck(Symbol(),OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(Symbol(),ORDER_TYPE_SELL,SLI,TPI))
+                       {
+                        if(OrderTakeProfit()!=TPI && ((OrderStopLoss()<SLI && OrderOpenPrice()<OrderStopLoss()) || OrderStopLoss()==0))
+                          {
+                           bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,OrderTakeProfit(),0,clrGoldenrod);
+                          }
+                       }
+                    }
+                  else
+                  if(OrderType()==OP_BUY && OrderStopLoss()<OrderOpenPrice())
+                    {
+                     if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
+                     if(OrderModifyCheck(Symbol(),OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(Symbol(),ORDER_TYPE_BUY,SLI,TPI))
+                       {
+                        if(OrderStopLoss()>SLI && OrderOpenPrice()>OrderStopLoss())
+                          {
+                           bool Res=OrderModify(OrderTicket(),OrderOpenPrice(),SLI,OrderTakeProfit(),0,clrGoldenrod);
+                          }
+                       }
+                    }
+                 }
+              }
+           }
         }
      }
    return TempProfit;
