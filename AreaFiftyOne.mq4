@@ -1195,22 +1195,42 @@ Sell
       double adxLinePrev = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MAIN,1),digits);
       double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,0),digits);
       double adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_MINUSDI,0),digits);
+      
       double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1,0),digits);
+      double hmaPrevSlow2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,2,1),digits);
       double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1,1),digits);
       double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,1,2),digits);
       double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,3,0),digits);
+      double hmaPrevSlow4=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,4,1),digits);
       double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,3,1),digits);
       double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,3,3,2),digits);
+      
       double hmaCurrFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1,0),digits);
       double hmaPrevFast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1,1),digits);
       double hmaPrev2Fast1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,1,2),digits);
       double hmaCurrFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,3,0),digits);
       double hmaPrevFast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,3,1),digits);
       double hmaPrev2Fast3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodFast,3,3,2),digits);
-/*Print("hmaCurrSlow1="+hmaCurrSlow1);
-      Print("hmaCurrFast1="+hmaCurrFast1);
+      /*Print("hmaCurrSlow1="+hmaCurrSlow1);
+      //Print("hmaCurrFast1="+hmaCurrFast1);
       Print("hmaCurrSlow3="+hmaCurrSlow3);
-      Print("hmaCurrFast3="+hmaCurrFast3);*/
+      Print("hmaPrevSlow3="+hmaPrevSlow3);
+      Print("hmaPrev2Slow3="+hmaPrev2Slow3);
+      Print("hmaPrevSlow4="+hmaPrevSlow4);
+      Print("hmaPrevSlow2="+hmaPrevSlow2);
+      //Print("hmaCurrFast3="+hmaCurrFast3);*/
+      
+      if(hmaCurrSlow1!=EMPTY_VALUE && (hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE)) {
+         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+      }
+      
+      if(hmaCurrSlow3!=EMPTY_VALUE && (hmaCurrSlow1==EMPTY_VALUE && (hmaPrevSlow3==EMPTY_VALUE || hmaPrev2Slow3==EMPTY_VALUE)))
+      {
+         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+      }
+     /* 
       if(adxDPlus>adxDMinus && hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1>hmaCurrSlow1 && (hmaCurrFast1!=EMPTY_VALUE && hmaCurrSlow1<hmaCurrFast1)
          &&((hmaCurrFast1!=EMPTY_VALUE && (hmaPrevFast1==EMPTY_VALUE || hmaPrev2Fast1==EMPTY_VALUE)
          || ((hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE) && hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1!=EMPTY_VALUE))))
@@ -1233,6 +1253,7 @@ Sell
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
+        */
      }
    if(strategyName=="adx50")
      {
