@@ -91,25 +91,21 @@
 #property indicator_color7 Aqua
 #property indicator_separate_window
 
-int RSI_Period=13;         //8-25
-int RSI_Price=MODE_SMA;           //0-6
-int Volatility_Band=34;    //20-40
-int RSI_Price_Line = 2;
-int RSI_Price_Type=MODE_SMA;      //0-3
-int Trade_Signal_Line=7;
-int Trade_Signal_Line2=18;
-int Trade_Signal_Type=MODE_SMA;   //0-3
-bool UseAlerts=false;
-double LotSize=0.05;
-int CentMultiplicator=9;
-bool WriteToFile=false;
+extern int RSI_Period=13;         //8-25
+extern int RSI_Price=MODE_SMA;           //0-6
+extern int Volatility_Band=34;    //20-40
+extern int RSI_Price_Line = 2;
+extern int RSI_Price_Type=MODE_SMA;      //0-3
+extern int Trade_Signal_Line=7;
+extern int Trade_Signal_Type=MODE_SMA;   //0-3
+extern int Trade_Signal_Line2=0;
+extern bool UseAlerts=true;
+extern double LotSize=0.05;
+extern int CentMultiplicator=9;
 
 double RSIBuf[],UpZone[],MdZone[],DnZone[],MaBuf[],MbBuf[],McBuf[];
 double CrossPosStart,CrossPosEnd;
 int CountPoints=0;
-int OldTimestamp=0;
-int currTimeStamp=0;
-int count_signals=0;
 
 int AlertPlayedonBar=0;
 //+------------------------------------------------------------------+
@@ -127,12 +123,12 @@ int OnInit()
    SetIndexBuffer(6,McBuf);
 
    SetIndexStyle(0,DRAW_NONE);
-   SetIndexStyle(1,DRAW_NONE);
-   SetIndexStyle(2,DRAW_NONE,0,2);
-   SetIndexStyle(3,DRAW_NONE);
-   SetIndexStyle(4,DRAW_NONE,0,2);
-   SetIndexStyle(5,DRAW_NONE,0,2);
-   SetIndexStyle(6,DRAW_NONE,2,0);
+   SetIndexStyle(1,DRAW_LINE);
+   SetIndexStyle(2,DRAW_LINE,0,2);
+   SetIndexStyle(3,DRAW_LINE);
+   SetIndexStyle(4,DRAW_LINE,0,2);
+   SetIndexStyle(5,DRAW_LINE,0,2);
+   SetIndexStyle(6,DRAW_LINE,2,0);
 
    SetIndexLabel(0,NULL);
    SetIndexLabel(1,"VB High");
@@ -147,15 +143,6 @@ int OnInit()
    SetLevelValue(2,32);
    SetLevelStyle(STYLE_DOT,1,DimGray);
 
-   /*string IndicatorName="AreaFiftyOneIndicator";
-   string path=GetRelativeProgramPath();
-//--- indicator buffers mapping
-   int handle=iCustom(_Symbol,_Period,path,0,0);
-   if(handle==INVALID_HANDLE)
-     {
-      Print("Indicator: iCustom call: Error code=",GetLastError());
-      return(INIT_FAILED);
-     }*/
    return(0);
   }
 //+------------------------------------------------------------------+
@@ -163,7 +150,6 @@ int OnInit()
 //+------------------------------------------------------------------+
 int start()
   {
-   OldTimestamp=0;
    double MA,RSI[];
    ArrayResize(RSI,Volatility_Band);
    int counted_bars=IndicatorCounted();
@@ -186,17 +172,12 @@ int start()
      }
    for(i=limit-1;i>=0;i--)
      {
-      MaBuf[i] = (iMAOnArray(RSIBuf,0,RSI_Price_Line,0,RSI_Price_Type,i));
-      MbBuf[i] = (iMAOnArray(RSIBuf,0,Trade_Signal_Line,0,Trade_Signal_Type,i));
-      McBuf[i] = (iMAOnArray(RSIBuf,0,Trade_Signal_Line2,0,Trade_Signal_Type,i));
+      MaBuf[i] = iMAOnArray(RSIBuf,0,RSI_Price_Line,0,RSI_Price_Type,i);
+      MbBuf[i] = iMAOnArray(RSIBuf,0,Trade_Signal_Line,0,Trade_Signal_Type,i);
+      McBuf[i] = iMAOnArray(RSIBuf,0,Trade_Signal_Line2,0,Trade_Signal_Type,i);
      }
-   if(WriteToFile)
-     {
-      string terminal_data_path=TerminalInfoString(TERMINAL_DATA_PATH);
-      string filename="TradeSignal.csv";
-      int filehandle = 0;
-     }
-   string currBid=DoubleToString(Bid,Digits);
+
+ /*  string currBid=DoubleToString(Bid,Digits);
    string currAsk=DoubleToString(Ask,Digits);
    string CrossPosStartStr=DoubleToString(CrossPosStart,Digits);
 
@@ -215,24 +196,9 @@ int start()
         {
          Print("CountPoints: "+DoubleToStr(StringToDouble(CountPoints)/MathPow(10.0,Digits))+";Sum: "+StringToDouble(CountPoints)/(MathPow(10.0,Digits))*LotSize*100*CentMultiplicator/100/10+"€");
         }
-      if(WriteToFile)
-        {
-         ResetLastError();
-         filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
-         if(filehandle!=INVALID_HANDLE)
-           {
-            currTimeStamp=TimeCurrent();
-            count_signals= count_signals+1;
-            if(OldTimestamp==0) OldTimestamp=currTimeStamp;
-            FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"BUY",DoubleToString(Ask,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
-            FileClose(filehandle);
-            OldTimestamp=currTimeStamp;
-           }
-         else Print("Operation FileOpen failed, error ",GetLastError());
-        }
+
       CrossPosEnd=CrossPosStart;
       CrossPosStart=Ask;
-      PlaySound("alert.wav");
       AlertPlayedonBar=Bars;
      }
    if((MbBuf[0]<MdZone[0]) && (MbBuf[1]>=MdZone[1]) && (UseAlerts==true) && (AlertPlayedonBar!=Bars))
@@ -249,28 +215,12 @@ int start()
         {
          Print("CountPoints: "+DoubleToStr(StringToDouble(CountPoints)/MathPow(10.0,Digits))+";Sum: "+StringToDouble(CountPoints)/(MathPow(10.0,Digits))*LotSize*100*CentMultiplicator/100/10+"€");
         }
-      if(WriteToFile)
-        {
-         ResetLastError();
-         filehandle=FileOpen(filename,FILE_READ|FILE_SHARE_WRITE|FILE_WRITE|FILE_CSV|FILE_SHARE_READ," ");
-         if(filehandle!=INVALID_HANDLE)
-           {
-            currTimeStamp=TimeCurrent();
-            count_signals= count_signals+1;
-            if(OldTimestamp==0) OldTimestamp=currTimeStamp;
-            FileWrite(filehandle,TimeCurrent(),Symbol(),EnumToString(ENUM_TIMEFRAMES(_Period)),"SELL",DoubleToString(Bid,Digits),OldTimestamp,SYMBOL_SPREAD,count_signals);
-            FileClose(filehandle);
-            OldTimestamp=currTimeStamp;
-           }
-         else Print("Operation FileOpen failed, error ",GetLastError());
-        }
+
       CrossPosEnd=CrossPosStart;
       CrossPosStart=Bid;
-      PlaySound("alert.wav");
       AlertPlayedonBar=Bars;
-
      }
-
+*/
 //----
    return(0);
   }
@@ -281,7 +231,7 @@ void OnDeinit(const int reason)
   {
 //--- The first way to get the uninitialization reason code 
    Print(__FUNCTION__,"_Uninitalization reason code = ",reason);
-   if(UseAlerts) 
+   if(UseAlerts)
      {
       if(Digits>2)
         {
@@ -337,7 +287,7 @@ string GetRelativeProgramPath()
 //--- get the absolute path to the application
    string path=MQLInfoString(MQL_PROGRAM_PATH);
 //--- find the position of "\MQL4\" substring
-   int    pos =StringFind(path,"\\MQL4\\");
+   int    pos=StringFind(path,"\\MQL4\\");
 //--- substring not found - error
    if(pos<0)
       return(NULL);
@@ -361,9 +311,10 @@ string GetRelativeProgramPath()
 //+------------------------------------------------------------------+
 int OnCalculate(const int rates_total,
                 const int prev_calculated,
-                const int begin,        
-                const double& price[])
+                const int begin,
+                const double &price[])
   {
 //--- return value of prev_calculated for next call
    return(rates_total);
   }
+//+------------------------------------------------------------------+

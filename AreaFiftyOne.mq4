@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2018 VBApps::Valeri Balachnin"
-#property version   "4.40"
+#property version   "5.0"
 #property description "Trades on trend change with different indicators."
 #property strict
 
@@ -67,6 +67,7 @@ extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
 extern bool     UseRSIBasedIndicator=false;
+//extern bool     UseADXWithBaseLine=false;
 extern bool     UseCorridorCroosing=false;
 extern static string MACD_ADX_MA_Strategy="-------------------";
 extern bool     UseSimpleTrendStrategy=false;
@@ -84,9 +85,9 @@ extern int      CandleCountInBlock=12;
 extern int      MaxBlockSizeInPoints=300;
 extern static string IchimokuClouds="-------------------";
 extern bool     UseIchimokuClouds=false;
-extern int      Tenkan=24; // Tenkan line period. The fast "moving average".
-extern int      Kijun=48; // Kijun line period. The slow "moving average".
-extern int      Senkou=240;  // Senkou period. Used for Kumo (Cloud) spans.
+int      Tenkan=24; // Tenkan line period. The fast "moving average".
+int      Kijun=48; // Kijun line period. The slow "moving average".
+int      Senkou=240;  // Senkou period. Used for Kumo (Cloud) spans.
 extern int      IchimokuMAPeriod=12;
 extern int      IchimokuMAShift=9;
 extern bool     UseIchimokuCrossing=true;
@@ -110,6 +111,12 @@ extern static string MagicSymphonieStrategy="-------------------";
 extern bool     UseMagicSymphonieStrategy=false;
 extern static string SolarWindStrategy="-------------------";
 extern bool     UseSolarWindStrategy=false;
+extern static string HandleLostPositionsHint="-------------------";
+extern bool     HandleLostPositions=true;
+extern int      StepInPoints=500;
+extern int      PendingOrderAfter=250;
+extern int      PendingOrderExpiry=30;
+extern int      PointsToTake=100;
 extern static string TradeAllSymbolsFromOneChart="Trade the choosen strategy on all available FX symbols";
 extern bool     TradeOnAllSymbols=false;
 extern bool     TradeOnlyListOfSelectedSymbols=false;
@@ -146,20 +153,20 @@ bool DebugTrace=false;
 
 /*licence*/
 bool trial_lic=false;
-datetime expiryDate=D'2017.10.01 00:00';
+datetime expiryDate=D'2018.12.01 00:00';
 bool rent_lic=false;
-datetime rentExpiryDate=D'2018.06.01 00:00';
+datetime rentExpiryDate=D'2019.12.01 00:00';
 int rentAccountNumber=0;
 string rentCustomerName="";
 /*licence_end*/
 
-int RSI_Period=13;         //8-25
-int RSI_Price=0;           //0-6
-int Volatility_Band=34;    //20-40
+int RSI_Period=14;         //8-25
+int RSI_Price=3;           //0-6
+int Volatility_Band=26;    //20-40
 int RSI_Price_Line=6;
 int RSI_Price_Type=MODE_SMA;      //0-3
 int Trade_Signal_Line=7;
-int Trade_Signal_Line2=18;
+int Trade_Signal_Line2=0;
 int Trade_Signal_Type=MODE_SMA;   //0-3
 int MAFastPeriod = 7;
 int MASlowPeriod = 21;
@@ -246,7 +253,7 @@ int OnInit()
 
    if(rent_lic)
      {
-      if(!IsTesting() && AccountName()==rentCustomerName && AccountNumber()==rentAccountNumber)
+      if(!IsTesting() && AccountName()==rentCustomerName)// && AccountNumber()==rentAccountNumber)
         {
          if(TimeCurrent()>rentExpiryDate)
            {
@@ -271,12 +278,13 @@ int OnInit()
    HideTestIndicators(true);
    if(UseRSIBasedIndicator)
      {
-      handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
-      if(handle_ind==INVALID_HANDLE)
-        {
-         Print("Expert: iCustom call: Error code=",GetLastError());
-         return(INIT_FAILED);
-        }
+      handle_ind=0;
+      //handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
+      //if(handle_ind==INVALID_HANDLE)
+      //{
+      // Print("Expert: iCustom call: Error code=",GetLastError());
+      // return(INIT_FAILED);
+      //}
      }
    if(UseTrendIndicator)
      {
@@ -349,7 +357,7 @@ int OnInit()
    if(UseHMAStrategy)
      {
       int handle_ind9=0;
-      handle_ind9=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName9+".ex4",0,0);
+      handle_ind9=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,0);
       if(handle_ind9==INVALID_HANDLE)
         {
          Print("Expert: iCustom call_9: Error code=",GetLastError());
@@ -373,7 +381,7 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
-   HideTestIndicators(false);
+// HideTestIndicators(false);
 //---
    return(INIT_SUCCEEDED);
   }
@@ -427,9 +435,11 @@ void OnTick()
 
 //---//
 
+   openPendingsForWrongDirectionTrades(Symbol());
+
    int limit=1,err=0;
    bool BUY=false,SELL=false;
-   SellFlag=false;BuyFlag=false;
+//SellFlag=false;BuyFlag=false;
    bool TradingAllowed=false;
 /*if(Debug){Print("StartHour>-1="+(StartHour>-1)+"&&EndHour<24="+(EndHour<24)+"&&Hour>StartHour="+(Hour()>StartHour)
    +"||Hour==StartHour="+(Hour()==StartHour)+"&&Hour<EndHour="+(Hour()<EndHour)+"||Hour==EndHour"+(Hour()==EndHour));}*/
@@ -673,7 +683,10 @@ void OnTick()
         }
      }
 //HideTestIndicators(false);
-
+   if(SellFlag==true || BuyFlag==true)
+     {
+      //Print("Signal from one of  strategies!");
+     }
    if(HandleUserPositions && !TradeOnAllSymbols){HandleUserPositionsFun();}
 
 //conditions to close positions
@@ -698,12 +711,16 @@ void OnTick()
         }
       if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
       //entry conditions verification
-      if(SellFlag>0){OS=1;OB=0;}if(BuyFlag>0){OB=1;OS=0;}
+      if(SellFlag==true){OS=1;OB=0;}if(BuyFlag==true){OB=1;OS=0;}
       LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[0][4];
       RemainingLotSize=tradeDoubleVarsValues[0][4];
       countRemainingMaxLots=(int)tradeDoubleVarsValues[0][3];
       MaxLot=tradeDoubleVarsValues[0][2];
-      OpenPosition(Symbol(),OP,OSC,OBC,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+      if(OB==1 || OS==1)
+        {
+         //Print("Signal from one of  strategies! Control Point 0!..");
+         OpenPosition(Symbol(),OP,OSC,OBC,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
+        }
 
       double TempProfitUserPosis=0.0;
       if(HandleUserPositions)
@@ -769,8 +786,10 @@ void OnTick()
 //+------------------------------------------------------------------+
 void OpenPosition(string symbolName,int OP,int OSC,int OBC,int OS,int OB,bool LotSizeIsBiggerThenMaxLotT,int countRemainingMaxLotsT,double MaxLotT,double RemainingLotSizeT)
   {
+//Print("OpenPositionFun-Start -> SymbolName="+symbolName+";OSC="+IntegerToString(OSC)+";OBC="+IntegerToString(OBC));
    if(TradeFromSignalToSignal)
      {
+      //Print("OpenPositionFun-TradeFromSignalToSignal is active.");
       if(OS==1)
         {
          ClosePreviousSignalTrade(symbolName,OS,0);
@@ -780,24 +799,31 @@ void OpenPosition(string symbolName,int OP,int OSC,int OBC,int OS,int OB,bool Lo
          ClosePreviousSignalTrade(symbolName,0,OB);
         }
      }
+
 //open position
    if(((getCurrentSpreadForSymbol(symbolName)<=MaxSpread) && AddP(symbolName) && AddPositionsIndependently && OP*2<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
+      Print("OpenPositionFun-Control Point 1 passed...");
       if(OnlySell==true && !(AccountFreeMarginCheck(symbolName,OP_SELL,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
         {
+         Print("OpenPositionFun-Control Point 2 for SELL passed...");
          if(OS==1 && OSC<MaxConcurrentOpenedOrders)
            {
+            Print("OpenPositionFun-Control Point 3 passed...");
             if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_BID)-TP*MarketInfo(symbolName,MODE_POINT);if(SL==0)SLI=MarketInfo(symbolName,MODE_BID)+10000*MarketInfo(symbolName,MODE_POINT);else SLI=MarketInfo(symbolName,MODE_BID)+SL*MarketInfo(symbolName,MODE_POINT);
             if(UseLongTermJourneyToSunriseStrategy && SunriseSL>0){SLI=SunriseSL+AdditionalSL*MarketInfo(symbolName,MODE_POINT);}
             if(CheckMoneyForTrade(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],OP_SELL))
               {
+               Print("OpenPositionFun-Control Point 4 passed...");
                if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,SLI,TPI) && CheckVolumeValue(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]))
                  {
+                  Print("OpenPositionFun-Control Point 5 passed... Try to open sell trade!");
                   TicketNrSell=OrderSend(symbolName,OP_SELL,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
                   if(TicketNrSell<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   if(LotSizeIsBiggerThenMaxLotT)
                     {
+                     Print("OpenPositionFun-Control Point 6 passed...");
                      for(int c=0;c<countRemainingMaxLotsT-1;c++)
                        {
                         if(OrderSend(symbolName,OP_SELL,MaxLotT,MarketInfo(symbolName,MODE_BID),Slippage,SLI,TPI,EAName,MagicNumber,0,Red)<0)
@@ -812,19 +838,24 @@ void OpenPosition(string symbolName,int OP,int OSC,int OBC,int OS,int OB,bool Lo
         }
       if(OnlyBuy==true && !(AccountFreeMarginCheck(Symbol(),OP_BUY,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
         {
+         Print("OpenPositionFun-Control Point 2 for BUY passed...");
          if(OB==1 && OBC<MaxConcurrentOpenedOrders)
            {
+            Print("OpenPositionFun-Control Point 3 passed...");
             if(TP==0)TPI=0;else TPI=MarketInfo(symbolName,MODE_ASK)+TP*MarketInfo(symbolName,MODE_POINT);if(SL==0)SLI=MarketInfo(symbolName,MODE_ASK)-10000*MarketInfo(symbolName,MODE_POINT);else SLI=MarketInfo(symbolName,MODE_ASK)-SL*MarketInfo(symbolName,MODE_POINT);
             if(UseLongTermJourneyToSunriseStrategy && SunriseSL>0){SLI=SunriseSL-AdditionalSL*MarketInfo(symbolName,MODE_POINT);}
             if(CheckMoneyForTrade(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],OP_BUY))
               {
+               Print("OpenPositionFun-Control Point 4 passed...");
                if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]))
                  {
+                  Print("OpenPositionFun-Control Point 5 passed... Try to open sell trade!");
                   TicketNrBuy=OrderSend(symbolName,OP_BUY,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
                   if(TicketNrBuy<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
                   if(LotSizeIsBiggerThenMaxLotT)
                     {
+                     Print("OpenPositionFun-Control Point 6 passed...");
                      for(int c=0;c<countRemainingMaxLotsT-1;c++)
                        {
                         if(OrderSend(symbolName,OP_BUY,MaxLotT,MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime)<0)
@@ -1186,7 +1217,7 @@ void CountOrders()
 //+------------------------------------------------------------------+
 string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,string strategyName)
   {
-//HideTestIndicators(true); <- reactivate before publish!
+// HideTestIndicators(true); //<- reactivate before publish!
    SellFlag=false;
    BuyFlag=false;
    string additionalText;
@@ -1352,28 +1383,117 @@ Sell
    if(strategyName=="hmaColor")
      {
       int hmaPeriodSlow=110;
+      int EMA_period=14;
+      double currAsk = NormalizeDouble(MarketInfo(symbolName,MODE_ASK),digits);
+      double currBid = NormalizeDouble(MarketInfo(symbolName,MODE_BID),digits);
       double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,0),digits);
       double adxLinePrev = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,1),digits);
       double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_PLUSDI,0),digits);
       double adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MINUSDI,0),digits);
+      double adxDPlusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_PLUSDI,1),digits);
+      double adxDMinusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MINUSDI,1),digits);
 
-      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,1,0),digits);
-      double hmaPrevSlow2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,2,1),digits);
-      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,1,1),digits);
-      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,1,2),digits);
-      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,3,0),digits);
-      double hmaPrevSlow4=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,4,1),digits);
-      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,3,1),digits);
-      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,true,0,0,3,2),digits);
+      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,0),digits);
+      double hmaPrevSlow2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,2,1),digits);
+      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,1),digits);
+      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,2),digits);
+      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,0),digits);
+      double hmaPrevSlow4=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,4,1),digits);
+      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,1),digits);
+      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,2),digits);
 
-      /*Print("hmaCurrSlow1="+hmaCurrSlow1);
+      double eMACurr=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,0),digits);
+      double eMAPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,1),digits);
+
+      double openPrice=NormalizeDouble(iOpen(symbolName,symbolTimeframe,1),digits);
+      double closePrice=NormalizeDouble(iClose(symbolName,symbolTimeframe,1),digits);
+
+      //if(UseSimpleEMA_HMACroosing) 
+      // {
+      if(adxLineCurr>20.0)
+        {
+         if(adxDPlus>20.0 && adxDPlus>adxDMinus && ((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
+            && ((hmaCurrSlow1!=EMPTY_VALUE && eMACurr>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && eMACurr>hmaCurrSlow3)))
+           {
+            if(((hmaCurrSlow3!=EMPTY_VALUE && eMAPrev<hmaPrevSlow3) || (hmaCurrSlow1!=EMPTY_VALUE && eMAPrev<hmaPrevSlow1))
+               && ((closePrice-openPrice)>MarketInfo(symbolName,MODE_POINT)*12))
+              {
+               if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+               createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+              }
+           }
+
+         //if(adxDMinus>20.0 && adxDPlus<adxDMinus
+         //&& 
+         if(adxDPlus<adxDMinus && ((hmaCurrSlow1!=EMPTY_VALUE && currBid<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currBid<hmaCurrSlow3))
+            && ((hmaCurrSlow1!=EMPTY_VALUE && eMACurr<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && eMACurr<hmaCurrSlow3)))
+           {
+            if(((hmaCurrSlow3!=EMPTY_VALUE && eMAPrev>hmaPrevSlow3) || (hmaCurrSlow1!=EMPTY_VALUE && eMAPrev>hmaPrevSlow1))
+               && ((openPrice-closePrice)>MarketInfo(symbolName,MODE_POINT)*12))
+              {
+               if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+               createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+              }
+           }
+         // }
+        }
+
+/*Print("hmaCurrSlow1="+hmaCurrSlow1);
       Print("hmaCurrSlow3="+hmaCurrSlow3);
       Print("hmaPrevSlow3="+hmaPrevSlow3);
       Print("hmaPrev2Slow3="+hmaPrev2Slow3);
       Print("hmaPrevSlow4="+hmaPrevSlow4);
       Print("hmaPrevSlow2="+hmaPrevSlow2);*/
 
-      if(hmaCurrSlow1!=EMPTY_VALUE && (hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE))
+/* if(adxLineCurr>25.0)
+        {
+         if(adxDPlus>20.0 && ((currAsk>hmaCurrSlow1) || (currAsk>hmaCurrSlow3)))
+           {
+            if(//(adxDPlus>adxDMinus || adxDPlusPrev<adxDMinusPrev) 
+               /*&&*//*((hmaCurrSlow1!=EMPTY_VALUE && (eMACurr>hmaCurrSlow1)) || (hmaCurrSlow3!=EMPTY_VALUE && (eMACurr>hmaCurrSlow3))))
+              {
+               if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+               createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+              }
+           }
+        }
+      //closing conditions
+      // || (adxDPlus<adxDMinus && adxDPlusPrev>adxDMinusPrev)
+      if((((hmaCurrSlow1!=EMPTY_VALUE && currBid<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currBid<hmaCurrSlow3))
+
+         ||(((hmaCurrSlow1!=EMPTY_VALUE && (eMACurr<hmaCurrSlow1)) || (hmaCurrSlow3!=EMPTY_VALUE && (eMACurr<hmaCurrSlow3)))
+         && ((hmaPrevSlow1!=EMPTY_VALUE && (eMACurr>hmaPrevSlow1)) || (hmaPrevSlow3!=EMPTY_VALUE && (eMACurr>hmaPrevSlow3)))))
+         && BuyOpened && IsNewBar())
+        {
+         //CloseSellTrade=true;
+         //BuyOpened=false;
+        }
+      if(adxLineCurr>25.0)
+        {
+         if(adxDMinus>20.0 && ((currBid<hmaCurrSlow1) || (currBid<hmaCurrSlow3)))
+           {
+            if(//(adxDPlus>adxDMinus || adxDPlusPrev<adxDMinusPrev) 
+               /*&&*//*((hmaCurrSlow1!=EMPTY_VALUE && (eMACurr<hmaCurrSlow1)) || (hmaCurrSlow3!=EMPTY_VALUE && (eMACurr<hmaCurrSlow3))))
+              {
+               if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+               createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+              }
+           }
+        }
+*/
+      //closing conditions
+      //  || (adxDPlus>adxDMinus && adxDPlusPrev<adxDMinusPrev)
+      if((((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
+
+         ||(((hmaCurrSlow1!=EMPTY_VALUE && (eMACurr>hmaCurrSlow1)) || (hmaCurrSlow3!=EMPTY_VALUE && (eMACurr>hmaCurrSlow3)))
+         && ((hmaPrevSlow1!=EMPTY_VALUE && (eMACurr<hmaPrevSlow1)) || (hmaPrevSlow3!=EMPTY_VALUE && (eMACurr<hmaPrevSlow3)))))
+         && SellOpened && IsNewBar())
+        {
+         //CloseBuyTrade=true;
+         //SellOpened=false;
+        }
+
+/*  if(hmaCurrSlow1!=EMPTY_VALUE && (hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE))
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
@@ -1383,7 +1503,7 @@ Sell
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-        }
+        } */
 /* 
       if(adxDPlus>adxDMinus && hmaCurrSlow1!=EMPTY_VALUE && hmaCurrFast1>hmaCurrSlow1 && (hmaCurrFast1!=EMPTY_VALUE && hmaCurrSlow1<hmaCurrFast1)
          &&((hmaCurrFast1!=EMPTY_VALUE && (hmaPrevFast1==EMPTY_VALUE || hmaPrev2Fast1==EMPTY_VALUE)
@@ -1409,6 +1529,9 @@ Sell
         }
         */
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="adx50")
      {
       double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,0),digits);
@@ -1428,6 +1551,9 @@ Sell
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="magicTrend")
      {
       double lastValueLow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName8+".ex4",1,0), digits);
@@ -1445,6 +1571,9 @@ Sell
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="solarWind")
      {
       int period=15;
@@ -1497,7 +1626,9 @@ Sell
         }
 
      }
-
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="nightAsianBlock")
      {
       // block time period from 23:00 till 02:00 (close of M15 candle)
@@ -1532,6 +1663,9 @@ Sell
            }
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="stochCroosingRSI")
      {
       int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=0;
@@ -1552,6 +1686,9 @@ Sell
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="MaOn5050")
      {
       int buff=150;
@@ -1577,6 +1714,9 @@ Sell
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="5050")
      {
       int i=0;
@@ -1595,6 +1735,9 @@ Sell
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="baseStochi")
      {
       for(int i=0; i<=2; i++)
@@ -1627,6 +1770,9 @@ Sell
            }
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="simpleTrend")
      {
       double MAFastPrevious1,MAFastPrevious2;
@@ -1668,6 +1814,9 @@ Sell
            }
         }
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="trendy")
      {
       double Trend=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
@@ -1819,19 +1968,87 @@ Sell
         }
       if((SellFlag || BuyFlag) && Debug) {Print("Got signal from trend-based indicator!");}
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(strategyName=="tdi")
      {
       int i=0;
       double TDIGreen=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
       double TDIGreenPrevious=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
-      double TDIYellow=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i);
-      double TDIYellowPrevous=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1);
-      //double TDIRedPlusOne=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1);
-      //double TDIRed=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i);
+      double TDIYellow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i),digits);
+      double TDIYellowPrevous=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1),digits);
+      double TDIRedPrevous=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1),digits);
+      double TDIRed=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i),digits);
       // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
       // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
       double TSL2=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
       double TSL2Previous=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
+
+      double adxLineCurr=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,i),digits);
+      double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_PLUSDI,i),digits);
+      double adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MINUSDI,i),digits);
+
+      double currAsk = NormalizeDouble(MarketInfo(symbolName,MODE_ASK),digits);
+      double currBid = NormalizeDouble(MarketInfo(symbolName,MODE_BID),digits);
+      double hmaCurr1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,0,1,0),digits);
+      double hmaCurr3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,0,3,0),digits);
+
+      double hmaCurr1Sell=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,-40,1,0),digits);
+      double hmaCurr3Sell=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,-40,3,0),digits);
+
+      double stochValue=iStochastic(symbolName,symbolTimeframe,18,5,3,MODE_EMA,0,MODE_MAIN,0);
+
+      double openPrice=NormalizeDouble(iOpen(symbolName,symbolTimeframe,1),digits);
+      double closePrice=NormalizeDouble(iClose(symbolName,symbolTimeframe,1),digits);
+
+      //if(UseADXWithBaseLine)
+      //{
+
+      if(adxLineCurr>20.0)
+        {
+         if(adxDPlus>adxDMinus && TDIYellow>28 && (TDIRed<45.0 || TDIRed>55.0) && TDIYellow<60 && TDIRed>TDIYellow && ((TDIRed-TDIYellow)>1.0) && TDIRedPrevous<TDIYellowPrevous)
+           {
+            if((currAsk>hmaCurr1) || (currAsk>hmaCurr3))
+              {
+               if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+               createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+              }
+           }
+         if(adxDMinus>adxDPlus && TDIYellow<70 && (TDIRed>55.0 || TDIRed<45.0) && TDIYellow>32 && TDIRed<TDIYellow && ((TDIYellow-TDIRed)>1.0) && TDIRedPrevous>TDIYellowPrevous)
+           {
+            if((currBid<hmaCurr1) || (currBid<hmaCurr3))
+              {
+               if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+               createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+              }
+           }
+         // }
+        }
+
+      if(adxLineCurr>20.0)
+        {
+         if(adxDPlus>adxDMinus && adxDPlus>18.0
+            && stochValue<80.0
+            && ((openPrice>hmaCurr1 || openPrice>hmaCurr3)
+            && (closePrice>hmaCurr1 || closePrice>hmaCurr3)
+            && (closePrice-openPrice)>MarketInfo(symbolName,MODE_POINT)*12))
+           {
+            Print("Buy -> price is higher as HMA");
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+           }
+         if(adxDMinus>adxDPlus && adxDMinus>18.0
+            && stochValue>20.0
+            && ((openPrice<hmaCurr1Sell || openPrice<hmaCurr3Sell)
+            && (closePrice<hmaCurr1Sell || closePrice<hmaCurr3Sell)
+            && (openPrice-closePrice)>MarketInfo(symbolName,MODE_POINT)*12))
+           {
+            Print("Sell -> price is lower as HMA");
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           }
+        }
 
       if(UseCorridorCroosing)
         {
@@ -1839,25 +2056,21 @@ Sell
          if((TSL2>TDIYellow) && (TDIGreen<TSL2 && (TDIGreenPrevious>TSL2Previous || TDIGreenPrevious==TSL2Previous))) {SellFlag=true;}
         }
 
-      if((TDIYellow<50) && (TSL2<TDIYellow) && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
-      if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
-
-      if(SellFlag && Debug) { Print("Got sell signal from RSI-based indicator!");}
-      if(BuyFlag && Debug) { Print("Got buy signal from RSI-based indicator!");}
-      if(!SendOnlyNotificationsNoTrades)
+/*if((UseCorridorCroosing==false))// && (UseADXWithBaseLine=false))
         {
-         if(BuyFlag){SellFlag=false;createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);}
-         if(SellFlag){BuyFlag=false;createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);}
-           } else {SellFlag=false;BuyFlag=false;
+         if((TDIYellow<50) && (TSL2<TDIYellow) && (TDIGreen>TDIYellow && (TDIGreenPrevious<TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {BuyFlag=true;}
+         if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
         }
+      */
      }
 
    string res="noSignal";
    if(SellFlag) {res="Sell";}
    if(BuyFlag) {res="Buy";}
+   if(res!="noSignal"){Print("Got signal ("+res+")  from "+strategyName+" on "+symbolName);}
    if(CloseBuyTrade){ClosePreviousSignalTrade(symbolName,0,1);}
    if(CloseSellTrade){ClosePreviousSignalTrade(symbolName,1,0);}
-// HideTestIndicators(false); <- reactivate before publish!
+// HideTestIndicators(true); //<- reactivate before publish!
    return res;
   }
 //+------------------------------------------------------------------+
@@ -1867,6 +2080,9 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
   {
    bool positionCanBeOpened=false;
    int currentAlreadyOpenedPositions=0;
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(OrdersTotal()>0)
      {
       for(int cnt=0;cnt<OrdersTotal();cnt++)
@@ -1917,10 +2133,16 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
            }
         }
         } else {
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
       positionCanBeOpened=true;
      }
    return positionCanBeOpened;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -2062,14 +2284,23 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
 void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
   {
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(CurProfit>=0.0)
      {
       ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
         }else{ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
    ObjectSet("CurProfit",OBJPROP_YDISTANCE,40);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(HandleUserPositions)
      {
       ObjectCreate("CurProfitOfManualPlacedUserPositions",OBJ_LABEL,0,0,0);
@@ -2122,21 +2353,30 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       //+------------------------------------------------------------------+
       //|                                                                  |
       //+------------------------------------------------------------------+
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      }
 
    if(!IsTesting() && trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
    if(!IsTesting() && rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 int getTicketCurrentType(int TicketNr)
   {
-   int res=-1;
+   int result=-1;
    if(OrderSelect(TicketNr,SELECT_BY_TICKET,MODE_TRADES))
      {
-      res=OrderType();
+      result=OrderType();
      }
-   return res;
+   return result;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 int CloseAll()
   {
@@ -2145,6 +2385,9 @@ int CloseAll()
    int FirstOrderType=0;
 
    for(int index=0; index<OrdersTotal(); index++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
       if(OrderSymbol()==Symbol() && OrderMagicNumber()==MagicNumber)
@@ -2155,6 +2398,9 @@ int CloseAll()
      }
 
    for(int index=numOfOrders-1; index>=0; index--)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
 
@@ -2184,6 +2430,9 @@ int CloseAll()
    return(rv);
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //| Überprüft - ob noch eine Order gesetzt werden kann               |
 //+------------------------------------------------------------------+
 bool IsNewOrderAllowed()
@@ -2200,12 +2449,18 @@ bool IsNewOrderAllowed()
 //--- geben wir das Ergebnis des Vergleiches zurück
    return(orders<max_allowed_orders);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+  
 int getContractProfitCalcMode(string symbolName)
   {
    int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
    return profitCalcMode;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 bool CheckMoneyForTrade(string symb,double lots,int type)
   {
@@ -2221,11 +2476,17 @@ bool CheckMoneyForTrade(string symb,double lots,int type)
    return(true);
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 bool CompareDoubles(double number1,double number2)
   {
    if(NormalizeDouble(number1-number2,5)==0) return(true);
    else return(false);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 //| die Überprüfung der neuen Ebene-Werte vor der Modifikation der Order         |
 //+------------------------------------------------------------------+
@@ -2260,15 +2521,24 @@ bool OrderModifyCheck(string symbol,int ticket,double price,double sl,double tp)
    return(false);       // es gibt keinen Sinn, zu modifizieren 
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,double TPT)
   {
    int stops_level=(int)SymbolInfoInteger(symbolName,SYMBOL_TRADE_STOPS_LEVEL);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(stops_level!=0)
      {
       PrintFormat("SYMBOL_TRADE_STOPS_LEVEL=%d: StopLoss and TakeProfit must be"+
                   " less %d points from close price",stops_level,stops_level);
      }
    bool SLT_check=false,TPT_check=false;
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    switch(type)
      {
       case  ORDER_TYPE_BUY:
@@ -2304,6 +2574,9 @@ bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,
    return false;
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 //| Check the correctness of the order volume                        |
 //+------------------------------------------------------------------+
 bool CheckVolumeValue(string symbolName,double volume)
@@ -2311,6 +2584,9 @@ bool CheckVolumeValue(string symbolName,double volume)
 //--- minimal allowed volume for trade operations
    string description="";
    double min_volume=SymbolInfoDouble(symbolName,SYMBOL_VOLUME_MIN);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(volume<min_volume)
      {
       PrintFormat("Volume is less than the minimal allowed SYMBOL_VOLUME_MIN=%.2f",min_volume);
@@ -2319,6 +2595,9 @@ bool CheckVolumeValue(string symbolName,double volume)
 
 //--- maximal allowed volume of trade operations
    double max_volume=SymbolInfoDouble(symbolName,SYMBOL_VOLUME_MAX);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(volume>max_volume)
      {
       PrintFormat("Volume is greater than the maximal allowed SYMBOL_VOLUME_MAX=%.2f",max_volume);
@@ -2329,6 +2608,9 @@ bool CheckVolumeValue(string symbolName,double volume)
    double volume_step=SymbolInfoDouble(symbolName,SYMBOL_VOLUME_STEP);
 
    int ratio=(int)MathRound(volume/volume_step);
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(MathAbs(ratio*volume_step-volume)>0.0000001)
      {
       Print(StringFormat("Volume is not a multiple of the minimal step SYMBOL_VOLUME_STEP=%.2f, the closest correct volume is %.2f",
@@ -2339,25 +2621,40 @@ bool CheckVolumeValue(string symbolName,double volume)
 //Print(description);
    return(true);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+-----------------------------------------------------------------+
 bool NewBar()
   {
    static datetime lastbar;
    datetime curbar=Time[0];
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    if(lastbar!=curbar)
      {
       lastbar=curbar;
       return(true);
      }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    else
      {
       return(false);
      }
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 string getTimeframeFromMinutes(int ai_0)
   {
    string timeFrame;
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
    switch(ai_0)
      {
       case 1:
@@ -2389,6 +2686,9 @@ string getTimeframeFromMinutes(int ai_0)
      }
    return (timeFrame);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+  
 int getTimeframeFromString(string timeFrameFromString)
   {
@@ -2405,10 +2705,16 @@ int getTimeframeFromString(string timeFrameFromString)
    return (timeFrame);
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 int getOpenedPositionsForSymbol(string symbolName)
   {
    int cnt=0,OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
@@ -2421,10 +2727,16 @@ int getOpenedPositionsForSymbol(string symbolName)
    return OP;
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 int getOpenedBuyPositionsForSymbol(string symbolName)
   {
    int cnt=0,OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
@@ -2437,10 +2749,16 @@ int getOpenedBuyPositionsForSymbol(string symbolName)
    return OP;
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 int getOpenedSellPositionsForSymbol(string symbolName)
   {
    int cnt=0,OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
@@ -2452,6 +2770,9 @@ int getOpenedSellPositionsForSymbol(string symbolName)
      }
    return OP;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+
 void generateSignalsAndPositions(string strategyName)
   {
@@ -2538,6 +2859,9 @@ void setTradeVarsValues()
    int tempCountedDecimals,tempStopLevel,tempMarginMode,tempTrailingStep=TrailingStep,tempDistanceStep=DistanceStep;
 
    for(int c=0;c<ArraySize(symbolNameBuffer);c++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       if(symbolNameBuffer[c]!=IntegerToString(EMPTY_VALUE))
         {
@@ -2589,6 +2913,7 @@ void setTradeVarsValues()
          if(LotAutoSize)
            {
             int Faktor=100;
+            if(AccountLeverage()<100)Faktor=Faktor*100;
             if(LotRiskPercent<0.1 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
             else
               {
@@ -2665,25 +2990,40 @@ void setTradeVarsValues()
      }
   }
 //+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
 int getTradeIntVarValue(int arrayIndex,int valueIndex)
   {
    return tradeIntVarsValues[arrayIndex][valueIndex];
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+  
 double getTradeDoubleValue(int arrayIndex,int valueIndex)
   {
    return tradeDoubleVarsValues[arrayIndex][valueIndex];
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+  
 int getSymbolArrayIndex(string symbolName)
   {
    int symbolNameIndex=0;
    for(int i=0;i<ArraySize(symbolNameBuffer);i++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       if(symbolNameBuffer[i]==symbolName) {symbolNameIndex=i;break;}
      }
    return symbolNameIndex;
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 //+------------------------------------------------------------------
 double checkForMod(string symbolName)
   {
@@ -2709,6 +3049,9 @@ double checkForMod(string symbolName)
         }
      }
    for(int j=0;j<OrdersTotal();j++)
+      //+------------------------------------------------------------------+
+      //|                                                                  |
+      //+------------------------------------------------------------------+
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
@@ -2770,5 +3113,201 @@ void createNotifications(string symbolName,string direction,int period,string ad
    if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
    if(SendNotificationToPhone){SendNotification(direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS))+" -> Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+") with "+strategyName+" strategy");}
 
+  }
+//+------------------------------------------------------------------+
+void openPendingsForWrongDirectionTrades(string symbolName)
+  {
+//get all current trades for symbol with the same magic number
+//iterate above the list
+//for each trade, that distance from open price more than StepInPoints in wrong direction
+//multiple StepInPoints if price is over OpenPrice+-StepInPoints
+//set a pending order at the price from open price +-PendingOrderAfter
+//with expiry PendingOrderExpiry
+//
+   bool pendingSell=false;
+   bool pendingBuy=false;
+   for(int j=0;j<OrdersTotal();j++)
+     {
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+        {
+         if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
+           {
+            double point=MarketInfo(symbolName,MODE_POINT);
+            if(OrderType()==OP_SELL)
+              {
+               double pbid=MarketInfo(symbolName,MODE_BID);
+               double currentDistance=pbid-OrderOpenPrice();
+               double pendingsCount=currentDistance/PendingOrderAfter;
+               if(OrderOpenPrice()+StepInPoints*Point<pbid)
+                 {
+                  for(int c=1;c<=pendingsCount;c++)
+                    {
+                     double sellOpenPrice=OrderOpenPrice()+PendingOrderAfter*c*point;
+                     if(!hasAlreadyPendings(symbolName,sellOpenPrice,OrderTicket()))
+                       {
+                        pendingSell=OrderSend(symbolName,OP_SELLSTOP,getTradeDoubleValue(0,6),sellOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(OrderTicket()),MagicNumber,TimeCurrent()+2592000,Red);
+                       }
+                    }
+                 }
+              }
+            if(OrderType()==OP_BUY)
+              {
+               double pask=MarketInfo(symbolName,MODE_ASK);
+               double currentDistance=OrderOpenPrice()-pask;
+               double pendingsCount=currentDistance/PendingOrderAfter;
+               if(OrderOpenPrice()-StepInPoints*Point>pask)
+                 {
+                  for(int c=1;c<=pendingsCount;c++)
+                    {
+                     double buyOpenPrice=OrderOpenPrice()-PendingOrderAfter*c*point;
+                     if(!hasAlreadyPendings(symbolName,buyOpenPrice,OrderTicket()))
+                       {
+                        pendingBuy=OrderSend(symbolName,OP_BUYSTOP,getTradeDoubleValue(0,6),buyOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(OrderTicket()),MagicNumber,TimeCurrent()+2592000,Lime);
+                       }
+                    }
+                 }
+              }
+           }
+        }
+     }
+  }
+//+------------------------------------------------------------------+
+void handleWrongDirectionTrades(string symbolName)
+  {
+   bool res=false;
+   int orderBuff[250,250];
+   ArrayResize(orderBuff,250,250);
+   for(int j=0;j<OrdersTotal();j++)
+     {
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
+         && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
+         && StringFind(OrderComment(),EAName+"_")>0
+         && StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(OrderTicket())))==IntegerToString(OrderTicket()))
+        {
+
+         if(orderBuff[0][0]==EMPTY)
+           {
+            orderBuff[0][0]=OrderTicket();
+           }
+
+         for(int b=1;b<ArraySize(orderBuff);b++)
+           {
+
+            if(orderBuff[b][0]==EMPTY)
+              {
+               orderBuff[b][0]=OrderTicket();
+               break;
+              }
+
+           }
+        }
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
+         && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
+         && StringFind(OrderComment(),EAName+"_")>0)
+        {
+         for(int e=0;e<ArraySize(orderBuff);e++)
+           {
+            if(IntegerToString(orderBuff[e][0])==StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(OrderTicket()))))
+              {
+               for(int v=1;v<ArrayRange(orderBuff,1);v++)
+                 {
+                  if(orderBuff[e][v]!=EMPTY)
+                    {
+                     orderBuff[e][v]=OrderTicket();
+                    }
+                 }
+              }
+           }
+        }
+     }
+   double currentProfit=0.0;
+   for(int k=0;k<ArraySize(orderBuff);k++)
+     {
+      if(orderBuff[k][0]!=EMPTY)
+        {
+         for(int f=0;f<ArrayRange(orderBuff,1);f++)
+           {
+            if(orderBuff[k][f]!=EMPTY)
+              {
+               for(int d=0;d<OrdersTotal();d++)
+                 {
+                  if(OrderSelect(d,SELECT_BY_POS,MODE_TRADES)
+                     && OrderTicket()==orderBuff[k][f])
+                    {
+                     //calculate positions profit
+                     currentProfit=currentProfit+OrderProfit()+OrderSwap()+OrderCommission();
+                    }
+                 }
+              }
+           }
+        }
+     }
+   double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
+   if(tickValue==0) {tickValue=0.9;}
+   if(currentProfit>tickValue*getTradeDoubleValue(0,6)*PointsToTake)
+     {
+      //close all positions with the same ordernummer and order if PointsToTake*TickValue*Lots are reached
+      for(int k=0;k<ArraySize(orderBuff);k++)
+        {
+         if(orderBuff[k][0]!=EMPTY)
+           {
+            for(int f=0;f<ArrayRange(orderBuff,1);f++)
+              {
+               if(orderBuff[k][f]!=EMPTY)
+                 {
+                  for(int d=0;d<OrdersTotal();d++)
+                    {
+                     if(OrderSelect(d,SELECT_BY_POS,MODE_TRADES)
+                        && OrderTicket()==orderBuff[k][f])
+                       {
+                        bool success;
+                        color col;
+                        int NumRetries=3;
+                        if(OrderType()==OP_BUY || OrderType()==OP_BUYSTOP)
+                           col=Blue;
+                        else
+                           col=Red;
+                        int i=0;
+                        while(i<3)
+                          {
+                           i+=1;
+                           while(IsTradeContextBusy())Sleep(NumRetries*1000);
+                           RefreshRates();
+
+                           Print("Try "+IntegerToString(i)+" : Close "+IntegerToString(OrderTicket()));
+                           success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),99,col);
+                           if(!success)
+                             {
+                              Print("Failed to close order "+IntegerToString(OrderTicket())+" Error code:"+IntegerToString(GetLastError()));
+                              if(i==NumRetries)
+                                 Print("*** Final retry to CLOSE ORDER failed. Close trade manually ***");
+                             }
+                           else
+                              i=NumRetries;
+                          }
+                       }
+                    }
+                 }
+              }
+           }
+        }
+     }
+  }
+//+------------------------------------------------------------------+
+bool hasAlreadyPendings(string symbolName,double openPrice,int orderNumber)
+  {
+   bool res=false;
+   for(int j=0;j<OrdersTotal();j++)
+     {
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
+         &&  OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
+         &&  OrderComment()==EAName+"_"+IntegerToString(orderNumber)
+         && OrderOpenPrice()==openPrice)
+        {
+         res=true;
+         break;
+        }
+     }
+   return res;
   }
 //+------------------------------------------------------------------+
