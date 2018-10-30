@@ -436,6 +436,7 @@ void OnTick()
 //---//
 
    openPendingsForWrongDirectionTrades(Symbol());
+   handleWrongDirectionTrades(Symbol());
 
    int limit=1,err=0;
    bool BUY=false,SELL=false;
@@ -2990,40 +2991,25 @@ void setTradeVarsValues()
      }
   }
 //+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-//+------------------------------------------------------------------+
 int getTradeIntVarValue(int arrayIndex,int valueIndex)
   {
    return tradeIntVarsValues[arrayIndex][valueIndex];
   }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+  
 double getTradeDoubleValue(int arrayIndex,int valueIndex)
   {
    return tradeDoubleVarsValues[arrayIndex][valueIndex];
   }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
 //+------------------------------------------------------------------+  
 int getSymbolArrayIndex(string symbolName)
   {
    int symbolNameIndex=0;
    for(int i=0;i<ArraySize(symbolNameBuffer);i++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
      {
       if(symbolNameBuffer[i]==symbolName) {symbolNameIndex=i;break;}
      }
    return symbolNameIndex;
   }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
 //+------------------------------------------------------------------
 double checkForMod(string symbolName)
   {
@@ -3034,12 +3020,13 @@ double checkForMod(string symbolName)
         {
          if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
            {
-            if(TradeFromSignalToSignal && MakeCloseTradeAlwaysInProfit && ((OrderType()==OP_BUY && OrderStopLoss()<OrderOpenPrice())
-               || (OrderType()==OP_SELL && OrderStopLoss()>OrderOpenPrice())))
+            if(TradeFromSignalToSignal && MakeCloseTradeAlwaysInProfit
+               && ((OrderType()==OP_BUY && OrderStopLoss()<OrderOpenPrice()) || (OrderType()==OP_SELL && OrderStopLoss()>OrderOpenPrice()))
+               && OrderComment()==EAName)
               {
                TrP(symbolName);
               }
-            else if(!TradeFromSignalToSignal)
+            else if(!TradeFromSignalToSignal && OrderComment()==EAName)
               {
                TrP(symbolName);
               }
@@ -3049,9 +3036,6 @@ double checkForMod(string symbolName)
         }
      }
    for(int j=0;j<OrdersTotal();j++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
@@ -3133,17 +3117,24 @@ void openPendingsForWrongDirectionTrades(string symbolName)
          if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
            {
             double point=MarketInfo(symbolName,MODE_POINT);
+            int digits=(int)MarketInfo(symbolName,MODE_DIGITS);
             if(OrderType()==OP_SELL)
               {
                double pbid=MarketInfo(symbolName,MODE_BID);
-               double currentDistance=pbid-OrderOpenPrice();
-               double pendingsCount=currentDistance/PendingOrderAfter;
-               if(OrderOpenPrice()+StepInPoints*Point<pbid)
+               double currentDistance=NormalizeDouble(pbid-OrderOpenPrice(),digits);
+               double pendingsCount=NormalizeDouble(currentDistance/(PendingOrderAfter*point),0);
+               if(OrderOpenPrice()+StepInPoints*point<pbid)
                  {
-                  for(int c=1;c<=pendingsCount;c++)
+                  for(int c=1;c<pendingsCount;c++)
                     {
-                     double sellOpenPrice=OrderOpenPrice()+PendingOrderAfter*c*point;
-                     if(!hasAlreadyPendings(symbolName,sellOpenPrice,OrderTicket()))
+                     double sellOpenPrice=OrderOpenPrice();
+                     if(c==1)
+                       {
+                        sellOpenPrice=sellOpenPrice+PendingOrderAfter*c*point;
+                          }else{
+                        sellOpenPrice=sellOpenPrice+PendingOrderAfter*(c-1)*point;
+                       }
+                     if(!hasAlreadyPendings(symbolName,sellOpenPrice,OrderTicket()) && IsNewBar() && (sellOpenPrice<pbid || sellOpenPrice==pbid))
                        {
                         pendingSell=OrderSend(symbolName,OP_SELLSTOP,getTradeDoubleValue(0,6),sellOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(OrderTicket()),MagicNumber,TimeCurrent()+2592000,Red);
                        }
@@ -3153,14 +3144,20 @@ void openPendingsForWrongDirectionTrades(string symbolName)
             if(OrderType()==OP_BUY)
               {
                double pask=MarketInfo(symbolName,MODE_ASK);
-               double currentDistance=OrderOpenPrice()-pask;
-               double pendingsCount=currentDistance/PendingOrderAfter;
-               if(OrderOpenPrice()-StepInPoints*Point>pask)
+               double currentDistance=NormalizeDouble(OrderOpenPrice()-pask,digits);
+               double pendingsCount=NormalizeDouble(currentDistance/(PendingOrderAfter*point),0);
+               if(OrderOpenPrice()-StepInPoints*point>pask)
                  {
-                  for(int c=1;c<=pendingsCount;c++)
+                  for(int c=1;c<pendingsCount;c++)
                     {
-                     double buyOpenPrice=OrderOpenPrice()-PendingOrderAfter*c*point;
-                     if(!hasAlreadyPendings(symbolName,buyOpenPrice,OrderTicket()))
+                     double buyOpenPrice=OrderOpenPrice();
+                     if(c==1)
+                       {
+                        buyOpenPrice=buyOpenPrice-PendingOrderAfter*c*point;
+                          }else{
+                        buyOpenPrice=buyOpenPrice-PendingOrderAfter*c*point;
+                       }
+                     if(!hasAlreadyPendings(symbolName,buyOpenPrice,OrderTicket()) && IsNewBar() && (buyOpenPrice>pask || buyOpenPrice==pask))
                        {
                         pendingBuy=OrderSend(symbolName,OP_BUYSTOP,getTradeDoubleValue(0,6),buyOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(OrderTicket()),MagicNumber,TimeCurrent()+2592000,Lime);
                        }
@@ -3175,8 +3172,9 @@ void openPendingsForWrongDirectionTrades(string symbolName)
 void handleWrongDirectionTrades(string symbolName)
   {
    bool res=false;
-   int orderBuff[250,250];
-   ArrayResize(orderBuff,250,250);
+   int orderBuff[10,10];
+   int ordersTotal=OrdersTotal();
+   ArrayResize(orderBuff,ordersTotal+50,ordersTotal+50);
    for(int j=0;j<OrdersTotal();j++)
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
@@ -3184,36 +3182,32 @@ void handleWrongDirectionTrades(string symbolName)
          && StringFind(OrderComment(),EAName+"_")>0
          && StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(OrderTicket())))==IntegerToString(OrderTicket()))
         {
-
          if(orderBuff[0][0]==EMPTY)
            {
             orderBuff[0][0]=OrderTicket();
            }
-
          for(int b=1;b<ArraySize(orderBuff);b++)
            {
-
             if(orderBuff[b][0]==EMPTY)
               {
                orderBuff[b][0]=OrderTicket();
-               break;
-              }
 
+              }
            }
         }
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
          && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
          && StringFind(OrderComment(),EAName+"_")>0)
         {
-         for(int e=0;e<ArraySize(orderBuff);e++)
+         for(int e=0;e<ArrayRange(orderBuff,0);e++)
            {
             if(IntegerToString(orderBuff[e][0])==StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(OrderTicket()))))
               {
-               for(int v=1;v<ArrayRange(orderBuff,1);v++)
+               for(int v=0;v<ArrayRange(orderBuff,1);v++)
                  {
-                  if(orderBuff[e][v]!=EMPTY)
+                  if(orderBuff[e][v+1]!=EMPTY)
                     {
-                     orderBuff[e][v]=OrderTicket();
+                     orderBuff[e][v+1]=OrderTicket();
                     }
                  }
               }
@@ -3221,7 +3215,7 @@ void handleWrongDirectionTrades(string symbolName)
         }
      }
    double currentProfit=0.0;
-   for(int k=0;k<ArraySize(orderBuff);k++)
+   for(int k=0;k<ArrayRange(orderBuff,0);k++)
      {
       if(orderBuff[k][0]!=EMPTY)
         {
@@ -3247,18 +3241,20 @@ void handleWrongDirectionTrades(string symbolName)
    if(currentProfit>tickValue*getTradeDoubleValue(0,6)*PointsToTake)
      {
       //close all positions with the same ordernummer and order if PointsToTake*TickValue*Lots are reached
-      for(int k=0;k<ArraySize(orderBuff);k++)
+      for(int k=0;k<ArrayRange(orderBuff,0);k++)
         {
          if(orderBuff[k][0]!=EMPTY)
            {
+          // Print("orderBuff[k][0]="+orderBuff[k][0]);
             for(int f=0;f<ArrayRange(orderBuff,1);f++)
               {
                if(orderBuff[k][f]!=EMPTY)
                  {
+                 Print("orderBuff["+k+"]["+f+"]="+orderBuff[k][f]);
                   for(int d=0;d<OrdersTotal();d++)
                     {
                      if(OrderSelect(d,SELECT_BY_POS,MODE_TRADES)
-                        && OrderTicket()==orderBuff[k][f])
+                        && OrderTicket()==orderBuff[k][f] && OrderComment()!=EAName)
                        {
                         bool success;
                         color col;
@@ -3271,11 +3267,16 @@ void handleWrongDirectionTrades(string symbolName)
                         while(i<3)
                           {
                            i+=1;
-                           while(IsTradeContextBusy())Sleep(NumRetries*1000);
-                           RefreshRates();
+                           //while(IsTradeContextBusy())Sleep(NumRetries*1000);
+                           //RefreshRates();
 
                            Print("Try "+IntegerToString(i)+" : Close "+IntegerToString(OrderTicket()));
-                           success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),99,col);
+                           if(OrderType()==OP_BUYSTOP || OrderType()==OP_SELLSTOP)
+                             {
+                              success=OrderDelete(OrderTicket(),col);
+                                } else {
+                              success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),15,col);
+                             }
                            if(!success)
                              {
                               Print("Failed to close order "+IntegerToString(OrderTicket())+" Error code:"+IntegerToString(GetLastError()));
@@ -3296,7 +3297,6 @@ void handleWrongDirectionTrades(string symbolName)
 //+------------------------------------------------------------------+
 bool hasAlreadyPendings(string symbolName,double openPrice,int orderNumber)
   {
-   bool res=false;
    for(int j=0;j<OrdersTotal();j++)
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
@@ -3304,10 +3304,9 @@ bool hasAlreadyPendings(string symbolName,double openPrice,int orderNumber)
          &&  OrderComment()==EAName+"_"+IntegerToString(orderNumber)
          && OrderOpenPrice()==openPrice)
         {
-         res=true;
-         break;
+         return true;
         }
      }
-   return res;
+   return false;
   }
 //+------------------------------------------------------------------+
