@@ -2134,19 +2134,12 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
            }
         }
         } else {
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
       positionCanBeOpened=true;
      }
    return positionCanBeOpened;
   }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 /*bool PositionCanBeOpened()
   {
    bool positionCanBeOpened=false;
@@ -2292,9 +2285,7 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
      {
       ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
         }else{ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
@@ -2351,12 +2342,8 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectSet("CurrentLoss",OBJPROP_XDISTANCE,5);
       ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,100);
         } else {ObjectDelete("CurrentLoss");
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
+
      }
 
    if(!IsTesting() && trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
@@ -2386,9 +2373,7 @@ int CloseAll()
    int FirstOrderType=0;
 
    for(int index=0; index<OrdersTotal(); index++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      {
       bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
       if(OrderSymbol()==Symbol() && OrderMagicNumber()==MagicNumber)
@@ -2399,9 +2384,7 @@ int CloseAll()
      }
 
    for(int index=numOfOrders-1; index>=0; index--)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      {
       bool oS=OrderSelect(index,SELECT_BY_POS,MODE_TRADES);
 
@@ -2713,9 +2696,7 @@ int getOpenedPositionsForSymbol(string symbolName)
   {
    int cnt=0,OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
@@ -2735,9 +2716,7 @@ int getOpenedBuyPositionsForSymbol(string symbolName)
   {
    int cnt=0,OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
@@ -2757,9 +2736,7 @@ int getOpenedSellPositionsForSymbol(string symbolName)
   {
    int cnt=0,OP=0;
    for(cnt=0;cnt<OrdersTotal();cnt++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
         {
@@ -2860,9 +2837,7 @@ void setTradeVarsValues()
    int tempCountedDecimals,tempStopLevel,tempMarginMode,tempTrailingStep=TrailingStep,tempDistanceStep=DistanceStep;
 
    for(int c=0;c<ArraySize(symbolNameBuffer);c++)
-      //+------------------------------------------------------------------+
-      //|                                                                  |
-      //+------------------------------------------------------------------+
+
      {
       if(symbolNameBuffer[c]!=IntegerToString(EMPTY_VALUE))
         {
@@ -3250,7 +3225,7 @@ void handleWrongDirectionTrades(string symbolName)
               {
                if(orderBuff[k][f]!=EMPTY)
                  {
-                 Print("orderBuff["+k+"]["+f+"]="+orderBuff[k][f]);
+                 if(orderBuff[k][f]==>0)Print("orderBuff["+k+"]["+f+"]="+orderBuff[k][f]);
                   for(int d=0;d<OrdersTotal();d++)
                     {
                      if(OrderSelect(d,SELECT_BY_POS,MODE_TRADES)
@@ -3258,34 +3233,22 @@ void handleWrongDirectionTrades(string symbolName)
                        {
                         bool success;
                         color col;
-                        int NumRetries=3;
                         if(OrderType()==OP_BUY || OrderType()==OP_BUYSTOP)
                            col=Blue;
                         else
                            col=Red;
-                        int i=0;
-                        while(i<3)
-                          {
-                           i+=1;
-                           //while(IsTradeContextBusy())Sleep(NumRetries*1000);
-                           //RefreshRates();
 
                            Print("Try "+IntegerToString(i)+" : Close "+IntegerToString(OrderTicket()));
                            if(OrderType()==OP_BUYSTOP || OrderType()==OP_SELLSTOP)
                              {
                               success=OrderDelete(OrderTicket(),col);
                                 } else {
-                              success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),15,col);
+                              success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),5,col);
                              }
                            if(!success)
                              {
                               Print("Failed to close order "+IntegerToString(OrderTicket())+" Error code:"+IntegerToString(GetLastError()));
-                              if(i==NumRetries)
-                                 Print("*** Final retry to CLOSE ORDER failed. Close trade manually ***");
-                             }
-                           else
-                              i=NumRetries;
-                          }
+                           }
                        }
                     }
                  }
