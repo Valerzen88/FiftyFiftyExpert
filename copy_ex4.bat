@@ -1,0 +1,1 @@
+copy /y C:\Users\Administrator\Documents\FiftyFiftyExpert\AreaFiftyOne.ex4 C:\Users\Administrator\AppData\Roaming\MetaQuotes\Terminal\1DAFD9A7C67DC84FE37EAA1FC1E5CF75\MQL4\Experts\AreaFiftyOne_5.ex4

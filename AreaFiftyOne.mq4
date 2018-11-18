@@ -9,6 +9,8 @@
 #property description "Trades on trend change with different indicators."
 #property strict
 
+#include "Area51.mqh"
+
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 #resource "\\Indicators\\AreaFiftyOne_Trend.ex4"
 //#resource "\\Indicators\\SunTrade\\$hah+.ex4"
@@ -2139,7 +2141,9 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
      }
    return positionCanBeOpened;
   }
-
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 /*bool PositionCanBeOpened()
   {
    bool positionCanBeOpened=false;
@@ -2342,7 +2346,6 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectSet("CurrentLoss",OBJPROP_XDISTANCE,5);
       ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,100);
         } else {ObjectDelete("CurrentLoss");
-
 
      }
 
@@ -3083,58 +3086,65 @@ void openPendingsForWrongDirectionTrades(string symbolName)
 //set a pending order at the price from open price +-PendingOrderAfter
 //with expiry PendingOrderExpiry
 //
+   int ordersCount=OrdersTotal();
    bool pendingSell=false;
    bool pendingBuy=false;
    for(int j=0;j<OrdersTotal();j++)
      {
       if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
         {
-         if(OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
+         if(symbolName==OrderSymbol() && (OrderMagicNumber()==MagicNumber))
            {
             double point=MarketInfo(symbolName,MODE_POINT);
             int digits=(int)MarketInfo(symbolName,MODE_DIGITS);
-            if(OrderType()==OP_SELL)
+            int orderType=OrderType();
+            int orderTicket=OrderTicket();
+            if(orderType==OP_SELL)
               {
                double pbid=MarketInfo(symbolName,MODE_BID);
                double currentDistance=NormalizeDouble(pbid-OrderOpenPrice(),digits);
                double pendingsCount=NormalizeDouble(currentDistance/(PendingOrderAfter*point),0);
-               if(OrderOpenPrice()+StepInPoints*point<pbid)
+               double sellOpenPrice=OrderOpenPrice();
+               if(sellOpenPrice+StepInPoints*point<pbid)
                  {
-                  for(int c=1;c<pendingsCount;c++)
+                  for(int c=0;c<pendingsCount;c++)
                     {
-                     double sellOpenPrice=OrderOpenPrice();
-                     if(c==1)
+                     if(c==0)
                        {
-                        sellOpenPrice=sellOpenPrice+PendingOrderAfter*c*point;
-                          }else{
-                        sellOpenPrice=sellOpenPrice+PendingOrderAfter*(c-1)*point;
+                        sellOpenPrice=sellOpenPrice+(PendingOrderAfter*(c+1))*point;
+                          }else if(sellOpenPrice+StepInPoints*c*point<pbid){
+                        sellOpenPrice=sellOpenPrice+(PendingOrderAfter*c)*point;
                        }
-                     if(!hasAlreadyPendings(symbolName,sellOpenPrice,OrderTicket()) && IsNewBar() && (sellOpenPrice<pbid || sellOpenPrice==pbid))
+                     if(!hasAlreadyPending(symbolName,sellOpenPrice,orderTicket) && IsNewBar())
                        {
-                        pendingSell=OrderSend(symbolName,OP_SELLSTOP,getTradeDoubleValue(0,6),sellOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(OrderTicket()),MagicNumber,TimeCurrent()+2592000,Red);
+                        pendingSell=OrderSend(symbolName,OP_SELLSTOP,getTradeDoubleValue(0,6),sellOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(orderTicket),MagicNumber,TimeCurrent()+2592000,Red);
+                        if(!pendingSell) {Print("Error send sell pending order: "+IntegerToString(GetLastError()));}
+                        else{Print("OrderComment="+EAName+"_"+IntegerToString(orderTicket));}
                        }
                     }
                  }
               }
-            if(OrderType()==OP_BUY)
+            if(orderType==OP_BUY)
               {
                double pask=MarketInfo(symbolName,MODE_ASK);
                double currentDistance=NormalizeDouble(OrderOpenPrice()-pask,digits);
                double pendingsCount=NormalizeDouble(currentDistance/(PendingOrderAfter*point),0);
-               if(OrderOpenPrice()-StepInPoints*point>pask)
+               double buyOpenPrice=OrderOpenPrice();
+               if(buyOpenPrice-StepInPoints*point>pask)
                  {
-                  for(int c=1;c<pendingsCount;c++)
+                  for(int c=0;c<pendingsCount;c++)
                     {
-                     double buyOpenPrice=OrderOpenPrice();
-                     if(c==1)
+                     if(c==0)
                        {
-                        buyOpenPrice=buyOpenPrice-PendingOrderAfter*c*point;
-                          }else{
-                        buyOpenPrice=buyOpenPrice-PendingOrderAfter*c*point;
+                        buyOpenPrice=buyOpenPrice-(PendingOrderAfter*(c+1))*point;
+                          }else if(buyOpenPrice-StepInPoints*c*point<pask){
+                        buyOpenPrice=buyOpenPrice-(PendingOrderAfter*c)*point;
                        }
-                     if(!hasAlreadyPendings(symbolName,buyOpenPrice,OrderTicket()) && IsNewBar() && (buyOpenPrice>pask || buyOpenPrice==pask))
+                     if(!hasAlreadyPending(symbolName,buyOpenPrice,orderTicket) && IsNewBar())
                        {
-                        pendingBuy=OrderSend(symbolName,OP_BUYSTOP,getTradeDoubleValue(0,6),buyOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(OrderTicket()),MagicNumber,TimeCurrent()+2592000,Lime);
+                        pendingBuy=OrderSend(symbolName,OP_BUYSTOP,getTradeDoubleValue(0,6),buyOpenPrice,Slippage,0,0,EAName+"_"+IntegerToString(orderTicket),MagicNumber,TimeCurrent()+2592000,Lime);
+                        if(!pendingBuy) {Print("Error send buy pending order: "+IntegerToString(GetLastError()));}
+                        else{Print("OrderComment="+EAName+"_"+IntegerToString(orderTicket));}
                        }
                     }
                  }
@@ -3146,109 +3156,148 @@ void openPendingsForWrongDirectionTrades(string symbolName)
 //+------------------------------------------------------------------+
 void handleWrongDirectionTrades(string symbolName)
   {
-   bool res=false;
-   int orderBuff[10,10];
+   int orderBuff[1,100];
    int ordersTotal=OrdersTotal();
    ArrayResize(orderBuff,ordersTotal+50,ordersTotal+50);
-   for(int j=0;j<OrdersTotal();j++)
-     {
-      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
-         && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
-         && StringFind(OrderComment(),EAName+"_")>0
-         && StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(OrderTicket())))==IntegerToString(OrderTicket()))
-        {
-         if(orderBuff[0][0]==EMPTY)
-           {
-            orderBuff[0][0]=OrderTicket();
-           }
-         for(int b=1;b<ArraySize(orderBuff);b++)
-           {
-            if(orderBuff[b][0]==EMPTY)
-              {
-               orderBuff[b][0]=OrderTicket();
 
-              }
-           }
-        }
-      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
-         && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
-         && StringFind(OrderComment(),EAName+"_")>0)
+   int allParentList[];
+   for(int i=ordersTotal-1; i>=0; i--)
+     {
+      if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
         {
-         for(int e=0;e<ArrayRange(orderBuff,0);e++)
+         if(OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber)
            {
-            if(IntegerToString(orderBuff[e][0])==StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(OrderTicket()))))
+            int orderTicket=OrderTicket();
+            if(StringFind(OrderComment(),EAName+"_")>-1)
               {
-               for(int v=0;v<ArrayRange(orderBuff,1);v++)
+               int parentTicket=(int)(StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(orderTicket))));
+               if(fniGetElementIndex(allParentList,parentTicket)==-1)
                  {
-                  if(orderBuff[e][v+1]!=EMPTY)
-                    {
-                     orderBuff[e][v+1]=OrderTicket();
-                    }
+                  ArrayResize(allParentList,ArrayRange(allParentList,0)+1);
+                  allParentList[ArrayRange(allParentList,0)-1]=parentTicket;
+                  Print("parentTicket="+parentTicket);
                  }
               }
            }
         }
      }
+
+   for(int c=0;c<ArraySize(allParentList);c++)
+     {
+      for(int j=ordersTotal-1; j>=0; j--)
+        {
+         if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+           {
+            int orderTicket=OrderTicket();
+            if(StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(allParentList[c])))==IntegerToString(allParentList[c]))
+              {
+               if(orderBuff[c][0]!=allParentList[c])
+                 {
+                  Print("setParentTicket="+allParentList[c]);
+                  orderBuff[c][0]=allParentList[c];
+                    } else {
+                  for(int t=1;t<ArrayRange(orderBuff,1);t++)
+                    {
+                     if(orderBuff[c][t]<1)
+                       {
+                        Print("orderBuff[curr]="+orderBuff[c][t]);
+                        orderBuff[c][t]=orderTicket;
+                       }
+                    }
+                 }
+               //Print("orderBuff_Dim_2_size="+ArrayResize(orderBuff,ArrayRange(orderBuff,1)+1,ArrayRange(orderBuff,1)+1));
+               //Print("orderBuff_Dim_2_size="+(ArrayRange(orderBuff,1)));
+               //orderBuff[c][ArrayRange(orderBuff,1)-1]=orderTicket;
+               //Print("orderBuff[0]="+orderBuff[c][0]);
+               //Print("orderBuff[curr]="+orderBuff[c][ArrayRange(orderBuff,1)-1]);
+              }
+           }
+        }
+     }
+
+/*for(int j=0;j<ordersTotal;j++)
+     {
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
+         && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber)
+        {
+         int orderTicket=OrderTicket();
+         if(StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(orderTicket)))==IntegerToString(orderTicket))
+           {
+            for(int b=0;b<ArrayRange(orderBuff,1);b++)
+              {
+               if(orderBuff[b][0]==EMPTY)
+                 {
+                  orderBuff[b][0]=orderTicket;
+                  break;
+                 }
+              }
+            continue;
+           }
+         for(int e=0;e<ArrayRange(orderBuff,0);e++)
+           {
+            if(IntegerToString(orderBuff[e][0])==StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(orderTicket))))
+              {
+               for(int v=1;v<ArrayRange(orderBuff,1);v++)
+                 {
+                  if(orderBuff[e][v]==EMPTY)
+                    {
+                     orderBuff[e][v]=orderTicket;
+                    }
+                 }
+              }
+           }
+        }
+     }*/
+
    double currentProfit=0.0;
    for(int k=0;k<ArrayRange(orderBuff,0);k++)
      {
-      if(orderBuff[k][0]!=EMPTY)
+      for(int f=0;f<ArrayRange(orderBuff,1);f++)
+        {
+         //Print("orderBuff[k][f]="+orderBuff[k][f]);
+         if(orderBuff[k][f]>0)
+           {
+            if(OrderSelect(orderBuff[k][f],SELECT_BY_TICKET,MODE_TRADES))
+              {
+               //calculate positions profit
+               currentProfit=currentProfit+OrderProfit()+OrderSwap()+OrderCommission();
+              }
+           }
+        }
+     }
+   currentProfit=NormalizeDouble(currentProfit,2);
+   double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
+   if(tickValue==0) {tickValue=0.9;}
+   double pointsToTakeInMoney=NormalizeDouble(tickValue*getTradeDoubleValue(0,6)*PointsToTake,2);
+   if(currentProfit>0 && currentProfit>pointsToTakeInMoney)
+     {
+      //close all positions with the same ordernummer and order if PointsToTake*TickValue*Lots are reached
+      for(int k=0;k<ArrayRange(orderBuff,0);k++)
         {
          for(int f=0;f<ArrayRange(orderBuff,1);f++)
            {
             if(orderBuff[k][f]!=EMPTY)
               {
-               for(int d=0;d<OrdersTotal();d++)
+               for(int c=0;c<OrdersTotal();c++) 
                  {
-                  if(OrderSelect(d,SELECT_BY_POS,MODE_TRADES)
-                     && OrderTicket()==orderBuff[k][f])
+                  if(OrderSelect(c,SELECT_BY_POS,MODE_TRADES) && OrderTicket()==orderBuff[k][f])
                     {
-                     //calculate positions profit
-                     currentProfit=currentProfit+OrderProfit()+OrderSwap()+OrderCommission();
-                    }
-                 }
-              }
-           }
-        }
-     }
-   double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
-   if(tickValue==0) {tickValue=0.9;}
-   if(currentProfit>tickValue*getTradeDoubleValue(0,6)*PointsToTake)
-     {
-      //close all positions with the same ordernummer and order if PointsToTake*TickValue*Lots are reached
-      for(int k=0;k<ArrayRange(orderBuff,0);k++)
-        {
-         if(orderBuff[k][0]!=EMPTY)
-           {
-          // Print("orderBuff[k][0]="+orderBuff[k][0]);
-            for(int f=0;f<ArrayRange(orderBuff,1);f++)
-              {
-               if(orderBuff[k][f]!=EMPTY)
-                 {
-                 if(orderBuff[k][f]==>0)Print("orderBuff["+k+"]["+f+"]="+orderBuff[k][f]);
-                  for(int d=0;d<OrdersTotal();d++)
-                    {
-                     if(OrderSelect(d,SELECT_BY_POS,MODE_TRADES)
-                        && OrderTicket()==orderBuff[k][f] && OrderComment()!=EAName)
+                     bool success;
+                     color col;
+                     if(OrderType()==OP_BUY || OrderType()==OP_BUYSTOP)
+                        col=Blue;
+                     else
+                        col=Red;
+                     Print("Try to close "+IntegerToString(OrderTicket()));
+                     if(OrderType()==OP_BUYSTOP || OrderType()==OP_SELLSTOP)
                        {
-                        bool success;
-                        color col;
-                        if(OrderType()==OP_BUY || OrderType()==OP_BUYSTOP)
-                           col=Blue;
-                        else
-                           col=Red;
-
-                           Print("Try "+IntegerToString(i)+" : Close "+IntegerToString(OrderTicket()));
-                           if(OrderType()==OP_BUYSTOP || OrderType()==OP_SELLSTOP)
-                             {
-                              success=OrderDelete(OrderTicket(),col);
-                                } else {
-                              success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),5,col);
-                             }
-                           if(!success)
-                             {
-                              Print("Failed to close order "+IntegerToString(OrderTicket())+" Error code:"+IntegerToString(GetLastError()));
-                           }
+                        success=OrderDelete(orderBuff[k][f],col);
+                          } else {
+                        success=OrderClose(orderBuff[k][f],OrderLots(),OrderClosePrice(),5,col);
+                       }
+                     if(!success)
+                       {
+                        Print("Failed to close order "+IntegerToString(OrderTicket())+" Error code:"+IntegerToString(GetLastError()));
                        }
                     }
                  }
@@ -3258,18 +3307,41 @@ void handleWrongDirectionTrades(string symbolName)
      }
   }
 //+------------------------------------------------------------------+
-bool hasAlreadyPendings(string symbolName,double openPrice,int orderNumber)
+bool hasAlreadyPending(string symbolName,double openPrice,int orderNumber)
   {
-   for(int j=0;j<OrdersTotal();j++)
+   bool res=false;
+   for(int z=0;z<OrdersTotal();z++)
      {
-      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
-         &&  OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
-         &&  OrderComment()==EAName+"_"+IntegerToString(orderNumber)
-         && OrderOpenPrice()==openPrice)
+      if(OrderSelect(z,SELECT_BY_POS,MODE_TRADES))
         {
-         return true;
+         if(OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
+            && StringFind(OrderComment(),EAName+"_"+IntegerToString(orderNumber))>-1
+            && NormalizeDouble(OrderOpenPrice(),5)==NormalizeDouble(openPrice,5))
+           {
+            res=true;
+            break;
+           }
         }
      }
-   return false;
+   return res;
+  }
+//+------------------------------------------------------------------+
+//Function to return the index (position) of viValue within a given array
+int fniGetElementIndex(int &vaiArray[],int viValue)
+  {
+   int   viElementCount = ArrayRange(vaiArray, 0); //Get the total number of elements within that array.
+   int   viFoundAt = -1;                           //The element index where viValue is found within the array.
+
+                                                   //Loop through every element in vaiArray
+   for(int viElement=0; viElement<viElementCount; viElement++)
+     {
+      if(vaiArray[viElement]==viValue)
+        {
+         //If the element value is the same as viValue, then FOUND, break the for loop.
+         viFoundAt=viElement;
+         break;
+        }
+     }
+   return( viFoundAt );
   }
 //+------------------------------------------------------------------+
