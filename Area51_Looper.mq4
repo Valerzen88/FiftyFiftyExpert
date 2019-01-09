@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2018 VBApps::Valeri Balachnin"
 #property version   "1.0"
-#property description "Utility for."
+#property description "Utility for handling wrong direction trades."
 #property strict
 
 #include "Area51_Lib.mqh"
@@ -38,9 +38,14 @@ extern string   ListOfSelectedSymbols="EURUSD;USDJPY;GBPUSD";
 extern string   ListOfSelectedTimeframesForSymbols="H1;H4;D1";
 extern bool     TradeFromSignalToSignal=false;
 extern static string OrderHandling="-------------------";
-extern bool     openReverseOrders=false;
+extern bool     OpenReverseOrders=false;
 extern int      MaxPositions=5;
 extern double   MultipleFaktor=1.7;
+extern bool     HandleReverseTrading=true;
+extern int      StepInPoints=500;
+extern int      PendingOrderAfter=250;
+extern int      PendingOrderExpiry=30;
+extern int      PointsToTake=100;
 extern static string UsingEAOnDifferentTimeframes="-------------------";
 extern int      MagicNumber=513537;
 
@@ -73,6 +78,9 @@ double CurrentLoss=0;
 double TP=TakeProfit,SL=StopLoss;
 double SLI=0,TPI=0;
 int numBars=0;
+int listSellOrders[];
+int listBuyOrders[];
+string EAName="Area51_Looper";
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -160,8 +168,80 @@ int OnInit()
 void OpenPosition() {
 
 
-
 }
+
+void foundAllWrongTrades(string symbolName) {
+   bool pendingSell=false;
+   bool pendingBuy=false;
+   int ordersCount=OrdersTotal();
+   for(int i=0;i<ordersCount;i++) {
+      if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)) {
+         double point=MarketInfo(symbolName,MODE_POINT);
+            int digits=(int)MarketInfo(symbolName,MODE_DIGITS);
+            int orderType=OrderType();
+            int orderTicket=OrderTicket();
+            if(orderType==OP_BUY) {
+            if(fniGetElementIndex(listBuyOrders,orderTicket)==-1)
+                 {
+                  ArrayResize(listBuyOrders,ArrayRange(listBuyOrders,0)+1);
+                  listBuyOrders[ArrayRange(listBuyOrders,0)-1]=orderTicket;
+                 }
+                 double pask=MarketInfo(symbolName,MODE_ASK);
+               double currentDistance=NormalizeDouble(OrderOpenPrice()-pask,digits);
+               double pendingsCount=NormalizeDouble(currentDistance/(PendingOrderAfter*point),0);
+               double buyOpenPrice=OrderOpenPrice();
+               if(buyOpenPrice-StepInPoints*point>pask)
+                 {
+                  for(int c=0;c<pendingsCount;c++)
+                    {
+                     if(c==0)
+                       {
+                        buyOpenPrice=buyOpenPrice-(PendingOrderAfter*(c+1))*point;
+                          }else if(buyOpenPrice-StepInPoints*c*point<pask){
+                        buyOpenPrice=buyOpenPrice-(PendingOrderAfter*c)*point;
+                       }
+                     if(!hasAlreadyPending(symbolName,buyOpenPrice,orderTicket) && IsNewBar())
+                       {
+                        pendingBuy=OrderSend(symbolName,OP_BUYSTOP,getTradeDoubleValue(0,6),buyOpenPrice,Slippage,0,0,EAName+"_BUY",MagicNumber,TimeCurrent()+2592000,Lime);
+                        if(!pendingBuy) {Print("Error send buy pending order: "+IntegerToString(GetLastError()));}
+                        else{Print("OrderComment="+EAName+"_"+IntegerToString(orderTicket));}
+                       }
+                    }
+                 }
+            }
+            if(orderType==OP_SELL) {
+            double pbid=MarketInfo(symbolName,MODE_BID);
+               double currentDistance=NormalizeDouble(pbid-OrderOpenPrice(),digits);
+               double pendingsCount=NormalizeDouble(currentDistance/(PendingOrderAfter*point),0);
+               double sellOpenPrice=OrderOpenPrice();
+               if(sellOpenPrice+StepInPoints*point<pbid)
+                 {
+                  for(int c=0;c<pendingsCount;c++)
+                    {
+                     if(c==0)
+                       {
+                        sellOpenPrice=sellOpenPrice+(PendingOrderAfter*(c+1))*point;
+                          }else if(sellOpenPrice+StepInPoints*c*point<pbid){
+                        sellOpenPrice=sellOpenPrice+(PendingOrderAfter*c)*point;
+                       }
+                     if(!hasAlreadyPending(symbolName,sellOpenPrice,orderTicket) && IsNewBar())
+                       {
+                        pendingSell=OrderSend(symbolName,OP_SELLSTOP,getTradeDoubleValue(0,6),sellOpenPrice,Slippage,0,0,EAName+"_SELL",MagicNumber,TimeCurrent()+2592000,Red);
+                        if(!pendingSell) {Print("Error send sell pending order: "+IntegerToString(GetLastError()));}
+                        else{Print("OrderComment="+EAName+"_"+IntegerToString(orderTicket));}
+                       }
+                    }
+                 }
+            if(fniGetElementIndex(listSellOrders,orderTicket)==-1)
+                 {
+                  ArrayResize(listSellOrders,ArrayRange(listSellOrders,0)+1);
+                  listSellOrders[ArrayRange(listSellOrders,0)-1]=orderTicket;
+                 }
+            }
+      }
+   }
+}
+
 
 //+------------------------------------------------------------------+
 void setAllForTradeAvailableSymbols()
@@ -363,18 +443,28 @@ bool IsNewBar()
      }
    return(false);
   }
-
 //+------------------------------------------------------------------+
-  bool CheckMoneyForTrade(string symb,double lots,int type)
-    {
-     double free_margin=AccountFreeMarginCheck(symb,type,lots);
-  //-- wenn es Geldmittel nicht ausreichend sind
-     if(free_margin<0)
-       {
-        string oper=(type==OP_BUY)? "Buy":"Sell";
-        Print("Not enough money for ",oper," ",lots," ",symb," Error code=",GetLastError());
-        return(false);
-       }
-  //-- die Überprüfung ist erfolgreich gelaufen
-     return(true);
-    }
+int getContractProfitCalcMode(string symbolName)
+  {
+   int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
+   return profitCalcMode;
+  }
+ //+------------------------------------------------------------------+
+bool hasAlreadyPending(string symbolName,double openPrice,int orderNumber)
+  {
+   bool res=false;
+   for(int z=0;z<OrdersTotal();z++)
+     {
+      if(OrderSelect(z,SELECT_BY_POS,MODE_TRADES))
+        {
+         if(OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
+            && StringFind(OrderComment(),EAName+"_"+IntegerToString(orderNumber))>-1
+            && NormalizeDouble(OrderOpenPrice(),5)==NormalizeDouble(openPrice,5))
+           {
+            res=true;
+            break;
+           }
+        }
+     }
+   return res;
+  } 

@@ -1,11 +1,15 @@
-
-
 //+------------------------------------------------------------------+
-int getContractProfitCalcMode(string symbolName)
-  {
-   int profitCalcMode=(int)MarketInfo(symbolName,MODE_PROFITCALCMODE);
-   return profitCalcMode;
-  }
+//|                                                   Area51_Lib.mqh |
+//|                                           Copyright 2018, VBApps |
+//|                                                https://vbapps.co |
+//+------------------------------------------------------------------+
+#property copyright "Copyright 2018, VBApps"
+#property link      "https://vbapps.co"
+#property strict
+
+#define SLIPPAGE              5
+#define NO_ERROR              1
+#define AT_LEAST_ONE_FAILED   2
 
 //+------------------------------------------------------------------+
 bool CheckMoneyForTrade(string symb,double lots,int type)
@@ -313,3 +317,50 @@ bool CurrentCandleHasNoOpenedTrades(string symbolName)
      }
    return positionCanBeOpened;
   }
+//+------------------------------------------------------------------+
+//Function to return the index (position) of viValue within a given array
+int fniGetElementIndex(int &vaiArray[],int viValue)
+  {
+   int   viElementCount = ArrayRange(vaiArray, 0); //Get the total number of elements within that array.
+   int   viFoundAt = -1;                           //The element index where viValue is found within the array.
+
+                                                   //Loop through every element in vaiArray
+   for(int viElement=0; viElement<viElementCount; viElement++)
+     {
+      if(vaiArray[viElement]==viValue)
+        {
+         //If the element value is the same as viValue, then FOUND, break the for loop.
+         viFoundAt=viElement;
+         break;
+        }
+     }
+   return( viFoundAt );
+  }
+//+------------------------------------------------------------------+
+double getTempLoss() {
+double TempLoss=0;
+for(int j=0;j<OrdersTotal();j++)
+     {
+      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES))
+        {
+         if(TradeOnAllSymbols && OrderMagicNumber()==MagicNumber)
+           {
+            TempLoss=TempLoss+OrderProfit();
+           }
+         else if(!TradeOnAllSymbols && OrderSymbol()==Symbol() && (OrderMagicNumber()==MagicNumber))
+           {
+            TempLoss=TempLoss+OrderProfit();
+           }
+        }
+     }
+     return TempLoss;
+}
+//+------------------------------------------------------------------+
+bool tradingAllowed() {
+ bool TradingAllowed=false;
+   if((StartHour>-1 && EndHour<24) && (((Hour()>StartHour) || (Hour()==StartHour)) && (Hour()<EndHour || Hour()==EndHour)))
+     {
+      TradingAllowed=true;
+     }
+   return TradingAllowed;
+}
