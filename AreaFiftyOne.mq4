@@ -9,16 +9,13 @@
 #property description "Trades on trend change with different indicators."
 #property strict
 
-#include "Area51.mqh"
+#include "Area51_Lib.mqh"
 
 #resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
 #resource "\\Indicators\\AreaFiftyOne_Trend.ex4"
 #resource "\\Indicators\\MagicTrend.ex4"
 #resource "\\Indicators\\HMA_Color.ex4"
-
-#define SLIPPAGE              5
-#define NO_ERROR              1
-#define AT_LEAST_ONE_FAILED   2
+#resource "\\Indicators\\Heiken_Ashi_Smoothed.ex4"
 
 #define   SIGNAL_BUY          1
 #define   SIGNAL_SELL         -1
@@ -95,6 +92,8 @@ extern bool     UseMagicTrendStrategy=false;
 extern int      CCPeriod=120;
 extern static string HMAStrategy="-------------------";
 extern bool     UseHMAStrategy=false;
+extern static string SmoothedStrategy="-------------------";
+extern bool     UseSmoothedStrategy=false;
 //extern static string LongTermJourneyToSunriseStrategy="-------------------";
 bool     UseLongTermJourneyToSunriseStrategy=false;
 bool     Use2ndLevelSignals=false;
@@ -180,6 +179,7 @@ double SLI=0,TPI=0;
 string EAName="AreaFiftyOne";
 string IndicatorName="AreaFiftyOneIndicator";
 string IndicatorName2="AreaFiftyOne_Trend";
+string IndicatorName7="Heiken_Ashi_Smoothed";
 string IndicatorName8="MagicTrend";
 string IndicatorName9="HMA_Color";
 int handle_ind;
@@ -257,12 +257,12 @@ int OnInit()
            {
             Alert("You can use the expert advisor only on accountNumber="+IntegerToString(rentAccountNumber)+" and accountName="+rentCustomerName);
             Alert("Current accountNumber="+IntegerToString(AccountNumber())+" && accountName="+AccountName());
-            Alert("Please contact the vendor at info@vbapps.co for more information.")
+            Alert("Please contact the vendor at info@vbapps.co for more information.");
             return(INIT_FAILED);
            }
         }
      }
-   HideTestIndicators(true);
+   //HideTestIndicators(true);
    if(UseRSIBasedIndicator)
      {
       handle_ind=0;
@@ -300,6 +300,16 @@ int OnInit()
       if(handle_ind9==INVALID_HANDLE)
         {
          Print("Expert: iCustom call_9: Error code=",GetLastError());
+         return(INIT_FAILED);
+        }
+     }
+   if(UseSmoothedStrategy)
+     {
+      int handle_ind7=0;
+      handle_ind7=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName7+".ex4",110,0,3,false,0,0);
+      if(handle_ind7==INVALID_HANDLE)
+        {
+         Print("Expert: iCustom call_7: Error code=",GetLastError());
          return(INIT_FAILED);
         }
      }
@@ -348,7 +358,8 @@ void OnTick()
    int limit=1,err=0;
    bool BUY=false,SELL=false;
 //SellFlag=false;BuyFlag=false;
-  bool CheckForSignal;
+   bool CheckForSignal;
+   bool TradingAllowed=tradingAllowed();
 //SERIES_LASTBAR_DATE?
    if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
    if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades(Symbol())) {CheckForSignal=true;}
@@ -567,6 +578,21 @@ void OnTick()
               }
            }
         }
+      if(UseSmoothedStrategy)
+        {
+         if(TradeOnAllSymbols)
+           {
+            generateSignalsAndPositions("smoothed");
+              } else {
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"smoothed");
+            if(signalStr=="Sell")
+              {
+               SellFlag=true;
+                 } else if(signalStr=="Buy"){
+               BuyFlag=true;
+              }
+           }
+        }
       if(UseMagicSymphonieStrategy)
         {
          if(TradeOnAllSymbols)
@@ -750,7 +776,7 @@ void OpenPosition(string symbolName,int OP,int OSC,int OBC,int OS,int OB,bool Lo
                Print("OpenPositionFun-Control Point 4 passed...");
                if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,SLI,TPI) && CheckVolumeValue(symbolName,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]))
                  {
-                  Print("OpenPositionFun-Control Point 5 passed... Try to open sell trade!");
+                  Print("OpenPositionFun-Control Point 5 passed... Try to open buy trade!");
                   TicketNrBuy=OrderSend(symbolName,OP_BUY,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],MarketInfo(symbolName,MODE_ASK),Slippage,SLI,TPI,EAName,MagicNumber,0,Lime);OB=0;
                   if(TicketNrBuy<0)
                     {Print(EAName+" => OrderSend Error: "+IntegerToString(GetLastError()));}
@@ -1318,9 +1344,26 @@ Sell
         }
         */
      }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+   if(strategyName=="smoothed")
+     {
+      int EMA_period=14;
+      double smoothed2 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",2,0),digits);
+      double smoothed3 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,0),digits);
+      double smoothed3Prev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,1),digits);
+      double eMACurr=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,0),digits);
+      double eMAPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,1),digits);
+
+      if(smoothed3<eMACurr && smoothed3Prev>eMAPrev)
+        {
+         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+        }
+      if(smoothed3>eMACurr && smoothed3Prev<eMAPrev)
+        {
+         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+        }
+     }
    if(strategyName=="adx50")
      {
       double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,5,MODE_PLUSDI,0),digits);
@@ -1807,68 +1850,6 @@ Sell
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-bool CurrentCandleHasNoOpenedTrades(string symbolName)
-  {
-   bool positionCanBeOpened=false;
-   int currentAlreadyOpenedPositions=0;
-   if(OrdersTotal()>0)
-     {
-      for(int cnt=0;cnt<OrdersTotal();cnt++)
-        {
-         if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
-           {
-            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==symbolName && (OrderMagicNumber()==MagicNumber))
-              {
-               if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
-                 {
-                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
-                    {
-                     positionCanBeOpened=false;
-                       }else{
-                     positionCanBeOpened=true;
-                    }
-                 }
-               if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
-                 {
-                  if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
-                    {
-                     positionCanBeOpened=false;
-                       }else{
-                     positionCanBeOpened=true;
-                    }
-                 }
-
-               if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
-                 {
-                  if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
-                    {
-                     positionCanBeOpened=false;
-                       }else{
-                     positionCanBeOpened=true;
-                    }
-                 }
-
-               if(Period()==PERIOD_MN1)
-                 {
-                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
-                    {
-                     positionCanBeOpened=false;
-                       }else{
-                     positionCanBeOpened=true;
-                    }
-                 }
-              }
-           }
-        }
-        } else {
-
-      positionCanBeOpened=true;
-     }
-   return positionCanBeOpened;
-  }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
 /*bool PositionCanBeOpened()
   {
    bool positionCanBeOpened=false;
@@ -2068,33 +2049,6 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    if(!IsTesting() && trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
    if(!IsTesting() && rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
   }
-//+------------------------------------------------------------------+
-int getTicketCurrentType(int TicketNr)
-  {
-   int result=-1;
-   if(OrderSelect(TicketNr,SELECT_BY_TICKET,MODE_TRADES))
-     {
-      result=OrderType();
-     }
-   return result;
-  }
-//+------------------------------------------------------------------+
-//| Überprüft - ob noch ein Order gesetzt werden kann               |
-//+------------------------------------------------------------------+
-bool IsNewOrderAllowed()
-  {
-//--- Bekommen die Anzahl der erlaubten Pending Orders am Konto
-   int max_allowed_orders=(int)AccountInfoInteger(ACCOUNT_LIMIT_ORDERS);
-
-//---  wenn es keine Beschränkungen gibt - geben true zurück, man kann auch Order absenden
-   if(max_allowed_orders==0) return(true);
-
-//--- wenn es bis zu dieser Stelle angekommen ist, bedeutet dies, dass eine Beschränkung gibt, wie viel Order schon gelten
-   int orders=OrdersTotal();
-
-//--- geben wir das Ergebnis des Vergleiches zurück
-   return(orders<max_allowed_orders);
-  }
 //+------------------------------------------------------------------+  
 int getContractProfitCalcMode(string symbolName)
   {
@@ -2133,50 +2087,6 @@ bool OrderModifyCheck(string symbol,int ticket,double price,double sl,double tp)
      }
 //--- kommen bis zu Ende, Änderungen für die Order nicht gibt
    return(false);       // es gibt keinen Sinn, zu modifizieren 
-  }
-//+------------------------------------------------------------------+
-bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,double TPT)
-  {
-   int stops_level=(int)SymbolInfoInteger(symbolName,SYMBOL_TRADE_STOPS_LEVEL);
-   if(stops_level!=0)
-     {
-      PrintFormat("SYMBOL_TRADE_STOPS_LEVEL=%d: StopLoss and TakeProfit must be"+
-                  " less %d points from close price",stops_level,stops_level);
-     }
-   bool SLT_check=false,TPT_check=false;
-   switch(type)
-     {
-      case  ORDER_TYPE_BUY:
-        {
-         SLT_check=(MarketInfo(symbolName,MODE_BID)-SLT>stops_level*MarketInfo(symbolName,MODE_POINT));
-         if(!SLT_check)
-            PrintFormat("For order %s StopLoss=%.5f must be less than %.5f"+
-                        " (Bid=%.5f - SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),SLT,MarketInfo(symbolName,MODE_BID)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
-         TPT_check=(TPT-MarketInfo(symbolName,MODE_BID)>stops_level*MarketInfo(symbolName,MODE_POINT));
-         if(!TPT_check)
-            PrintFormat("For order %s TakeProfit=%.5f must be greater than %.5f"+
-                        " (Bid=%.5f + SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),TPT,MarketInfo(symbolName,MODE_BID)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
-         return(SLT_check&&TPT_check);
-        }
-      case  ORDER_TYPE_SELL:
-        {
-         SLT_check=(SLT-MarketInfo(symbolName,MODE_ASK)>stops_level*MarketInfo(symbolName,MODE_POINT));
-         if(!SLT_check)
-            PrintFormat("For order %s StopLoss=%.5f must be greater than %.5f "+
-                        " (Ask=%.5f + SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),SLT,MarketInfo(symbolName,MODE_ASK)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
-         TPT_check=(MarketInfo(symbolName,MODE_ASK)-TPT>stops_level*MarketInfo(symbolName,MODE_POINT));
-         if(!TPT_check)
-            PrintFormat("For order %s TakeProfit=%.5f must be less than %.5f "+
-                        " (Ask=%.5f - SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),TPT,MarketInfo(symbolName,MODE_ASK)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
-         return(TPT_check&&SLT_check);
-        }
-      break;
-     }
-   return false;
   }
 //+------------------------------------------------------------------+
 int getOpenedPositionsForSymbol(string symbolName)
@@ -2549,7 +2459,7 @@ void createNotifications(string symbolName,string direction,int period,string ad
    if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
    if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
    if(SendNotificationToPhone){SendNotification(direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS))+" -> Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+") with "+strategyName+" strategy");}
-
+   if(ShowAlertBox) {Alert("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+") "+strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
   }
 //+------------------------------------------------------------------+
 void openPendingsForWrongDirectionTrades(string symbolName)
@@ -2753,7 +2663,7 @@ void handleWrongDirectionTrades(string symbolName)
            {
             if(orderBuff[k][f]!=EMPTY)
               {
-               for(int c=0;c<OrdersTotal();c++) 
+               for(int c=0;c<OrdersTotal();c++)
                  {
                   if(OrderSelect(c,SELECT_BY_POS,MODE_TRADES) && OrderTicket()==orderBuff[k][f])
                     {
