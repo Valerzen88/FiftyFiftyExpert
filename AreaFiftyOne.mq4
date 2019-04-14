@@ -34,7 +34,7 @@ extern double   LotSize=0.01;
 //extern static string LotRiskPercent_Comment="Available in the full version!";
 //extern static string MoneyRiskInPercent_Comment="Available in the full version!";
 extern bool     LotAutoSize=false;
-extern int      LotRiskPercent=25;
+extern double   LotRiskPercent=25;
 extern static string MoneyManagement="Set MM settings here";
 extern int      MoneyRiskInPercent=0;
 extern double   MaxDynamicLotSize=0.0;
@@ -94,6 +94,9 @@ extern static string HMAStrategy="-------------------";
 extern bool     UseHMAStrategy=false;
 extern static string SmoothedStrategy="-------------------";
 extern bool     UseSmoothedStrategy=false;
+extern bool     SmoothedWithADX=false;
+extern static string SimpleMAsStrategy="-------------------";
+extern bool     UseSimpleMAsStrategy=false;
 //extern static string LongTermJourneyToSunriseStrategy="-------------------";
 bool     UseLongTermJourneyToSunriseStrategy=false;
 bool     Use2ndLevelSignals=false;
@@ -105,7 +108,7 @@ bool     UseMagicSymphonieStrategy=false;
 //extern static string SolarWindStrategy="-------------------";
 bool     UseSolarWindStrategy=false;
 extern static string HandleLostPositionsHint="-------------------";
-extern bool     HandleLostPositions=true;
+extern bool     HandleLostPositions=false;
 extern int      StepInPoints=500;
 extern int      PendingOrderAfter=250;
 extern int      PendingOrderExpiry=30;
@@ -147,8 +150,8 @@ bool DebugTrace=false;
 /*licence*/
 bool trial_lic=false;
 datetime expiryDate=D'2018.12.01 00:00';
-bool rent_lic=false;
-datetime rentExpiryDate=D'2019.12.01 00:00';
+bool rent_lic=true;
+datetime rentExpiryDate=D'2020.01.01 00:00';
 int rentAccountNumber=0;
 string rentCustomerName="";
 /*licence_end*/
@@ -262,7 +265,7 @@ int OnInit()
            }
         }
      }
-   //HideTestIndicators(true);
+//HideTestIndicators(true);
    if(UseRSIBasedIndicator)
      {
       handle_ind=0;
@@ -352,13 +355,16 @@ void OnTick()
         }
      }
 
-   openPendingsForWrongDirectionTrades(Symbol());
-   handleWrongDirectionTrades(Symbol());
+   if(HandleLostPositions)
+     {
+      openPendingsForWrongDirectionTrades(Symbol());
+      handleWrongDirectionTrades(Symbol());
+     }
 
    int limit=1,err=0;
    bool BUY=false,SELL=false;
 //SellFlag=false;BuyFlag=false;
-   bool CheckForSignal;
+   bool CheckForSignal=false;
    bool TradingAllowed=tradingAllowed();
 //SERIES_LASTBAR_DATE?
    if(HandleOnCandleOpenOnly && Volume[0]==1) {CheckForSignal=true;} else {CheckForSignal=false;}
@@ -366,7 +372,7 @@ void OnTick()
 
 //double TempTDIGreen=0,TempTDIRed=0;
 //HideTestIndicators(true);
-   if(TradingAllowed && CheckForSignal)
+   if(TradingAllowed==true && CheckForSignal==true)
      {
       if(UseRSIBasedIndicator)
         {
@@ -593,6 +599,21 @@ void OnTick()
               }
            }
         }
+      if(UseSimpleMAsStrategy)
+        {
+         if(TradeOnAllSymbols)
+           {
+            generateSignalsAndPositions("simpleMAs");
+              } else {
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"simpleMAs");
+            if(signalStr=="Sell")
+              {
+               SellFlag=true;
+                 } else if(signalStr=="Buy"){
+               BuyFlag=true;
+              }
+           }
+        }
       if(UseMagicSymphonieStrategy)
         {
          if(TradeOnAllSymbols)
@@ -610,10 +631,6 @@ void OnTick()
         }
      }
 //HideTestIndicators(false);
-   if(SellFlag==true || BuyFlag==true)
-     {
-      //Print("Signal from one of  strategies!");
-     }
    if(HandleUserPositions && !TradeOnAllSymbols){HandleUserPositionsFun();}
 
 //conditions to close positions
@@ -638,12 +655,12 @@ void OnTick()
         }
       if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
       //entry conditions verification
-      if(SellFlag==true){OS=1;OB=0;}if(BuyFlag==true){OB=1;OS=0;}
+      if(SellFlag==true){OS=1;OB=0;SellFlag=false;}if(BuyFlag==true){OB=1;OS=0;BuyFlag=false;}
       LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[0][4];
       RemainingLotSize=tradeDoubleVarsValues[0][4];
       countRemainingMaxLots=(int)tradeDoubleVarsValues[0][3];
       MaxLot=tradeDoubleVarsValues[0][2];
-      if(OB==1 || OS==1)
+      if((OB==1 || OS==1) && TradingAllowed)
         {
          //Print("Signal from one of  strategies! Control Point 0!..");
          OpenPosition(Symbol(),OP,OSC,OBC,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
@@ -1346,19 +1363,55 @@ Sell
      }
    if(strategyName=="smoothed")
      {
-      int EMA_period=14;
+      int EMA_period=6;
+      double adxDPlus,adxDMinus,adxLineCurr;
+      bool adxLine,adxPlusMinus,adxMinusPlus;
       double smoothed2 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",2,0),digits);
       double smoothed3 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,0),digits);
       double smoothed3Prev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,1),digits);
-      double eMACurr=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,0),digits);
-      double eMAPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,1),digits);
+      double eMACurr=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_SMA,PRICE_CLOSE,0),digits);
+      double eMAPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_SMA,PRICE_CLOSE,1),digits);
+      if(SmoothedWithADX)
+        {
+         adxLineCurr=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,0),digits);
+         adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_PLUSDI,0),digits);
+         adxDMinus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MINUSDI,0),digits);
+         adxLine=adxLineCurr>20.0;
+         adxPlusMinus=adxDPlus>adxDMinus;
+         adxMinusPlus=adxDPlus<adxDMinus;
+           } else {
+         adxLine=true;
+         adxPlusMinus=true;
+         adxMinusPlus=true;
+        }
+      if(adxLine)
+        {
+         if(adxPlusMinus && smoothed3<eMACurr && smoothed3Prev>eMAPrev)
+           {
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+           }
+         if(adxMinusPlus && smoothed3>eMACurr && smoothed3Prev<eMAPrev)
+           {
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           }
+        }
+     }
+   if(strategyName=="simpleMAs")
+     {
+      int MA_period1=6,MA_period2=12;
+      double eMACurr1=NormalizeDouble(iMA(symbolName,symbolTimeframe,MA_period1,0,MODE_EMA,PRICE_CLOSE,0),digits);
+      double eMAPrev1=NormalizeDouble(iMA(symbolName,symbolTimeframe,MA_period1,0,MODE_EMA,PRICE_CLOSE,1),digits);
+      double eMACurr2=NormalizeDouble(iMA(symbolName,symbolTimeframe,MA_period2,0,MODE_EMA,PRICE_TYPICAL,0),digits);
+      double eMAPrev2=NormalizeDouble(iMA(symbolName,symbolTimeframe,MA_period2,0,MODE_EMA,PRICE_TYPICAL,1),digits);
 
-      if(smoothed3<eMACurr && smoothed3Prev>eMAPrev)
+      if(eMACurr1>eMACurr2 && eMAPrev1<eMAPrev2)
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
-      if(smoothed3>eMACurr && smoothed3Prev<eMAPrev)
+      if(eMACurr1<eMACurr2 && eMAPrev1>eMAPrev2)
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
@@ -2278,7 +2331,7 @@ void setTradeVarsValues()
            {
             int Faktor=100;
             if(AccountLeverage()<100)Faktor=Faktor*100;
-            if(LotRiskPercent<0.1 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
+            if(LotRiskPercent<0.001 || LotRiskPercent>1000){Comment("Invalid Risk Value.");}
             else
               {
                if(getContractProfitCalcMode(symbolNameBuffer[c])==0 || (tempMarginMode==0 && compareContractSizes))
