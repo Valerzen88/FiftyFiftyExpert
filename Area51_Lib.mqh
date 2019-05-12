@@ -36,6 +36,14 @@ bool CompareDoubles(double number1,double number2)
 //+------------------------------------------------------------------+
 bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,double TPT)
   {
+  return CheckStopLoss_Takeprofit_End(0, 0.0, symbolName,type,SLT,TPT);
+  }
+bool CheckStopLoss_Takeprofit(int orderTicket,double orderOpenPrice,string symbolName,ENUM_ORDER_TYPE type,double SLT,double TPT)
+  {
+  return CheckStopLoss_Takeprofit_End(orderTicket,orderOpenPrice,symbolName,type,SLT,TPT);
+  }
+bool CheckStopLoss_Takeprofit_End(int orderTicket,double orderOpenPrice,string symbolName,ENUM_ORDER_TYPE type,double SLT,double TPT)
+  {
    int stops_level=(int)SymbolInfoInteger(symbolName,SYMBOL_TRADE_STOPS_LEVEL);
    if(stops_level!=0)
      {
@@ -49,28 +57,28 @@ bool CheckStopLoss_Takeprofit(string symbolName,ENUM_ORDER_TYPE type,double SLT,
         {
          SLT_check=(MarketInfo(symbolName,MODE_BID)-SLT>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!SLT_check)
-            PrintFormat("For order %s StopLoss=%.5f must be less than %.5f"+
+            PrintFormat("For order nr. %i and OpenPrice=%.5f %s StopLoss=%.5f must be less than %.5f"+
                         " (Bid=%.5f - SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),SLT,MarketInfo(symbolName,MODE_BID)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
+                        orderTicket,orderOpenPrice,EnumToString(type),SLT,MarketInfo(symbolName,MODE_BID)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
          TPT_check=(TPT-MarketInfo(symbolName,MODE_BID)>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!TPT_check)
-            PrintFormat("For order %s TakeProfit=%.5f must be greater than %.5f"+
+            PrintFormat("For order nr. %i and OpenPrice=%.5f %s TakeProfit=%.5f must be greater than %.5f"+
                         " (Bid=%.5f + SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),TPT,MarketInfo(symbolName,MODE_BID)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
+                        orderTicket,orderOpenPrice,EnumToString(type),TPT,MarketInfo(symbolName,MODE_BID)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_BID),stops_level);
          return(SLT_check&&TPT_check);
         }
       case  ORDER_TYPE_SELL:
         {
          SLT_check=(SLT-MarketInfo(symbolName,MODE_ASK)>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!SLT_check)
-            PrintFormat("For order %s StopLoss=%.5f must be greater than %.5f "+
+            PrintFormat("For order nr. %i and OpenPrice=%.5f %s StopLoss=%.5f must be greater than %.5f "+
                         " (Ask=%.5f + SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),SLT,MarketInfo(symbolName,MODE_ASK)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
+                        orderTicket,orderOpenPrice,EnumToString(type),SLT,MarketInfo(symbolName,MODE_ASK)+stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
          TPT_check=(MarketInfo(symbolName,MODE_ASK)-TPT>stops_level*MarketInfo(symbolName,MODE_POINT));
          if(!TPT_check)
-            PrintFormat("For order %s TakeProfit=%.5f must be less than %.5f "+
+            PrintFormat("For order nr. %i and OpenPrice=%.5f %s TakeProfit=%.5f must be less than %.5f "+
                         " (Ask=%.5f - SYMBOL_TRADE_STOPS_LEVEL=%d points)",
-                        EnumToString(type),TPT,MarketInfo(symbolName,MODE_ASK)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
+                        orderTicket,orderOpenPrice,EnumToString(type),TPT,MarketInfo(symbolName,MODE_ASK)-stops_level*MarketInfo(symbolName,MODE_POINT),MarketInfo(symbolName,MODE_ASK),stops_level);
          return(TPT_check&&SLT_check);
         }
       break;
