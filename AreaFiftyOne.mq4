@@ -6,7 +6,7 @@
 
 #property copyright "Copyright © 2019 VBApps::Valeri Balachnin"
 #property version   "5.1"
-#property description "Trades on trend change with different indicators."
+#property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
 #include "Area51_Lib.mqh"
@@ -16,6 +16,7 @@
 #resource "\\Indicators\\MagicTrend.ex4"
 #resource "\\Indicators\\HMA_Color.ex4"
 #resource "\\Indicators\\Heiken_Ashi_Smoothed.ex4"
+#resource "\\Indicators\\Improved_CCI.ex4"
 
 #define   SIGNAL_BUY          1
 #define   SIGNAL_SELL         -1
@@ -98,8 +99,10 @@ extern bool     SmoothedWithADX=false;
 extern double   DistanceForPending=0.0;
 extern static string SimpleMAsStrategy="-------------------";
 extern bool     UseSimpleMAsStrategy=false;
+extern bool     UseCCIAverageFiltering=false;
 extern static string CCIAverageStrategy="-------------------";
 extern bool     UseCCIAverageStrategy=false;
+//do not use this strategy!!! is garbage!
 //extern static string LongTermJourneyToSunriseStrategy="-------------------";
 bool     UseLongTermJourneyToSunriseStrategy=false;
 bool     Use2ndLevelSignals=false;
@@ -231,9 +234,7 @@ int OnInit()
          default: DistanceForPending=50;break;
         }
      }
-   Print("DistanceForPending0="+DistanceForPending+";point="+MarketInfo(Symbol(),MODE_POINT));
    DistanceForPending=DistanceForPending*MarketInfo(Symbol(),MODE_POINT);
-   Print("DistanceForPending="+DistanceForPending);
 
    numBars=Bars;
 
@@ -833,11 +834,9 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
                   if(strategyName=="smoothed")
                     {
                      double smoothed3_blue_pending_o_price=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,0),(int)MarketInfo(symbolName,MODE_DIGITS))-DistanceForPending;
-                     Print("smoothed3_blue_pending_o_price="+smoothed3_blue_pending_o_price+";currentPrice="+MarketInfo(symbolName,MODE_BID));
                      if(NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)<NormalizeDouble(smoothed3_blue_pending_o_price,5))
                        {
                         smoothed3_blue_pending_o_price=MarketInfo(symbolName,MODE_BID)+DistanceForPending;
-                        Print("smoothed3_blue_pending_o_price2="+smoothed3_blue_pending_o_price);
                        }
                      //Add pending orders instead of market orders
                      TicketNrSell=OrderSend(symbolName,OP_SELLSTOP,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6],smoothed3_blue_pending_o_price,Slippage,SLI,TPI,EAName,MagicNumber,0,Red);OS=0;
@@ -878,7 +877,6 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
                   if(strategyName=="smoothed")
                     {
                      double smoothed2_red_pending_o_price=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",2,0),(int)MarketInfo(symbolName,MODE_DIGITS))+DistanceForPending;
-                     Print("smoothed2_red_pending_o_price="+smoothed2_red_pending_o_price);
                      if(NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)>NormalizeDouble(smoothed2_red_pending_o_price,5))
                        {
                         smoothed2_red_pending_o_price=MarketInfo(symbolName,MODE_ASK)+DistanceForPending;
@@ -1499,15 +1497,33 @@ Sell
       double eMACurr2=NormalizeDouble(iMA(symbolName,symbolTimeframe,MA_period2,0,MODE_EMA,PRICE_TYPICAL,0),digits);
       double eMAPrev2=NormalizeDouble(iMA(symbolName,symbolTimeframe,MA_period2,0,MODE_EMA,PRICE_TYPICAL,1),digits);
 
-      if(eMACurr1>eMACurr2 && eMAPrev1<eMAPrev2)
+      if(UseCCIAverageFiltering)
         {
-         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
-         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
-        }
-      if(eMACurr1<eMACurr2 && eMAPrev1>eMAPrev2)
-        {
-         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
-         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+         double averageCCI=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,0),digits);
+         double averageCCIPrev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,1),digits);
+         Print("averageCCI="+averageCCI);
+         Print("averageCCI1="+averageCCIPrev);
+         if(eMACurr1>eMACurr2 && eMAPrev1<eMAPrev2 && averageCCI<0.0)
+           {
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+           }
+         if(eMACurr1<eMACurr2 && eMAPrev1>eMAPrev2 && averageCCIPrev>0.0)
+           {
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           }
+           }else{
+         if(eMACurr1>eMACurr2 && eMAPrev1<eMAPrev2)
+           {
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+           }
+         if(eMACurr1<eMACurr2 && eMAPrev1>eMAPrev2)
+           {
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           }
         }
      }
    if(strategyName=="cciaverage")
