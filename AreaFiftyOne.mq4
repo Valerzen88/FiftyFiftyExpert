@@ -102,6 +102,7 @@ extern bool     UseSimpleMAsStrategy=false;
 extern bool     UseCCIAverageFiltering=false;
 extern static string CCIAverageStrategy="-------------------";
 extern bool     UseCCIAverageStrategy=false;
+extern double   CCISignalValue=150.0;
 //do not use this strategy!!! is garbage!
 //extern static string LongTermJourneyToSunriseStrategy="-------------------";
 bool     UseLongTermJourneyToSunriseStrategy=false;
@@ -341,7 +342,7 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
-   if(UseCCIAverageStrategy)
+   /*if(UseCCIAverageStrategy)
      {
       int handle_ind10=0;
       handle_ind10=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName10+".ex4",0,0);
@@ -350,7 +351,7 @@ int OnInit()
          Print("Expert: iCustom call_10: Error code=",GetLastError());
          return(INIT_FAILED);
         }
-     }
+     }*/
 // HideTestIndicators(false);
 //---
    return(INIT_SUCCEEDED);
@@ -819,7 +820,7 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
       Print("OpenPositionFun-Control Point 1 passed...");
       if(OnlySell==true && !(AccountFreeMarginCheck(symbolName,OP_SELL,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
         {
-         Print("OpenPositionFun-Control Point 2 for SELL passed...");
+         Print("OpenPositionFun-Control Point 2 for SELL passed... OS="+OS+";OSC="+OSC);
          if(OS==1 && OSC<MaxConcurrentOpenedOrders)
            {
             Print("OpenPositionFun-Control Point 3 passed...");
@@ -860,7 +861,7 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
               }
            }
         }
-      else if(OnlyBuy==true && !(AccountFreeMarginCheck(Symbol(),OP_BUY,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
+      if(OnlyBuy==true && !(AccountFreeMarginCheck(Symbol(),OP_BUY,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
         {
          Print("OpenPositionFun-Control Point 2 for BUY passed...");
          if(OB==1 && OBC<MaxConcurrentOpenedOrders)
@@ -1501,8 +1502,6 @@ Sell
         {
          double averageCCI=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,0),digits);
          double averageCCIPrev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,1),digits);
-         Print("averageCCI="+averageCCI);
-         Print("averageCCI1="+averageCCIPrev);
          if(eMACurr1>eMACurr2 && eMAPrev1<eMAPrev2 && averageCCI<0.0)
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
@@ -1531,16 +1530,13 @@ Sell
       double averageCCI=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,0),digits);
       double averageCCIPrev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,1),digits);
       double averageCCIPrev2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,2),digits);
-      Print("averageCCI="+averageCCI);
-      Print("averageCCI1="+averageCCIPrev);
-      Print("averageCCI2="+averageCCIPrev2);
-      if(averageCCIPrev<-150.0 && averageCCI>-150.0)
+      if(NormalizeDouble(averageCCIPrev,digits)<NormalizeDouble(-CCISignalValue,digits) && NormalizeDouble(averageCCI,digits)>NormalizeDouble(-CCISignalValue,digits))
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
 
-      if(averageCCIPrev>150.0 && averageCCI<150.0)
+      if(NormalizeDouble(averageCCIPrev,digits)>NormalizeDouble(CCISignalValue,digits) && NormalizeDouble(averageCCI,digits)<NormalizeDouble(CCISignalValue,digits))
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
