@@ -352,7 +352,7 @@ int OnInit()
          return(INIT_FAILED);
         }
      }*/
-// HideTestIndicators(false);
+ HideTestIndicators(false);
 //---
    return(INIT_SUCCEEDED);
   }
@@ -407,7 +407,7 @@ void OnTick()
    if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades(Symbol())) {CheckForSignal=true;}
 
 //double TempTDIGreen=0,TempTDIRed=0;
-//HideTestIndicators(true);
+HideTestIndicators(true);
    string strategyName="";
    if(TradingAllowed==true && CheckForSignal==true)
      {
