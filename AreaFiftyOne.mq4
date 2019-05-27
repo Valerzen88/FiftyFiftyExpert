@@ -988,7 +988,7 @@ void HandleUserPositionsFun()
                   || ((OrderStopLoss()<OrderOpenPrice()) || OrderStopLoss()==0)))
                  {
                   if(TP==0)TPI=0;else TPI=OrderOpenPrice()+TP*Point;if(SL==0)SLI=OrderOpenPrice()-10000*Point;else SLI=OrderOpenPrice()-SL*Point;
-                  if(OrderModifyCheck(Symbol(),OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(Symbol(),ORDER_TYPE_BUY,SLI,TPI))
+                  if(OrderModifyCheck(Symbol(),OrderTicket(),OrderOpenPrice(),SLI,TPI) && CheckStopLoss_Takeprofit(OrderTicket(),OrderOpenPrice(),Symbol(),ORDER_TYPE_BUY,SLI,TPI))
                     {
                      if(OrderTakeProfit()!=TPI && ((OrderStopLoss()>SLI && OrderOpenPrice()>OrderStopLoss()) || OrderStopLoss()==0))
                        {
@@ -1123,14 +1123,14 @@ void ModSL(string symbolName,double ldSL)
      {
       if(OrderType()==OP_BUY)
         {
-         if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_BUY,ldSL,OrderTakeProfit()))
+         if(CheckStopLoss_Takeprofit(OrderTicket(),OrderOpenPrice(),symbolName,ORDER_TYPE_BUY,ldSL,OrderTakeProfit()))
            {
             bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
         }
       if(OrderType()==OP_SELL)
         {
-         if(CheckStopLoss_Takeprofit(symbolName,ORDER_TYPE_SELL,ldSL,OrderTakeProfit()))
+         if(CheckStopLoss_Takeprofit(OrderTicket(),OrderOpenPrice(),symbolName,ORDER_TYPE_SELL,ldSL,OrderTakeProfit()))
            {
             bool fm;fm=OrderModify(OrderTicket(),OrderOpenPrice(),ldSL,OrderTakeProfit(),0,Red);
            }
