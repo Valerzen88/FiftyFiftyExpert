@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2019 VBApps::Valeri Balachnin"
-#property version   "5.1"
+#property version   "5.3"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
@@ -58,7 +58,7 @@ extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
-extern bool     UseRSIBasedIndicator=false;
+extern bool     UseRSIBasedIndicator=true;
 //extern bool     UseADXWithBaseLine=false;
 extern bool     UseCorridorCroosing=false;
 extern static string MACD_ADX_MA_Strategy="-------------------";
@@ -69,7 +69,7 @@ extern static string ADX_RSI_MA_Strategy="-------------------";
 extern bool     Use5050Strategy=false;
 extern bool     UseMAOn5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
-extern bool     UseStochRSICroosingStrategy=true;
+extern bool     UseStochRSICroosingStrategy=false;
 extern static string UseNightAsianBlockStrategy="-------------------";;
 extern bool     UseNightAsianBlock=false;
 extern int      GapFromBlock=60;
@@ -158,7 +158,7 @@ bool DebugTrace=false;
 bool trial_lic=false;
 datetime expiryDate=D'2018.12.01 00:00';
 bool rent_lic=false;
-datetime rentExpiryDate=D'2020.01.01 00:00';
+datetime rentExpiryDate=D'2019.12.31 00:00';
 int rentAccountNumber=0;
 string rentCustomerName="";
 /*licence_end*/
@@ -820,7 +820,7 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
       Print("OpenPositionFun-Control Point 1 passed...");
       if(OnlySell==true && !(AccountFreeMarginCheck(symbolName,OP_SELL,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
         {
-         Print("OpenPositionFun-Control Point 2 for SELL passed... OS="+OS+";OSC="+OSC);
+         Print("OpenPositionFun-Control Point 2 for SELL passed... OS="+IntegerToString(OS)+";OSC="+IntegerToString(OSC));
          if(OS==1 && OSC<MaxConcurrentOpenedOrders)
            {
             Print("OpenPositionFun-Control Point 3 passed...");
@@ -2322,7 +2322,9 @@ void generateSignalsAndPositions(string strategyName)
      {
       if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
         {
-         int symbolTimeframe=getTimeframeFromString(symbolTimeframeBuffer[x]);
+        int symbolTimeframe=_Period;
+         if(TradeOnlyListOfSelectedSymbols)
+            symbolTimeframe=getTimeframeFromString(symbolTimeframeBuffer[x]);
          string signalStr=getSignalForCurrencyAndStrategy(symbolNameBuffer[x],symbolTimeframe,strategyName);
          if(signalStr!="noSignal")
            {
@@ -2736,7 +2738,7 @@ void handleWrongDirectionTrades(string symbolName)
                  {
                   ArrayResize(allParentList,ArrayRange(allParentList,0)+1);
                   allParentList[ArrayRange(allParentList,0)-1]=parentTicket;
-                  Print("parentTicket="+parentTicket);
+                  //Print("parentTicket="+parentTicket);
                  }
               }
            }
@@ -2754,14 +2756,14 @@ void handleWrongDirectionTrades(string symbolName)
               {
                if(orderBuff[c][0]!=allParentList[c])
                  {
-                  Print("setParentTicket="+allParentList[c]);
+                  //Print("setParentTicket="+allParentList[c]);
                   orderBuff[c][0]=allParentList[c];
                     } else {
                   for(int t=1;t<ArrayRange(orderBuff,1);t++)
                     {
                      if(orderBuff[c][t]<1)
                        {
-                        Print("orderBuff[curr]="+orderBuff[c][t]);
+                        //Print("orderBuff[curr]="+orderBuff[c][t]);
                         orderBuff[c][t]=orderTicket;
                        }
                     }
