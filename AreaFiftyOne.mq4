@@ -9,14 +9,16 @@
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
-#include "Area51_Lib.mqh"
-
-#resource "\\Indicators\\AreaFiftyOneIndicator.ex4"
-#resource "\\Indicators\\AreaFiftyOne_Trend.ex4"
-#resource "\\Indicators\\MagicTrend.ex4"
-#resource "\\Indicators\\HMA_Color.ex4"
-#resource "\\Indicators\\Heiken_Ashi_Smoothed.ex4"
-#resource "\\Indicators\\Improved_CCI.ex4"
+#define nd2(_val) NormalizeDouble(_val,2)
+#define nd(_val)  NormalizeDouble(_val,_Digits)
+#include <Area51_Lib.mqh>
+#define INDPATH "Indicators\\"
+#resource "\\"+INDPATH+"AreaFiftyOneIndicator.ex4"
+#resource "\\"+INDPATH+"AreaFiftyOne_Trend.ex4"
+#resource "\\"+INDPATH+"MagicTrend.ex4"
+#resource "\\"+INDPATH+"HMA_Color.ex4"
+#resource "\\"+INDPATH+"Heiken_Ashi_Smoothed.ex4"
+#resource "\\"+INDPATH+"Improved_CCI.ex4"
 
 #define   SIGNAL_BUY          1
 #define   SIGNAL_SELL         -1
@@ -69,7 +71,7 @@ extern static string ADX_RSI_MA_Strategy="-------------------";
 extern bool     Use5050Strategy=false;
 extern bool     UseMAOn5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
-extern bool     UseStochRSICroosingStrategy=false;
+extern bool     UseStochRSICroosingStrategy=true;
 extern static string UseNightAsianBlockStrategy="-------------------";;
 extern bool     UseNightAsianBlock=false;
 extern int      GapFromBlock=60;
@@ -158,7 +160,7 @@ bool DebugTrace=false;
 bool trial_lic=false;
 datetime expiryDate=D'2018.12.01 00:00';
 bool rent_lic=false;
-datetime rentExpiryDate=D'2019.12.31 00:00';
+datetime rentExpiryDate=D'2020.01.01 00:00';
 int rentAccountNumber=0;
 string rentCustomerName="";
 /*licence_end*/
@@ -295,7 +297,7 @@ int OnInit()
    if(UseRSIBasedIndicator)
      {
       handle_ind=0;
-      //handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName+".ex4",0,0);
+      //handle_ind=(int)iCustom(_Symbol,_Period,"::"+INDPATH+""+IndicatorName+".ex4",0,0);
       //if(handle_ind==INVALID_HANDLE)
       //{
       // Print("Expert: iCustom call: Error code=",GetLastError());
@@ -305,7 +307,7 @@ int OnInit()
    if(UseTrendIndicator)
      {
       handle_ind=0;
-      handle_ind=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0);
+      handle_ind=(int)iCustom(_Symbol,_Period,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,0,0);
       if(handle_ind==INVALID_HANDLE)
         {
          Print("Expert: iCustom call_2: Error code=",GetLastError());
@@ -315,7 +317,7 @@ int OnInit()
    if(UseMagicTrendStrategy)
      {
       int handle_ind8=0;
-      handle_ind8=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName8+".ex4",0,0);
+      handle_ind8=(int)iCustom(_Symbol,_Period,"::"+INDPATH+""+IndicatorName8+".ex4",0,0);
       if(handle_ind8==INVALID_HANDLE)
         {
          Print("Expert: iCustom call_8: Error code=",GetLastError());
@@ -325,7 +327,7 @@ int OnInit()
    if(UseHMAStrategy)
      {
       int handle_ind9=0;
-      handle_ind9=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,0);
+      handle_ind9=(int)iCustom(_Symbol,_Period,"::"+INDPATH+""+IndicatorName9+".ex4",110,0,3,false,0,0);
       if(handle_ind9==INVALID_HANDLE)
         {
          Print("Expert: iCustom call_9: Error code=",GetLastError());
@@ -335,24 +337,24 @@ int OnInit()
    if(UseSmoothedStrategy)
      {
       int handle_ind7=0;
-      handle_ind7=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName7+".ex4",0,0);
+      handle_ind7=(int)iCustom(_Symbol,_Period,"::"+INDPATH+""+IndicatorName7+".ex4",0,0);
       if(handle_ind7==INVALID_HANDLE)
         {
          Print("Expert: iCustom call_7: Error code=",GetLastError());
          return(INIT_FAILED);
         }
      }
-   /*if(UseCCIAverageStrategy)
+/*if(UseCCIAverageStrategy)
      {
       int handle_ind10=0;
-      handle_ind10=(int)iCustom(_Symbol,_Period,"::Indicators\\"+IndicatorName10+".ex4",0,0);
+      handle_ind10=(int)iCustom(_Symbol,_Period,"::"+INDPATH+""+IndicatorName10+".ex4",0,0);
       if(handle_ind10==INVALID_HANDLE)
         {
          Print("Expert: iCustom call_10: Error code=",GetLastError());
          return(INIT_FAILED);
         }
      }*/
- HideTestIndicators(false);
+   HideTestIndicators(false);
 //---
    return(INIT_SUCCEEDED);
   }
@@ -407,7 +409,7 @@ void OnTick()
    if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades(Symbol())) {CheckForSignal=true;}
 
 //double TempTDIGreen=0,TempTDIRed=0;
-HideTestIndicators(true);
+   HideTestIndicators(true);
    string strategyName="";
    if(TradingAllowed==true && CheckForSignal==true)
      {
@@ -834,7 +836,7 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
                   Print("OpenPositionFun-Control Point 5 passed... Try to open sell trade!");
                   if(strategyName=="smoothed")
                     {
-                     double smoothed3_blue_pending_o_price=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,0),(int)MarketInfo(symbolName,MODE_DIGITS))-DistanceForPending;
+                     double smoothed3_blue_pending_o_price=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName7+".ex4",3,0),(int)MarketInfo(symbolName,MODE_DIGITS))-DistanceForPending;
                      if(NormalizeDouble(MarketInfo(symbolName,MODE_BID),5)<NormalizeDouble(smoothed3_blue_pending_o_price,5))
                        {
                         smoothed3_blue_pending_o_price=MarketInfo(symbolName,MODE_BID)+DistanceForPending;
@@ -877,7 +879,7 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
                   Print("OpenPositionFun-Control Point 5 passed... Try to open buy trade!");
                   if(strategyName=="smoothed")
                     {
-                     double smoothed2_red_pending_o_price=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",2,0),(int)MarketInfo(symbolName,MODE_DIGITS))+DistanceForPending;
+                     double smoothed2_red_pending_o_price=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName7+".ex4",2,0),(int)MarketInfo(symbolName,MODE_DIGITS))+DistanceForPending;
                      if(NormalizeDouble(MarketInfo(symbolName,MODE_ASK),5)>NormalizeDouble(smoothed2_red_pending_o_price,5))
                        {
                         smoothed2_red_pending_o_price=MarketInfo(symbolName,MODE_ASK)+DistanceForPending;
@@ -1213,6 +1215,7 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
    BuyFlag=false;
    string additionalText;
    int digits=(int)MarketInfo(symbolName,MODE_DIGITS);
+   Print(strategyName);
 
    if(strategyName=="ichimoku")
      {
@@ -1262,7 +1265,6 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
 - SenkouSpanA < SenkouSpanB
 - SenkouSpanA > Preis || SenkouSpanB > Preis
 - SL -> Tief der letzten 34 Kerzen
-
 Sell
 - ADX(21/4) > 20
 - -DI > +DI
@@ -1270,7 +1272,6 @@ Sell
 - SenkouSpanA > SenkouSpanB
 - SenkouSpanA > Preis || SenkouSpanB > Preis
 - SL -> Hoch der letzten 34 Kerzen
-
 */
 
         }
@@ -1317,14 +1318,14 @@ Sell
       double adxDPlusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_PLUSDI,1),digits);
       double adxDMinusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MINUSDI,1),digits);
 
-      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,0),digits);
-      double hmaPrevSlow2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,2,1),digits);
-      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,1),digits);
-      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,2),digits);
-      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,0),digits);
-      double hmaPrevSlow4=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,4,1),digits);
-      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,1),digits);
-      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,2),digits);
+      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,0),digits);
+      double hmaPrevSlow2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,2,1),digits);
+      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,1),digits);
+      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,2),digits);
+      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,0),digits);
+      double hmaPrevSlow4=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,4,1),digits);
+      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,1),digits);
+      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,2),digits);
 
       double eMACurr=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,0),digits);
       double eMAPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,1),digits);
@@ -1384,7 +1385,6 @@ Sell
       //closing conditions
       // || (adxDPlus<adxDMinus && adxDPlusPrev>adxDMinusPrev)
       if((((hmaCurrSlow1!=EMPTY_VALUE && currBid<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currBid<hmaCurrSlow3))
-
          ||(((hmaCurrSlow1!=EMPTY_VALUE && (eMACurr<hmaCurrSlow1)) || (hmaCurrSlow3!=EMPTY_VALUE && (eMACurr<hmaCurrSlow3)))
          && ((hmaPrevSlow1!=EMPTY_VALUE && (eMACurr>hmaPrevSlow1)) || (hmaPrevSlow3!=EMPTY_VALUE && (eMACurr>hmaPrevSlow3)))))
          && BuyOpened && IsNewBar())
@@ -1422,7 +1422,6 @@ Sell
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
-
       if(hmaCurrSlow3!=EMPTY_VALUE && (hmaCurrSlow1==EMPTY_VALUE && (hmaPrevSlow3==EMPTY_VALUE || hmaPrev2Slow3==EMPTY_VALUE)))
         {
          if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
@@ -1458,9 +1457,9 @@ Sell
       int EMA_period=6;
       double adxDPlus,adxDMinus,adxLineCurr;
       bool adxLine,adxPlusMinus,adxMinusPlus;
-      double smoothed2 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",2,0),digits);
-      double smoothed3 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,0),digits);
-      double smoothed3Prev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName7+".ex4",3,1),digits);
+      double smoothed2 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName7+".ex4",2,0),digits);
+      double smoothed3 = NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName7+".ex4",3,0),digits);
+      double smoothed3Prev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName7+".ex4",3,1),digits);
       double eMACurr=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_SMA,PRICE_CLOSE,0),digits);
       double eMAPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_SMA,PRICE_CLOSE,1),digits);
       if(SmoothedWithADX)
@@ -1500,8 +1499,8 @@ Sell
 
       if(UseCCIAverageFiltering)
         {
-         double averageCCI=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,0),digits);
-         double averageCCIPrev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,1),digits);
+         double averageCCI=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName10+".ex4",24,32,49,5,2,0,0),digits);
+         double averageCCIPrev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName10+".ex4",24,32,49,5,2,0,1),digits);
          if(eMACurr1>eMACurr2 && eMAPrev1<eMAPrev2 && averageCCI<0.0)
            {
             if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
@@ -1527,9 +1526,9 @@ Sell
      }
    if(strategyName=="cciaverage")
      {
-      double averageCCI=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,0),digits);
-      double averageCCIPrev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,1),digits);
-      double averageCCIPrev2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName10+".ex4",24,32,49,5,2,0,2),digits);
+      double averageCCI=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName10+".ex4",24,32,49,5,2,0,0),digits);
+      double averageCCIPrev=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName10+".ex4",24,32,49,5,2,0,1),digits);
+      double averageCCIPrev2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName10+".ex4",24,32,49,5,2,0,2),digits);
       if(NormalizeDouble(averageCCIPrev,digits)<NormalizeDouble(-CCISignalValue,digits) && NormalizeDouble(averageCCI,digits)>NormalizeDouble(-CCISignalValue,digits))
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
@@ -1563,10 +1562,10 @@ Sell
      }
    if(strategyName=="magicTrend")
      {
-      double lastValueLow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName8+".ex4",1,0), digits);
-      double prevValueLow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName8+".ex4",1,1), digits);
-      double lastValueHigh=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName8+".ex4",0,0), digits);
-      double prevValueHigh=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName8+".ex4",0,1), digits);
+      double lastValueLow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName8+".ex4",1,0), digits);
+      double prevValueLow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName8+".ex4",1,1), digits);
+      double lastValueHigh=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName8+".ex4",0,0), digits);
+      double prevValueHigh=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName8+".ex4",0,1), digits);
       if(lastValueLow>prevValueLow)
         {
          if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
@@ -1768,15 +1767,15 @@ Sell
 //+------------------------------------------------------------------+
    if(strategyName=="trendy")
      {
-      double Trend=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
-      double TrendBack=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,1),1);
-      double TrendBack2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,0,2),1);
-      double MA=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,0),1);
-      double MABack=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,1),1);
-      double MABack2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,1,2),1);
-      double MA_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,0),1);
-      double MABack_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,1),1);
-      double MABack2_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName2+".ex4",7575,Smoothing,2,2),1);
+      double Trend=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,0,0),1);
+      double TrendBack=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,0,1),1);
+      double TrendBack2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,0,2),1);
+      double MA=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,1,0),1);
+      double MABack=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,1,1),1);
+      double MABack2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,1,2),1);
+      double MA_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,2,0),1);
+      double MABack_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,2,1),1);
+      double MABack2_Second=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName2+".ex4",7575,Smoothing,2,2),1);
 
       if(Debug)
         {
@@ -1923,16 +1922,16 @@ Sell
    if(strategyName=="tdi")
      {
       int i=0;
-      double TDIGreen=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
-      double TDIGreenPrevious=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
-      double TDIYellow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i),digits);
-      double TDIYellowPrevous=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1),digits);
-      double TDIRedPrevous=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1),digits);
-      double TDIRed=NormalizeDouble(iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i),digits);
-      // double TDIUp=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
-      // double TDIDown=iCustom(Symbol(),0,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
-      double TSL2=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
-      double TSL2Previous=iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
+      double TDIGreen=iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i);
+      double TDIGreenPrevious=iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,4,i+1);
+      double TDIYellow=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i),digits);
+      double TDIYellowPrevous=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,2,i+1),digits);
+      double TDIRedPrevous=NormalizeDouble(iCustom(Symbol(),0,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i+1),digits);
+      double TDIRed=NormalizeDouble(iCustom(Symbol(),0,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,5,i),digits);
+      // double TDIUp=iCustom(Symbol(),0,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,1,i);
+      // double TDIDown=iCustom(Symbol(),0,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,3,i);
+      double TSL2=iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i);
+      double TSL2Previous=iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName+".ex4",RSI_Period,RSI_Price,Volatility_Band,RSI_Price_Line,RSI_Price_Type,Trade_Signal_Line,Trade_Signal_Line2,Trade_Signal_Type,6,i+1);
 
       double adxLineCurr=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,i),digits);
       double adxDPlus=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_PLUSDI,i),digits);
@@ -1940,11 +1939,11 @@ Sell
 
       double currAsk = NormalizeDouble(MarketInfo(symbolName,MODE_ASK),digits);
       double currBid = NormalizeDouble(MarketInfo(symbolName,MODE_BID),digits);
-      double hmaCurr1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,0,1,0),digits);
-      double hmaCurr3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,0,3,0),digits);
+      double hmaCurr1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",110,0,3,false,0,0,1,0),digits);
+      double hmaCurr3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",110,0,3,false,0,0,3,0),digits);
 
-      double hmaCurr1Sell=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,-40,1,0),digits);
-      double hmaCurr3Sell=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::Indicators\\"+IndicatorName9+".ex4",110,0,3,false,0,-40,3,0),digits);
+      double hmaCurr1Sell=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",110,0,3,false,0,-40,1,0),digits);
+      double hmaCurr3Sell=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",110,0,3,false,0,-40,3,0),digits);
 
       double stochValue=iStochastic(symbolName,symbolTimeframe,18,5,3,MODE_EMA,0,MODE_MAIN,0);
 
@@ -2064,7 +2063,6 @@ Sell
                        }
                     }
                  }
-
                if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
                  {
                   if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
@@ -2076,7 +2074,6 @@ Sell
                        }
                     }
                  }
-
                if(Period()==PERIOD_MN1)
                  {
                   if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
@@ -2109,7 +2106,6 @@ Sell
                        }
                     }
                  }
-
                if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
                  {
                   if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
@@ -2125,7 +2121,6 @@ Sell
                        }
                     }
                  }
-
                if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
                  {
                   if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
@@ -2137,7 +2132,6 @@ Sell
                        }
                     }
                  }
-
                if(Period()==PERIOD_MN1)
                  {
                   if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
@@ -2322,7 +2316,7 @@ void generateSignalsAndPositions(string strategyName)
      {
       if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
         {
-        int symbolTimeframe=_Period;
+         int symbolTimeframe=_Period;
          if(TradeOnlyListOfSelectedSymbols)
             symbolTimeframe=getTimeframeFromString(symbolTimeframeBuffer[x]);
          string signalStr=getSignalForCurrencyAndStrategy(symbolNameBuffer[x],symbolTimeframe,strategyName);
@@ -2648,7 +2642,7 @@ void openPendingsForWrongDirectionTrades(string symbolName)
 //multiple StepInPoints if price is over OpenPrice+-StepInPoints
 //set a pending order at the price from open price +-PendingOrderAfter
 //with expiry PendingOrderExpiry
-//
+
    int ordersCount=OrdersTotal();
    bool pendingSell=false;
    bool pendingBuy=false;
@@ -2738,7 +2732,6 @@ void handleWrongDirectionTrades(string symbolName)
                  {
                   ArrayResize(allParentList,ArrayRange(allParentList,0)+1);
                   allParentList[ArrayRange(allParentList,0)-1]=parentTicket;
-                  //Print("parentTicket="+parentTicket);
                  }
               }
            }
@@ -2756,83 +2749,78 @@ void handleWrongDirectionTrades(string symbolName)
               {
                if(orderBuff[c][0]!=allParentList[c])
                  {
-                  //Print("setParentTicket="+allParentList[c]);
                   orderBuff[c][0]=allParentList[c];
                     } else {
                   for(int t=1;t<ArrayRange(orderBuff,1);t++)
                     {
                      if(orderBuff[c][t]<1)
                        {
-                        //Print("orderBuff[curr]="+orderBuff[c][t]);
                         orderBuff[c][t]=orderTicket;
                        }
                     }
                  }
-               //Print("orderBuff_Dim_2_size="+ArrayResize(orderBuff,ArrayRange(orderBuff,1)+1,ArrayRange(orderBuff,1)+1));
-               //Print("orderBuff_Dim_2_size="+(ArrayRange(orderBuff,1)));
-               //orderBuff[c][ArrayRange(orderBuff,1)-1]=orderTicket;
-               //Print("orderBuff[0]="+orderBuff[c][0]);
-               //Print("orderBuff[curr]="+orderBuff[c][ArrayRange(orderBuff,1)-1]);
               }
            }
         }
      }
-
-/*for(int j=0;j<ordersTotal;j++)
-     {
-      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
-         && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber)
-        {
-         int orderTicket=OrderTicket();
-         if(StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(orderTicket)))==IntegerToString(orderTicket))
-           {
-            for(int b=0;b<ArrayRange(orderBuff,1);b++)
-              {
-               if(orderBuff[b][0]==EMPTY)
-                 {
-                  orderBuff[b][0]=orderTicket;
-                  break;
-                 }
-              }
-            continue;
-           }
-         for(int e=0;e<ArrayRange(orderBuff,0);e++)
-           {
-            if(IntegerToString(orderBuff[e][0])==StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(orderTicket))))
-              {
-               for(int v=1;v<ArrayRange(orderBuff,1);v++)
-                 {
-                  if(orderBuff[e][v]==EMPTY)
-                    {
-                     orderBuff[e][v]=orderTicket;
-                    }
-                 }
-              }
-           }
-        }
-     }*/
 
    double currentProfit=0.0;
-   for(int k=0;k<ArrayRange(orderBuff,0);k++)
+   double bprice=0,sprice=0,bavgprice=0,savgprice=0,
+   pipval=0,buylot=0,selllot=0,bprofit=0,sprofit=0,bweight=0,sweight=0,totalprofit=0;
+   int bn=0,sn=0,pe=0,market=0;
+   for(int i=0;i<OrdersTotal();i++)
      {
-      for(int f=0;f<ArrayRange(orderBuff,1);f++)
+      if(!OrderSelect(i,SELECT_BY_POS,MODE_TRADES))continue;
+      if(OrderSymbol()!=_Symbol)continue;
+      if(OrderMagicNumber()!=MagicNumber)continue;
+      if(OrderType()!=OP_BUY && OrderType()!=OP_SELL)continue;
+      currentProfit+=OrderProfit()+OrderSwap()+OrderCommission();
+      double profit=OrderProfit();
+      double diff=(OrderClosePrice()-OrderOpenPrice())/_Point;
+      double lot=OrderLots();
+      if(profit==0)profit=0.01;
+      if(diff==0)diff=1;
+      pipval=nd(profit/diff/lot);
+      if(OrderType()==OP_BUY)
         {
-         //Print("orderBuff[k][f]="+orderBuff[k][f]);
-         if(orderBuff[k][f]>0)
-           {
-            if(OrderSelect(orderBuff[k][f],SELECT_BY_TICKET,MODE_TRADES))
-              {
-               //calculate positions profit
-               currentProfit=currentProfit+OrderProfit()+OrderSwap()+OrderCommission();
-              }
-           }
+         bprofit+=OrderProfit()+OrderSwap()+OrderCommission();
+         bprice+=OrderOpenPrice();
+         bn++;
+         buylot+=OrderLots();
+         bweight+=OrderOpenPrice()*OrderLots();
+        }
+      if(OrderType()==OP_SELL)
+        {
+         sprofit+=OrderProfit()+OrderSwap()+OrderCommission();
+         sprice+=OrderOpenPrice();
+         sn++;
+         selllot+=OrderLots();
+         sweight+=OrderOpenPrice()*OrderLots();
         }
      }
-   currentProfit=NormalizeDouble(currentProfit,2);
+   currentProfit=nd2(currentProfit);
+   double pips=0;
+   if(buylot!=selllot)
+     {
+      pips=nd((currentProfit/(buylot-selllot)*pipval)*_Point);
+     }
+   double beprice=0;
+   if(buylot>selllot)
+     {
+      beprice=Bid-pips+PointsToTake*_Point;
+     }
+   if(buylot<selllot)
+     {
+      beprice=Ask-pips-PointsToTake*_Point;
+     }
+
    double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
    if(tickValue==0) {tickValue=0.9;}
    double pointsToTakeInMoney=NormalizeDouble(tickValue*getTradeDoubleValue(0,6)*PointsToTake,2);
-   if(currentProfit>0 && currentProfit>pointsToTakeInMoney)
+
+   if(currentProfit>0 && ((buylot>selllot && Bid>=beprice)
+      || (buylot<selllot && Ask<=beprice))
+      )
      {
       //close all positions with the same ordernummer and order if PointsToTake*TickValue*Lots are reached
       for(int k=0;k<ArrayRange(orderBuff,0);k++)
