@@ -2316,8 +2316,6 @@ void generateSignalsAndPositions(string strategyName)
      {
       if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
         {
-         Print(x,P,strategyName);
-         //Print(x,P,ArraySize(symbolNameBuffer),P,ArraySize(symbolTimeframeBuffer));
          int symbolTimeframe=_Period;
          if(TradeOnlyListOfSelectedSymbols)
             symbolTimeframe=getTimeframeFromString(symbolTimeframeBuffer[x]);
