@@ -5,11 +5,10 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2019 VBApps::Valeri Balachnin"
-#property version   "5.2"
+#property version   "5.3"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
-#define P         " "
 #define nd2(_val) NormalizeDouble(_val,2)
 #define nd(_val)  NormalizeDouble(_val,_Digits)
 #include <Area51_Lib.mqh>
@@ -61,7 +60,7 @@ extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
-extern bool     UseRSIBasedIndicator=false;
+extern bool     UseRSIBasedIndicator=true;
 //extern bool     UseADXWithBaseLine=false;
 extern bool     UseCorridorCroosing=false;
 extern static string MACD_ADX_MA_Strategy="-------------------";
@@ -2631,7 +2630,6 @@ int getCurrentSpreadForSymbol(string symbolName)
 //+------------------------------------------------------------------+
 void createNotifications(string symbolName,string direction,int period,string additionalText,string strategyName)
   {
-
    if(DebugTrace){Print("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
    if(SendEMail){SendMail("Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+")",strategyName+" strategy: "+direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS)));}
    if(SendNotificationToPhone){SendNotification(direction+" signal at "+DoubleToStr(iClose(symbolName,0,0),(int)MarketInfo(symbolName,MODE_DIGITS))+" -> Area51 on "+symbolName+"("+getTimeframeFromMinutes(period)+") with "+strategyName+" strategy");}
@@ -2646,7 +2644,7 @@ void openPendingsForWrongDirectionTrades(string symbolName)
 //multiple StepInPoints if price is over OpenPrice+-StepInPoints
 //set a pending order at the price from open price +-PendingOrderAfter
 //with expiry PendingOrderExpiry
-//
+
    int ordersCount=OrdersTotal();
    bool pendingSell=false;
    bool pendingBuy=false;
@@ -2736,7 +2734,6 @@ void handleWrongDirectionTrades(string symbolName)
                  {
                   ArrayResize(allParentList,ArrayRange(allParentList,0)+1);
                   allParentList[ArrayRange(allParentList,0)-1]=parentTicket;
-                  //Print("parentTicket="+parentTicket);
                  }
               }
            }
@@ -2754,80 +2751,22 @@ void handleWrongDirectionTrades(string symbolName)
               {
                if(orderBuff[c][0]!=allParentList[c])
                  {
-                  //Print("setParentTicket="+allParentList[c]);
                   orderBuff[c][0]=allParentList[c];
                     } else {
                   for(int t=1;t<ArrayRange(orderBuff,1);t++)
                     {
                      if(orderBuff[c][t]<1)
                        {
-                        //Print("orderBuff[curr]="+orderBuff[c][t]);
                         orderBuff[c][t]=orderTicket;
                        }
                     }
                  }
-               //Print("orderBuff_Dim_2_size="+ArrayResize(orderBuff,ArrayRange(orderBuff,1)+1,ArrayRange(orderBuff,1)+1));
-               //Print("orderBuff_Dim_2_size="+(ArrayRange(orderBuff,1)));
-               //orderBuff[c][ArrayRange(orderBuff,1)-1]=orderTicket;
-               //Print("orderBuff[0]="+orderBuff[c][0]);
-               //Print("orderBuff[curr]="+orderBuff[c][ArrayRange(orderBuff,1)-1]);
               }
            }
         }
      }
 
-/*for(int j=0;j<ordersTotal;j++)
-     {
-      if(OrderSelect(j,SELECT_BY_POS,MODE_TRADES)
-         && OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber)
-        {
-         int orderTicket=OrderTicket();
-         if(StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(orderTicket)))==IntegerToString(orderTicket))
-           {
-            for(int b=0;b<ArrayRange(orderBuff,1);b++)
-              {
-               if(orderBuff[b][0]==EMPTY)
-                 {
-                  orderBuff[b][0]=orderTicket;
-                  break;
-                 }
-              }
-            continue;
-           }
-         for(int e=0;e<ArrayRange(orderBuff,0);e++)
-           {
-            if(IntegerToString(orderBuff[e][0])==StringSubstr(OrderComment(),StringLen(EAName+"_"),StringLen(IntegerToString(orderTicket))))
-              {
-               for(int v=1;v<ArrayRange(orderBuff,1);v++)
-                 {
-                  if(orderBuff[e][v]==EMPTY)
-                    {
-                     orderBuff[e][v]=orderTicket;
-                    }
-                 }
-              }
-           }
-        }
-     }*/
-
    double currentProfit=0.0;
-//for(int k=0;k<ArrayRange(orderBuff,0);k++)
-//  {
-//   for(int f=0;f<ArrayRange(orderBuff,1);f++)
-//     {
-//      //Print("orderBuff[k][f]="+orderBuff[k][f]);
-//      if(orderBuff[k][f]>0)
-//        {
-//         if(OrderSelect(orderBuff[k][f],SELECT_BY_TICKET,MODE_TRADES))
-//           {
-//            //calculate positions profit
-//            Print(currentProfit,P,OrderProfit()+OrderSwap()+OrderCommission());
-//            currentProfit=currentProfit+OrderProfit()+OrderSwap()+OrderCommission();
-//           }
-//        }
-//     }
-//  }
-
    double bprice=0,sprice=0,bavgprice=0,savgprice=0,
    pipval=0,buylot=0,selllot=0,bprofit=0,sprofit=0,bweight=0,sweight=0,totalprofit=0;
    int bn=0,sn=0,pe=0,market=0;
@@ -2861,11 +2800,6 @@ void handleWrongDirectionTrades(string symbolName)
          sweight+=OrderOpenPrice()*OrderLots();
         }
      }
-
-//if(bn>0)
-//   bavgprice=nd(bweight/(double)buylot)+(1+PointsToTake)*_Point;
-//if(sn>0)
-//   savgprice=nd(sweight/(double)selllot)-(1+PointsToTake)*_Point;
    currentProfit=nd2(currentProfit);
    double pips=0;
    if(buylot!=selllot)
@@ -2885,8 +2819,6 @@ void handleWrongDirectionTrades(string symbolName)
    double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
    if(tickValue==0) {tickValue=0.9;}
    double pointsToTakeInMoney=NormalizeDouble(tickValue*getTradeDoubleValue(0,6)*PointsToTake,2);
-   //if(currentProfit>0)
-   //   Print(currentProfit,P,PointsToTake,P,beprice,P,pipval,P,pips);
 
    if(currentProfit>0 && ((buylot>selllot && Bid>=beprice)
       || (buylot<selllot && Ask<=beprice))
@@ -2925,7 +2857,6 @@ void handleWrongDirectionTrades(string symbolName)
               }
            }
         }
-      //ExpertRemove();
      }
   }
 //+------------------------------------------------------------------+
