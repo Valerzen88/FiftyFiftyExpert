@@ -822,7 +822,7 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
       Print("OpenPositionFun-Control Point 1 passed...");
       if(OnlySell==true && !(AccountFreeMarginCheck(symbolName,OP_SELL,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
         {
-         Print("OpenPositionFun-Control Point 2 for SELL passed... OS="+OS+";OSC="+OSC);
+         Print("OpenPositionFun-Control Point 2 for SELL passed... OS="+IntegerToString(OS)+";OSC="+IntegerToString(OSC));
          if(OS==1 && OSC<MaxConcurrentOpenedOrders)
            {
             Print("OpenPositionFun-Control Point 3 passed...");
