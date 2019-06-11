@@ -129,7 +129,7 @@ bool     UseMagicSymphonieStrategy=false;
 bool     UseSolarWindStrategy=false;
 extern static string HandleLostPositionsHint="-------------------";
 extern bool     HandleLostPositions=false;
-input  int      peLimit=0;                //Pending Limit
+input  int      MaxPendingAmount=0;                //Pending Limit
 extern int      StepInPoints=500;
 extern int      PendingOrderAfter=250;
 extern int      PendingOrderExpiry=30;
@@ -2682,7 +2682,7 @@ void openPendingsForWrongDirectionTrades(string symbolName)
          //}
          int n=(int)cutEnd(lastcom,"!")+1;
          string comment=EAName+"_"+IntegerToString(lastticket)+"!"+string(n);
-         if(n-1>=peLimit && peLimit>0)continue;
+         if(n-1>=MaxPendingAmount && MaxPendingAmount>0)continue;
          if((lasttype==OP_BUY || lasttype==OP_BUYSTOP) && Bid<=lastprice-StepInPoints*_Point)
            {
             double price=lastprice-(PendingOrderAfter)*_Point;
