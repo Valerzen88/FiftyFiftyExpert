@@ -129,7 +129,7 @@ bool     UseMagicSymphonieStrategy=false;
 bool     UseSolarWindStrategy=false;
 extern static string HandleLostPositionsHint="-------------------";
 extern bool     HandleLostPositions=false;
-input  int      MaxPendingAmount=0;                //Pending Limit
+input  int      MaxPendingAmount=5;                
 extern int      StepInPoints=500;
 extern int      PendingOrderAfter=250;
 extern int      PendingOrderExpiry=30;
@@ -2328,8 +2328,6 @@ void generateSignalsAndPositions(string strategyName)
      {
       if(symbolNameBuffer[x]!=IntegerToString(EMPTY_VALUE))
         {
-         Print(x,P,strategyName);
-         //Print(x,P,ArraySize(symbolNameBuffer),P,ArraySize(symbolTimeframeBuffer));
          int symbolTimeframe=_Period;
          if(TradeOnlyListOfSelectedSymbols)
             symbolTimeframe=getTimeframeFromString(symbolTimeframeBuffer[x]);
@@ -2682,7 +2680,7 @@ void openPendingsForWrongDirectionTrades(string symbolName)
          //}
          int n=(int)cutEnd(lastcom,"!")+1;
          string comment=EAName+"_"+IntegerToString(lastticket)+"!"+string(n);
-         if(n-1>=MaxPendingAmount && MaxPendingAmount>0)continue;
+         if(n-1>=MaxPendingAmount && MaxPendingAmount>0) {Print("HandleWrongPositions: Max amount of orders reached!");continue;}
          if((lasttype==OP_BUY || lasttype==OP_BUYSTOP) && Bid<=lastprice-StepInPoints*_Point)
            {
             double price=lastprice-(PendingOrderAfter)*_Point;
@@ -2770,8 +2768,6 @@ void handleWrongDirectionTrades(string symbolName)
      {
       //close all positions with the same ordernummer and order if PointsToTake*TickValue*Lots are reached
       CloseAll();
-      //Print("Stop");
-      //ExpertRemove();
      }
   }
 //+------------------------------------------------------------------+
