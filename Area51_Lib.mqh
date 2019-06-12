@@ -232,7 +232,7 @@ int CloseAll()
          switch(OrderType())
            {
             case OP_BUY:
-               if(!OrderClose(OrderTicket(),OrderLots(),MarketInfo(OrderSymbol(),MODE_BID),SLIPPAGE,Red))
+               if(!OrderClose(OrderTicket(),OrderLots(),MarketInfo(OrderSymbol(),MODE_BID),SLIPPAGE,Blue))
                rv=AT_LEAST_ONE_FAILED;
                break;
 
