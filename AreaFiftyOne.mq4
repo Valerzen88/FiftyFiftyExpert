@@ -2051,13 +2051,13 @@ Sell
         double RSIValue = iRSI(symbolName,symbolTimeframe,RSIValue,PRICE_CLOSE,0);
         double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
         double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);
-        double bidPrice = MarketInfo(symbolName, MODE_BID);
-        double askPrice = MarketInfo(symbolName, MODE_ASK);
         if(RSIValue>70) {
-            if(bidPrice>BBUpperValue) {
-
-            } else if (askPrice<BBLowerValue) {
-
+            if(bid>BBUpperValue) {
+                if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+                createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+            } else if (ask<BBLowerValue) {
+                if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+                createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
             }
         }
      }
