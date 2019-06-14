@@ -64,6 +64,10 @@ extern int      MinAmount=150;
 extern int      SetSLToMinAmountUnder=100;
 extern int      MaxSpread=25;
 extern static string Indicators="Choose strategies";
+extern static string GoldenGateStrategy="-------------------";
+extern bool     UseGoldenGateStrategy=true;
+extern int      BollingerCandelsAmount=23;
+extern int      RSICandlesAmount=18;
 extern static string TrendIndicatorStrategy="-------------------";
 extern bool     UseTrendIndicator=false;
 extern double   Smoothing=3.0;
@@ -425,14 +429,29 @@ void OnTick()
    string strategyName="";
    if(TradingAllowed==true && CheckForSignal==true)
      {
+      if(UseGoldenGateStrategy) {
+        strategyName="goldenGate";
+        if(TradeOnAllSymbols)
+         {
+          generateSignalsAndPositions(strategyName);
+            } else {
+          string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+          if(signalStr=="Sell")
+            {
+             SellFlag=true;
+               } else if(signalStr=="Buy"){
+             BuyFlag=true;
+            }
+         }
+      }
       if(UseRSIBasedIndicator)
         {
          strategyName="tdi";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("tdi");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"tdi");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -446,9 +465,9 @@ void OnTick()
          strategyName="trendy";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("trendy");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"trendy");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -478,9 +497,9 @@ void OnTick()
          strategyName="baseStochi";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("baseStochi");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"baseStochi");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -494,9 +513,9 @@ void OnTick()
          strategyName="5050";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("5050");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"5050");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -510,9 +529,9 @@ void OnTick()
          strategyName="MAOn5050";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("MAOn5050");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"MAOn5050");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -526,9 +545,9 @@ void OnTick()
          strategyName="stochCroosingRSI";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("stochCroosingRSI");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"stochCroosingRSI");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -542,9 +561,9 @@ void OnTick()
          strategyName="sunTrade";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("sunTrade");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"sunTrade");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -558,9 +577,9 @@ void OnTick()
          strategyName="solarWind";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("solarWind");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"solarWind");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -574,9 +593,9 @@ void OnTick()
          strategyName="magicTrend";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("magicTrend");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"magicTrend");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -590,9 +609,9 @@ void OnTick()
          strategyName="nightAsianBlock";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("nightAsianBlock");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"nightAsianBlock");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -606,9 +625,9 @@ void OnTick()
          strategyName="ichimoku";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("ichimoku");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"ichimoku");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -622,9 +641,9 @@ void OnTick()
          strategyName="adx50";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("adx50");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"adx50");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -638,9 +657,9 @@ void OnTick()
          strategyName="hmaColor";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("hmaColor");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"hmaColor");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -654,9 +673,9 @@ void OnTick()
          strategyName="smoothed";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("smoothed");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"smoothed");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -670,9 +689,9 @@ void OnTick()
          strategyName="simpleMAs";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("simpleMAs");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"simpleMAs");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -686,9 +705,9 @@ void OnTick()
          strategyName="cciaverage";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("cciaverage");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"cciaverage");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -702,9 +721,9 @@ void OnTick()
          strategyName="magicSymphonie";
          if(TradeOnAllSymbols)
            {
-            generateSignalsAndPositions("magicSymphonie");
+            generateSignalsAndPositions(strategyName);
               } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"magicSymphonie");
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
             if(signalStr=="Sell")
               {
                SellFlag=true;
@@ -2022,6 +2041,25 @@ Sell
          if((TDIYellow>50) && (TSL2>TDIYellow) && (TDIGreen<TDIYellow && (TDIGreenPrevious>TDIYellowPrevous || TDIGreenPrevious==TDIYellowPrevous))) {SellFlag=true;}
         }
       */
+     }
+
+     if(strategyName="goldenGate") {
+     /*
+     BB 23/Close, RSI 18, если цена заходит за границу BB и RSI ставится пендинг к примеру стоп лос на 10 пунктов ниже
+     и двигается с ценой наверх пока цена не пойдет вниз и не откроется ордер. потом тянется так же по пунктику вниз SL в плюс
+     */
+        double RSIValue = iRSI(symbolName,symbolTimeframe,RSIValue,PRICE_CLOSE,0);
+        double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
+        double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);
+        double bidPrice = MarketInfo(symbolName, MODE_BID);
+        double askPrice = MarketInfo(symbolName, MODE_ASK);
+        if(RSIValue>70) {
+            if(bidPrice>BBUpperValue) {
+
+            } else if (askPrice<BBLowerValue) {
+
+            }
+        }
      }
 
    string res="noSignal";
