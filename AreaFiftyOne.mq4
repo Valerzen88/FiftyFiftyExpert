@@ -133,7 +133,7 @@ bool     UseMagicSymphonieStrategy=false;
 bool     UseSolarWindStrategy=false;
 extern static string HandleLostPositionsHint="-------------------";
 extern bool     HandleLostPositions=false;
-input  int      MaxPendingAmount=5;                
+input  int      MaxPendingAmount=5;
 extern int      StepInPoints=500;
 extern int      PendingOrderAfter=250;
 extern int      PendingOrderExpiry=30;
@@ -429,21 +429,22 @@ void OnTick()
    string strategyName="";
    if(TradingAllowed==true && CheckForSignal==true)
      {
-      if(UseGoldenGateStrategy) {
-        strategyName="goldenGate";
-        if(TradeOnAllSymbols)
-         {
-          generateSignalsAndPositions(strategyName);
-            } else {
-          string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-          if(signalStr=="Sell")
-            {
-             SellFlag=true;
-               } else if(signalStr=="Buy"){
-             BuyFlag=true;
-            }
-         }
-      }
+      if(UseGoldenGateStrategy)
+        {
+         strategyName="goldenGate";
+         if(TradeOnAllSymbols)
+           {
+            generateSignalsAndPositions(strategyName);
+              } else {
+            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+            if(signalStr=="Sell")
+              {
+               SellFlag=true;
+                 } else if(signalStr=="Buy"){
+               BuyFlag=true;
+              }
+           }
+        }
       if(UseRSIBasedIndicator)
         {
          strategyName="tdi";
@@ -1246,7 +1247,6 @@ string getSignalForCurrencyAndStrategy(string symbolName,int symbolTimeframe,str
    BuyFlag=false;
    string additionalText;
    int digits=(int)MarketInfo(symbolName,MODE_DIGITS);
-   Print(strategyName);
 
    if(strategyName=="ichimoku")
      {
@@ -2043,22 +2043,39 @@ Sell
       */
      }
 
-     if(strategyName="goldenGate") {
-     /*
+   if(strategyName=="goldenGate")
+     {
+/*
      BB 23/Close, RSI 18, если цена заходит за границу BB и RSI ставится пендинг к примеру стоп лос на 10 пунктов ниже
      и двигается с ценой наверх пока цена не пойдет вниз и не откроется ордер. потом тянется так же по пунктику вниз SL в плюс
      */
-        double RSIValue = iRSI(symbolName,symbolTimeframe,RSIValue,PRICE_CLOSE,0);
-        double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
-        double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);
-        if(RSIValue>70) {
-            if(bid>BBUpperValue) {
-                if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
-                createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-            } else if (ask<BBLowerValue) {
-                if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
-                createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
-            }
+      double RSIValue=iRSI(symbolName,symbolTimeframe,RSICandlesAmount,PRICE_CLOSE,0);
+      double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
+      double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);
+      double bidPrice=MarketInfo(symbolName,MODE_BID);
+      double askPrice=MarketInfo(symbolName,MODE_ASK);
+      //--- get minimum stop level 
+      double minstoplevel=MarketInfo(symbolName,MODE_STOPLEVEL);
+      double priceBuy=bidPrice+GapFromBlock*Point;
+      double priceSell=askPrice-GapFromBlock*Point;
+      //--- calculated SL and TP prices must be normalized 
+      double stoplossBuy=NormalizeDouble(priceBuy-((GapFromBlock+minstoplevel)*MarketInfo(symbolName,MODE_POINT)),digits);
+      double takeprofitBuy=NormalizeDouble(priceBuy+((GapFromBlock+minstoplevel+TP)*MarketInfo(symbolName,MODE_POINT)),digits);
+      double stoplossSell=NormalizeDouble(priceSell+((GapFromBlock+minstoplevel)*MarketInfo(symbolName,MODE_POINT)),digits);
+      double takeprofitSell=NormalizeDouble(priceSell-((GapFromBlock+minstoplevel+TP)*MarketInfo(symbolName,MODE_POINT)),digits);
+      if(bidPrice>BBUpperValue && RSIValue>80)
+        {
+         if(!SendOnlyNotificationsNoTrades)
+           {
+            bool pendingBuyCheck=OrderSend(symbolName,OP_BUYSTOP,getTradeDoubleValue(0,6),priceBuy,3,stoplossBuy,takeprofitBuy,EAName+"!1",MagicNumber,TimeCurrent()+660,clrGreen);
+           }
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+           } else if(askPrice<BBLowerValue && RSIValue<20) {
+         if(!SendOnlyNotificationsNoTrades)
+           {
+            bool pendingSellCheck=OrderSend(symbolName,OP_SELLSTOP,getTradeDoubleValue(0,6),priceSell,3,stoplossSell,takeprofitSell,EAName+"!1",MagicNumber,TimeCurrent()+660,clrRed);
+           }
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
         }
      }
 
