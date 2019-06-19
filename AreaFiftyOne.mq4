@@ -1364,6 +1364,8 @@ Sell
       int hmaPeriodSlow=110;
       int EMA_period=14;
       //HideTestIndicators(false);
+      double BBLowerValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0),digits);
+      double BBUpperValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0),digits);
       double currAsk = NormalizeDouble(MarketInfo(symbolName,MODE_ASK),digits);
       double currBid = NormalizeDouble(MarketInfo(symbolName,MODE_BID),digits);
       double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,0),digits);
@@ -1395,7 +1397,7 @@ Sell
       // {
       //if(adxLineCurr>20.0)
         {
-         if(adxDPlus>adxDMinus
+         if(adxDPlus>adxDMinus && currBid<BBUpperValue
             && currAsk>hma && eMACurr>hma && eMAPrev<=prevhma
             && (closePrice-openPrice)>MarketInfo(symbolName,MODE_POINT)*12)
             //((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
@@ -1413,7 +1415,7 @@ Sell
 
          //if(adxDMinus>20.0 && adxDPlus<adxDMinus
          //&& 
-         if(adxDPlus<adxDMinus
+         if(adxDPlus<adxDMinus && currAsk>BBLowerValue
             && currBid<hma && eMACurr<hma && eMAPrev>=prevhma
             && (openPrice-closePrice)>MarketInfo(symbolName,MODE_POINT)*12)
            {
@@ -2087,9 +2089,9 @@ Sell
      BB 23/Close, RSI 18, если цена заходит за границу BB и RSI ставится пендинг к примеру стоп лос на 10 пунктов ниже
      и двигается с ценой наверх пока цена не пойдет вниз и не откроется ордер. потом тянется так же по пунктику вниз SL в плюс
      */
-      double RSIValue=iRSI(symbolName,symbolTimeframe,RSICandlesAmount,PRICE_CLOSE,0);
-      double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
-      double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);
+      double RSIValue = iRSI(symbolName,symbolTimeframe,RSICandlesAmount,PRICE_CLOSE,0);
+      double BBLowerValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0),digits);
+      double BBUpperValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0),digits);
       double bidPrice=MarketInfo(symbolName,MODE_BID);
       double askPrice=MarketInfo(symbolName,MODE_ASK);
       //--- get minimum stop level 
