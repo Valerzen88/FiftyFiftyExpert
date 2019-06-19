@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2019 VBApps::Valeri Balachnin"
-#property version   "5.4"
+#property version   "5.5"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
@@ -427,312 +427,332 @@ void OnTick()
 //double TempTDIGreen=0,TempTDIRed=0;
    HideTestIndicators(true);
    string strategyName="";
+   BuyFlag=false;SellFlag=false;
    if(TradingAllowed==true && CheckForSignal==true)
      {
-      if(UseGoldenGateStrategy)
-        {
-         strategyName="goldenGate";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseGoldenGateStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="goldenGate";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseRSIBasedIndicator)
-        {
-         strategyName="tdi";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseRSIBasedIndicator)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="tdi";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseTrendIndicator)
-        {
-         strategyName="trendy";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseTrendIndicator)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="trendy";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseSimpleTrendStrategy)
-        {
-         strategyName="simpleTrend";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseSimpleTrendStrategy)
            {
-            generateSignalsAndPositions("simpleTrend");
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"simpleTrend");
-            if(signalStr=="Sell")
+            strategyName="simpleTrend";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions("simpleTrend");
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,"simpleTrend");
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseStochasticBasedStrategy)
-        {
-         strategyName="baseStochi";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseStochasticBasedStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="baseStochi";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(Use5050Strategy)
-        {
-         strategyName="5050";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(Use5050Strategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="5050";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseMAOn5050Strategy)
-        {
-         strategyName="MAOn5050";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseMAOn5050Strategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="MAOn5050";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseStochRSICroosingStrategy)
-        {
-         strategyName="stochCroosingRSI";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseStochRSICroosingStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="stochCroosingRSI";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseLongTermJourneyToSunriseStrategy)
-        {
-         strategyName="sunTrade";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseLongTermJourneyToSunriseStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="sunTrade";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseSolarWindStrategy)
-        {
-         strategyName="solarWind";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseSolarWindStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="solarWind";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseMagicTrendStrategy)
-        {
-         strategyName="magicTrend";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseMagicTrendStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="magicTrend";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseNightAsianBlock)
-        {
-         strategyName="nightAsianBlock";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseNightAsianBlock)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="nightAsianBlock";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseIchimokuClouds)
-        {
-         strategyName="ichimoku";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseIchimokuClouds)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="ichimoku";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseADX50Plus)
-        {
-         strategyName="adx50";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseADX50Plus)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="adx50";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseHMAStrategy)
-        {
-         strategyName="hmaColor";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseHMAStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="hmaColor";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseSmoothedStrategy)
-        {
-         strategyName="smoothed";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseSmoothedStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="smoothed";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseSimpleMAsStrategy)
-        {
-         strategyName="simpleMAs";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseSimpleMAsStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="simpleMAs";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseCCIAverageStrategy)
-        {
-         strategyName="cciaverage";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseCCIAverageStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="cciaverage";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
-      if(UseMagicSymphonieStrategy)
-        {
-         strategyName="magicSymphonie";
-         if(TradeOnAllSymbols)
+      if(!BuyFlag && !SellFlag)
+         if(UseMagicSymphonieStrategy)
            {
-            generateSignalsAndPositions(strategyName);
-              } else {
-            string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-            if(signalStr=="Sell")
+            strategyName="magicSymphonie";
+            if(TradeOnAllSymbols)
               {
-               SellFlag=true;
-                 } else if(signalStr=="Buy"){
-               BuyFlag=true;
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
               }
            }
-        }
      }
 //HideTestIndicators(false);
    if(HandleUserPositions && !TradeOnAllSymbols){HandleUserPositionsFun();}
@@ -759,6 +779,8 @@ void OnTick()
         }
       if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
       //entry conditions verification
+      if(BuyFlag || SellFlag)
+         Print(BuyFlag,P,SellFlag);
       if(SellFlag==true){OS=1;OB=0;SellFlag=false;}if(BuyFlag==true){OB=1;OS=0;BuyFlag=false;}
       LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[0][4];
       RemainingLotSize=tradeDoubleVarsValues[0][4];
@@ -852,6 +874,7 @@ void OpenPosition(string symbolName,string strategyName,int symbolTimeframe,int 
    if(((getCurrentSpreadForSymbol(symbolName)<=MaxSpread) && AddP(symbolName) && AddPositionsIndependently && OP*2<=MaxConcurrentOpenedOrders) || (OP==0 && !AddPositionsIndependently))
      {
       Print("OpenPositionFun-Control Point 1 passed...");
+      Print("V",P,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3);
       if(OnlySell==true && !(AccountFreeMarginCheck(symbolName,OP_SELL,tradeDoubleVarsValues[getSymbolArrayIndex(symbolName)][6]*3)<=0 || GetLastError()==134))
         {
          Print("OpenPositionFun-Control Point 2 for SELL passed... OS="+(string)OS+";OSC="+(string)OSC);
@@ -1340,6 +1363,7 @@ Sell
      {
       int hmaPeriodSlow=110;
       int EMA_period=14;
+      //HideTestIndicators(false);
       double currAsk = NormalizeDouble(MarketInfo(symbolName,MODE_ASK),digits);
       double currBid = NormalizeDouble(MarketInfo(symbolName,MODE_BID),digits);
       double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,0),digits);
@@ -1349,14 +1373,17 @@ Sell
       double adxDPlusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_PLUSDI,1),digits);
       double adxDMinusPrev=NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MINUSDI,1),digits);
 
-      double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,0),digits);
-      double hmaPrevSlow2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,2,1),digits);
-      double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,1),digits);
-      double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,2),digits);
-      double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,0),digits);
-      double hmaPrevSlow4=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,4,1),digits);
-      double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,1),digits);
-      double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,2),digits);
+      double hma=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,0,0),digits);
+      double prevhma=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,0,1),digits);
+      double prev2hma=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,0,2),digits);
+      //double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,0),digits);
+      //double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,1),digits);
+      //double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,2),digits);
+      //double hmaCurrSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,0),digits);
+      //double hmaPrevSlow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,1),digits);
+      //double hmaPrev2Slow3=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,3,2),digits);
+      //double hmaPrevSlow2=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,2,1),digits);
+      //double hmaPrevSlow4=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,4,1),digits);
 
       double eMACurr=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,0),digits);
       double eMAPrev=NormalizeDouble(iMA(symbolName,symbolTimeframe,EMA_period,0,MODE_EMA,PRICE_CLOSE,1),digits);
@@ -1366,30 +1393,41 @@ Sell
 
       //if(UseSimpleEMA_HMACroosing) 
       // {
-      if(adxLineCurr>20.0)
+      //if(adxLineCurr>20.0)
         {
-         if(adxDPlus>20.0 && adxDPlus>adxDMinus && ((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
-            && ((hmaCurrSlow1!=EMPTY_VALUE && eMACurr>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && eMACurr>hmaCurrSlow3)))
+         if(adxDPlus>adxDMinus
+            && currAsk>hma && eMACurr>hma && eMAPrev<=prevhma
+            && (closePrice-openPrice)>MarketInfo(symbolName,MODE_POINT)*12)
+            //((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
+            //   && ((hmaCurrSlow1!=EMPTY_VALUE && eMACurr>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && eMACurr>hmaCurrSlow3)))
            {
-            if(((hmaCurrSlow3!=EMPTY_VALUE && eMAPrev<hmaPrevSlow3) || (hmaCurrSlow1!=EMPTY_VALUE && eMAPrev<hmaPrevSlow1))
-               && ((closePrice-openPrice)>MarketInfo(symbolName,MODE_POINT)*12))
-              {
-               if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
-               createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
-              }
+            //if(((hmaCurrSlow3!=EMPTY_VALUE && eMAPrev<hmaPrevSlow3) || (hmaCurrSlow1!=EMPTY_VALUE && eMAPrev<hmaPrevSlow1))
+            //   )
+            //{
+            //Print("lol");
+            if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;}
+            //BuyOpened=true;
+            createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+            //}
            }
 
          //if(adxDMinus>20.0 && adxDPlus<adxDMinus
          //&& 
-         if(adxDPlus<adxDMinus && ((hmaCurrSlow1!=EMPTY_VALUE && currBid<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currBid<hmaCurrSlow3))
-            && ((hmaCurrSlow1!=EMPTY_VALUE && eMACurr<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && eMACurr<hmaCurrSlow3)))
+         if(adxDPlus<adxDMinus
+            && currBid<hma && eMACurr<hma && eMAPrev>=prevhma
+            && (openPrice-closePrice)>MarketInfo(symbolName,MODE_POINT)*12)
            {
-            if(((hmaCurrSlow3!=EMPTY_VALUE && eMAPrev>hmaPrevSlow3) || (hmaCurrSlow1!=EMPTY_VALUE && eMAPrev>hmaPrevSlow1))
-               && ((openPrice-closePrice)>MarketInfo(symbolName,MODE_POINT)*12))
-              {
-               if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
-               createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-              }
+            //if(adxDPlus<adxDMinus
+            //   && ((hmaCurrSlow1!=EMPTY_VALUE && currBid<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currBid<hmaCurrSlow3))
+            //   && ((hmaCurrSlow1!=EMPTY_VALUE  &&  eMACurr<hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE  &&  eMACurr<hmaCurrSlow3)))
+            //  {
+            //   if(((hmaCurrSlow3!=EMPTY_VALUE && eMAPrev>hmaPrevSlow3) || (hmaCurrSlow1!=EMPTY_VALUE && eMAPrev>hmaPrevSlow1))
+            //      && ((openPrice-closePrice)>MarketInfo(symbolName,MODE_POINT)*12))
+            //     {
+            if(!SendOnlyNotificationsNoTrades) {SellFlag=true;}
+            //SellOpened=true;
+            createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+            //}
            }
          // }
         }
@@ -1438,15 +1476,15 @@ Sell
 */
       //closing conditions
       //  || (adxDPlus>adxDMinus && adxDPlusPrev<adxDMinusPrev)
-      if((((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
-
-         ||(((hmaCurrSlow1!=EMPTY_VALUE && (eMACurr>hmaCurrSlow1)) || (hmaCurrSlow3!=EMPTY_VALUE && (eMACurr>hmaCurrSlow3)))
-         && ((hmaPrevSlow1!=EMPTY_VALUE && (eMACurr<hmaPrevSlow1)) || (hmaPrevSlow3!=EMPTY_VALUE && (eMACurr<hmaPrevSlow3)))))
-         && SellOpened && IsNewBar())
-        {
-         //CloseBuyTrade=true;
-         //SellOpened=false;
-        }
+      //      if((((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
+      //
+      //         ||(((hmaCurrSlow1!=EMPTY_VALUE && (eMACurr>hmaCurrSlow1)) || (hmaCurrSlow3!=EMPTY_VALUE && (eMACurr>hmaCurrSlow3)))
+      //         && ((hmaPrevSlow1!=EMPTY_VALUE && (eMACurr<hmaPrevSlow1)) || (hmaPrevSlow3!=EMPTY_VALUE && (eMACurr<hmaPrevSlow3)))))
+      //         && SellOpened && IsNewBar())
+      //        {
+      //         //CloseBuyTrade=true;
+      //         //SellOpened=false;
+      //        }
 
 /*  if(hmaCurrSlow1!=EMPTY_VALUE && (hmaPrevSlow1==EMPTY_VALUE || hmaPrev2Slow1==EMPTY_VALUE))
         {
@@ -2586,7 +2624,7 @@ void setTradeVarsValues()
          tradeDoubleVarsValues[c][6]=TempLotSize;
          if(Debug)
            {
-            Print("LotSize("+symbolNameBuffer[c]+")="+DoubleToStr(TempLotSize,tempCountedDecimals));
+            //Print("LotSize("+symbolNameBuffer[c]+")="+DoubleToStr(TempLotSize,tempCountedDecimals));
            }
          tradeDoubleVarsValues[c][7]=MarketInfo(symbolNameBuffer[c],MODE_STOPLEVEL)*MarketInfo(symbolNameBuffer[c],MODE_POINT);
         }
