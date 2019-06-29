@@ -5,16 +5,18 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2019 VBApps::Valeri Balachnin"
-#property version   "5.5"
+#property version   "5.6"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
 #define cutStart(_text,_end) StringSubstr(_text,0,StringFind(_text,_end,0))
 #define cut(_text,_start,_end) StringSubstr(_text,StringFind(_text,_start,0)+StringLen(_start),StringFind(_text,_end,0)-StringFind(_text,_start,0)-StringLen(_start))
 #define cutEnd(_text,_start) StringSubstr(_text,StringFind(_text,_start,0)+StringLen(_start),StringLen(_text)-StringFind(_text,_start,0)-StringLen(_start))
+#define Pt(_symbol) SymbolInfoDouble(_symbol,SYMBOL_POINT)
+#define Dt(_symbol) SymbolInfoInteger(_symbol,SYMBOL_DIGITS)
+#define Nd(_val,_symbol) NormalizeDouble(_val,(int)SymbolInfoInteger(_symbol,SYMBOL_DIGITS))
 #define ndt(_text,n) ndtDef(_text,n) 
 string ndtDef(double _text,int n){string text=(string)NormalizeDouble(_text,n),res=text;int dot=StringFind(text,".",0);if(dot<0)return res+".0";if(dot+n+1<StringLen(text) && StringSubstr(text,StringLen(text)-1,1)=="9"){text=string((double)text+0.1);}res=StringSubstr(text,0,dot+n+1);return res;}
-#define ND(_val,_symbol) NormalizeDouble(_val,(int)SymbolInfoInteger(_symbol,SYMBOL_DIGITS))
 #define nd(_val)  NormalizeDouble(_val,_Digits)
 #define nd5(_val) NormalizeDouble(_val,5)
 #define nd3(_val) NormalizeDouble(_val,3)
@@ -65,9 +67,10 @@ extern int      SetSLToMinAmountUnder=100;
 extern int      MaxSpread=25;
 extern static string Indicators="Choose strategies";
 extern static string GoldenGateStrategy="-------------------";
-extern bool     UseGoldenGateStrategy=false;
+extern bool     UseGoldenGateStrategy=true;
+input  bool     goldengateNew=true;                 //Golden Gate New strategy?
 extern int      BollingerCandelsAmount=23;
-extern int      RSICandlesAmount=24;
+extern int      RSICandlesAmount=18;
 extern static string TrendIndicatorStrategy="-------------------";
 extern bool     UseTrendIndicator=false;
 extern double   Smoothing=3.0;
@@ -75,7 +78,7 @@ extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
-extern bool     UseRSIBasedIndicator=true;
+extern bool     UseRSIBasedIndicator=false;
 //extern bool     UseADXWithBaseLine=false;
 extern bool     UseCorridorCroosing=false;
 extern static string MACD_ADX_MA_Strategy="-------------------";
@@ -391,8 +394,8 @@ void OnDeinit(const int reason)
 void OnTick()
   {
 //---
-   uint start=GetTickCount();
-   setTradeVarsValues();
+   uint starting=GetTickCount();
+//setTradeVarsValues();
    double TempLoss=getTempLoss();
 
    if(AccountBalance()>0)
@@ -428,7 +431,7 @@ void OnTick()
    HideTestIndicators(true);
    string strategyName="";
    BuyFlag=false;SellFlag=false;
-   if(TradingAllowed==true && CheckForSignal==true)
+   if(TradingAllowed==true && (CheckForSignal==true || UseGoldenGateStrategy))
      {
       if(!BuyFlag && !SellFlag)
          if(UseGoldenGateStrategy)
@@ -437,13 +440,22 @@ void OnTick()
             if(TradeOnAllSymbols)
               {
                generateSignalsAndPositions(strategyName);
-                 } else {
-               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
-               if(signalStr=="Sell")
+              }
+            else
+              {
+               if(!goldengateNew)
                  {
-                  SellFlag=true;
-                    } else if(signalStr=="Buy"){
-                  BuyFlag=true;
+                  string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+                  if(signalStr=="Sell")
+                    {
+                     SellFlag=true;
+                       } else if(signalStr=="Buy"){
+                     BuyFlag=true;
+                    }
+                 }
+               if(goldengateNew)
+                 {
+                  StrategyGoldenGate(_Symbol,_Period);
                  }
               }
            }
@@ -779,15 +791,17 @@ void OnTick()
         }
       if(OP>=1){OS=0;OB=0;}OB=0;OS=0;CloseBuy=0;CloseSell=0;
       //entry conditions verification
-      if(BuyFlag || SellFlag)
-         Print(BuyFlag,P,SellFlag);
+      //if(BuyFlag || SellFlag)
+      //   Print(BuyFlag,P,SellFlag);
       if(SellFlag==true){OS=1;OB=0;SellFlag=false;}if(BuyFlag==true){OB=1;OS=0;BuyFlag=false;}
-      LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[0][4];
-      RemainingLotSize=tradeDoubleVarsValues[0][4];
-      countRemainingMaxLots=(int)tradeDoubleVarsValues[0][3];
-      MaxLot=tradeDoubleVarsValues[0][2];
+
       if((OB==1 || OS==1) && TradingAllowed)
         {
+         setTradeVarsValues();
+         LotSizeIsBiggerThenMaxLot=tradeIntVarsValues[0][4];
+         RemainingLotSize=tradeDoubleVarsValues[0][4];
+         countRemainingMaxLots=(int)tradeDoubleVarsValues[0][3];
+         MaxLot=tradeDoubleVarsValues[0][2];
          //Print("Signal from one of  strategies! Control Point 0!..");
          OpenPosition(Symbol(),strategyName,Period(),OP,OSC,OBC,OS,OB,LotSizeIsBiggerThenMaxLot,countRemainingMaxLots,MaxLot,RemainingLotSize);
         }
@@ -833,7 +847,9 @@ void OnTick()
            } else {
          CurrentProfit(checkForMod(Symbol()),0.0);
         }
-        } else {
+     }
+   else
+     {
       double TempProfit=0.0;
       for(int j=0;j<OrdersTotal();j++)
         {
@@ -848,7 +864,7 @@ void OnTick()
         }
       CurrentProfit(TempProfit,0.0);
      }
-   uint time=GetTickCount()-start;
+   uint time=GetTickCount()-starting;
 //PrintFormat("Calculating tick fun took %d ms",time);
   }
 //+------------------------------------------------------------------+
@@ -979,6 +995,8 @@ void ClosePreviousSignalTrade(string symbolName,int OS,int OB)
         {
          if(OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber)
            {
+            Print(OrderComment());
+            if(StringFind(OrderComment(),":G",0)>=0)continue;
             if(OrderType()==OP_BUY && OS==1)
               {
                closed=OrderClose(OrderTicket(),OrderLots(),MarketInfo(symbolName,MODE_BID),Slippage,Red);
@@ -1015,7 +1033,7 @@ void HandleUserPositionsFun()
   {
    for(int j=0;j<OrdersTotal();j++)
      {
-      if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol())
+      if(OrderSelect(j,SELECT_BY_POS)==true && OrderSymbol()==Symbol() && OrderMagicNumber()==0)
         {
          if(Debug){Print("OrderComment='"+OrderComment()+"'");}
          if(Debug){Print("OrderMagicNumber='"+IntegerToString(OrderMagicNumber())+"'");}
@@ -1198,43 +1216,43 @@ void ModSL(string symbolName,double ldSL)
 //|                                                                  |
 int cs,cb,total;
 //+------------------------------------------------------------------+
-void ClosePositionsByType(int type)
-  {
-   bool success;
-   color col;
-   int NumRetries=3;
-   if(type==OP_BUY)
-      col=Blue;
-   else
-      col=Red;
-   for(int cnt=OrdersTotal()-1; cnt>=0; cnt --)
-     {
-      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES))
-        {
-         if(OrderMagicNumber()==MagicNumber && OrderSymbol()==Symbol() && OrderType()==type)
-           {
-            int i=0;
-            while(i<3)
-              {
-               i+=1;
-               while(IsTradeContextBusy())Sleep(NumRetries*1000);
-               RefreshRates();
-
-               Print("Try "+IntegerToString(i)+" : Close "+IntegerToString(OrderTicket()));
-               success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),99,col);
-               if(!success)
-                 {
-                  Print("Failed to close order "+IntegerToString(OrderTicket())+" Error code:"+IntegerToString(GetLastError()));
-                  if(i==NumRetries)
-                     Print("*** Final retry to CLOSE ORDER failed. Close trade manually ***");
-                 }
-               else
-                  i=NumRetries;
-              }
-           }
-        }
-     }
-  }
+//void ClosePositionsByType(int type)
+//  {
+//   bool success;
+//   color col;
+//   int NumRetries=3;
+//   if(type==OP_BUY)
+//      col=Blue;
+//   else
+//      col=Red;
+//   for(int cnt=OrdersTotal()-1; cnt>=0; cnt --)
+//     {
+//      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES))
+//        {
+//         if(OrderMagicNumber()==MagicNumber && OrderSymbol()==Symbol() && OrderType()==type)
+//           {
+//            int i=0;
+//            while(i<3)
+//              {
+//               i+=1;
+//               while(IsTradeContextBusy())Sleep(NumRetries*1000);
+//               RefreshRates();
+//
+//               Print("Try "+IntegerToString(i)+" : Close "+IntegerToString(OrderTicket()));
+//               success=OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),99,col);
+//               if(!success)
+//                 {
+//                  Print("Failed to close order "+IntegerToString(OrderTicket())+" Error code:"+IntegerToString(GetLastError()));
+//                  if(i==NumRetries)
+//                     Print("*** Final retry to CLOSE ORDER failed. Close trade manually ***");
+//                 }
+//               else
+//                  i=NumRetries;
+//              }
+//           }
+//        }
+//     }
+//  }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -1364,8 +1382,6 @@ Sell
       int hmaPeriodSlow=110;
       int EMA_period=14;
       //HideTestIndicators(false);
-      double BBLowerValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0),digits);
-      double BBUpperValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0),digits);
       double currAsk = NormalizeDouble(MarketInfo(symbolName,MODE_ASK),digits);
       double currBid = NormalizeDouble(MarketInfo(symbolName,MODE_BID),digits);
       double adxLineCurr = NormalizeDouble(iADX(symbolName,symbolTimeframe,ADX50PlusPeriod,0,MODE_MAIN,0),digits);
@@ -1377,7 +1393,7 @@ Sell
 
       double hma=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,0,0),digits);
       double prevhma=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,0,1),digits);
-      double prev2hma=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,0,2),digits);
+      //double prev2hma=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,0,2),digits);
       //double hmaCurrSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,0),digits);
       //double hmaPrevSlow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,1),digits);
       //double hmaPrev2Slow1=NormalizeDouble(iCustom(symbolName,symbolTimeframe,"::"+INDPATH+""+IndicatorName9+".ex4",hmaPeriodSlow,0,3,false,0,0,1,2),digits);
@@ -1397,7 +1413,7 @@ Sell
       // {
       //if(adxLineCurr>20.0)
         {
-         if(adxDPlus>adxDMinus && currBid<BBUpperValue
+         if(adxDPlus>adxDMinus
             && currAsk>hma && eMACurr>hma && eMAPrev<=prevhma
             && (closePrice-openPrice)>MarketInfo(symbolName,MODE_POINT)*12)
             //((hmaCurrSlow1!=EMPTY_VALUE && currAsk>hmaCurrSlow1) || (hmaCurrSlow3!=EMPTY_VALUE && currAsk>hmaCurrSlow3))
@@ -1415,7 +1431,7 @@ Sell
 
          //if(adxDMinus>20.0 && adxDPlus<adxDMinus
          //&& 
-         if(adxDPlus<adxDMinus && currAsk>BBLowerValue
+         if(adxDPlus<adxDMinus
             && currBid<hma && eMACurr<hma && eMAPrev>=prevhma
             && (openPrice-closePrice)>MarketInfo(symbolName,MODE_POINT)*12)
            {
@@ -2083,15 +2099,15 @@ Sell
       */
      }
 
-   if(strategyName=="goldenGate")
+   if(strategyName=="goldenGate" && !goldengateNew)
      {
 /*
      BB 23/Close, RSI 18, если цена заходит за границу BB и RSI ставится пендинг к примеру стоп лос на 10 пунктов ниже
      и двигается с ценой наверх пока цена не пойдет вниз и не откроется ордер. потом тянется так же по пунктику вниз SL в плюс
      */
-      double RSIValue = iRSI(symbolName,symbolTimeframe,RSICandlesAmount,PRICE_CLOSE,0);
-      double BBLowerValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0),digits);
-      double BBUpperValue = NormalizeDouble(iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0),digits);
+      double RSIValue=iRSI(symbolName,symbolTimeframe,RSICandlesAmount,PRICE_CLOSE,0);
+      double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
+      double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);
       double bidPrice=MarketInfo(symbolName,MODE_BID);
       double askPrice=MarketInfo(symbolName,MODE_ASK);
       //--- get minimum stop level 
@@ -2110,7 +2126,10 @@ Sell
             bool pendingBuyCheck=OrderSend(symbolName,OP_BUYSTOP,getTradeDoubleValue(0,6),priceBuy,3,stoplossBuy,takeprofitBuy,EAName+"!1",MagicNumber,TimeCurrent()+660,clrGreen);
            }
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-           } else if(askPrice<BBLowerValue && RSIValue<20) {
+        }
+      else
+      if(askPrice<BBLowerValue && RSIValue<20)
+        {
          if(!SendOnlyNotificationsNoTrades)
            {
             bool pendingSellCheck=OrderSend(symbolName,OP_SELLSTOP,getTradeDoubleValue(0,6),priceSell,3,stoplossSell,takeprofitSell,EAName+"!1",MagicNumber,TimeCurrent()+660,clrRed);
@@ -2429,6 +2448,7 @@ void generateSignalsAndPositions(string strategyName)
          string signalStr=getSignalForCurrencyAndStrategy(symbolNameBuffer[x],symbolTimeframe,strategyName);
          if(signalStr!="noSignal")
            {
+            setTradeVarsValues();
             int OSC=getOpenedSellPositionsForSymbol(symbolNameBuffer[x]);
             int OBC=getOpenedBuyPositionsForSymbol(symbolNameBuffer[x]);
             int OP = getOpenedPositionsForSymbol(symbolNameBuffer[x]);
@@ -2459,6 +2479,10 @@ void generateSignalsAndPositions(string strategyName)
                  }
               }
            }
+
+         //---
+         if(strategyName=="goldenGate" && goldengateNew)
+            StrategyGoldenGate(symbolNameBuffer[x],symbolTimeframe);
         }
      }
   }
@@ -2762,7 +2786,7 @@ void openPendingsForWrongDirectionTrades(string symbolName)
         {
          if(!OrderSelect(i,SELECT_BY_POS,MODE_TRADES))continue;
          if(OrderSymbol()!=symbolName)continue;
-         if(OrderMagicNumber()!=MagicNumber)continue;
+         if(OrderMagicNumber()!=MagicNumber && MagicNumber!=0)continue;
          //if(OrderTicket()>lastticket)
            {
             lastticket=OrderTicket();
@@ -2774,6 +2798,7 @@ void openPendingsForWrongDirectionTrades(string symbolName)
            }
          //}
          int n=(int)cutEnd(lastcom,"!")+1;
+         if(MagicNumber==0)n=2;
          string comment=EAName+"_"+IntegerToString(lastticket)+"!"+string(n);
          if(n-1>=MaxPendingAmount && MaxPendingAmount>0) {Print("HandleWrongPositions: Max amount of orders reached!");continue;}
          if((lasttype==OP_BUY || lasttype==OP_BUYSTOP) && Bid<=lastprice-StepInPoints*_Point)
@@ -2810,7 +2835,7 @@ void handleWrongDirectionTrades(string symbolName)
      {
       if(!OrderSelect(i,SELECT_BY_POS,MODE_TRADES))continue;
       if(OrderSymbol()!=_Symbol)continue;
-      if(OrderMagicNumber()!=MagicNumber)continue;
+      if(OrderMagicNumber()!=MagicNumber && MagicNumber!=0)continue;
       if(OrderType()!=OP_BUY && OrderType()!=OP_SELL)continue;
       currentProfit+=OrderProfit()+OrderSwap()+OrderCommission();
       double profit=OrderProfit();
@@ -2883,5 +2908,156 @@ bool hasAlreadyPending(string symbolName,double openPrice,int orderNumber)
         }
      }
    return res;
+  }
+//+------------------------------------------------------------------+
+void StrategyGoldenGate(string symbolName,int symbolTimeframe)
+  {
+   HideTestIndicators(false);
+   double RSIValue=iRSI(symbolName,symbolTimeframe,RSICandlesAmount,PRICE_CLOSE,0);
+   double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
+   double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);
+   double bidPrice=MarketInfo(symbolName,MODE_BID);
+   double askPrice=MarketInfo(symbolName,MODE_ASK);
+//--- get minimum stop level 
+   double minstoplevel=MarketInfo(symbolName,MODE_STOPLEVEL);
+   double priceBuy=Nd(askPrice-GapFromBlock*Pt(symbolName),symbolName);
+   double priceSell=Nd(bidPrice+GapFromBlock*Pt(symbolName),symbolName);
+//--- calculated SL and TP prices must be normalized 
+   double stoplossBuy=Nd(priceBuy-((minstoplevel+SL)*Pt(symbolName)),symbolName);
+   double takeprofitBuy=Nd(priceBuy+((minstoplevel+TP)*Pt(symbolName)),symbolName);
+   double stoplossSell=Nd(priceSell+((minstoplevel+SL)*Pt(symbolName)),symbolName);
+   double takeprofitSell=Nd(priceSell-((minstoplevel+TP)*Pt(symbolName)),symbolName);
+   string additionalText="";
+   int trades=0,pe=0,ngolden=0;
+   double gapStep=3;
+   static double lastgap=GapFromBlock;
+   static double lasttsl=TrailingStep;
+   bool checkgap=false;
+   bool checktsl=false;
+//Print(1);
+   for(int i=OrdersTotal();i>=0;i--)
+     {
+      if(!OrderSelect(i,SELECT_BY_POS,MODE_TRADES))continue;
+      if(OrderSymbol()!=symbolName)continue;
+      if(OrderMagicNumber()!=MagicNumber)continue;
+      trades++;
+      if(StringFind(OrderComment(),":G",0)>=0)
+        {
+         if(OrderType()==OP_BUY || OrderType()==OP_SELL)
+           {
+            ngolden++;
+
+            //---TSL
+            if(lasttsl>0)
+              {
+               if(OrderType()==OP_BUY)
+                 {
+                  if(Nd(bidPrice-OrderStopLoss(),symbolName)/Pt(symbolName)>lasttsl)
+                    {
+                     double price=OrderOpenPrice();
+                     double sl=Nd(bidPrice-((lasttsl-DistanceStep)*Pt(symbolName)),symbolName);
+                     double tp=OrderTakeProfit();
+                     bool mod=OrderModify(OrderTicket(),price,sl,tp,OrderExpiration(),clrGreen);
+                     if(mod)
+                        checktsl=true;
+                    }
+                 }
+               if(OrderType()==OP_SELL)
+                 {
+                  if(Nd(OrderStopLoss()-askPrice,symbolName)/Pt(symbolName)>lasttsl)
+                    {
+                     double price=OrderOpenPrice();
+                     double sl=Nd(askPrice+((lasttsl-DistanceStep)*Pt(symbolName)),symbolName);
+                     double tp=OrderTakeProfit();
+                     bool mod=OrderModify(OrderTicket(),price,sl,tp,OrderExpiration(),clrRed);
+                     if(mod)
+                        checktsl=true;
+                    }
+                 }
+
+              }
+           }
+         if(OrderType()!=OP_BUY && OrderType()!=OP_SELL)
+            pe++;
+         if(OrderType()==OP_BUYLIMIT)
+           {
+            if(Nd(askPrice-OrderOpenPrice(),symbolName)/Pt(symbolName)<lastgap)
+              {
+               double price=Nd(askPrice-(lastgap-gapStep)*Pt(symbolName),symbolName);
+               double sl=Nd(price-((minstoplevel+SL)*Pt(symbolName)),symbolName);
+               double tp=Nd(price+((minstoplevel+TP)*Pt(symbolName)),symbolName);
+               bool mod=OrderModify(OrderTicket(),price,sl,tp,OrderExpiration(),clrGreen);
+               if(mod)
+                  checkgap=true;
+              }
+           }
+         //if(OrderType()!=OP_SELL)
+         //Print(OrderType(),P,OP_SELLLIMIT);
+         if(OrderType()==OP_SELLLIMIT)
+           {
+            if(Nd(OrderOpenPrice()-bidPrice,symbolName)/Pt(symbolName)<lastgap)
+              {
+               //Print(Nd(OrderOpenPrice()-bidPrice,symbolName)/Pt(symbolName),P,lastgap);
+
+               double price=Nd(bidPrice+(lastgap-gapStep)*Pt(symbolName),symbolName);
+               double sl=Nd(price+((minstoplevel+SL)*Pt(symbolName)),symbolName);
+               double tp=Nd(price-((minstoplevel+TP)*Pt(symbolName)),symbolName);
+               bool mod=OrderModify(OrderTicket(),price,sl,tp,OrderExpiration(),clrRed);
+               if(mod)
+                  checkgap=true;
+              }
+           }
+         //ExpertRemove();
+        }
+     }
+   if(checkgap)
+     {
+      lastgap-=gapStep;
+     }
+   if(checktsl)
+     {
+      lasttsl-=DistanceStep;
+     }
+
+//---
+   string comment=EAName+":G"+"!1";
+   double lot=getTradeDoubleValue(0,6);
+   if(pe==0 && ngolden==0)
+     {
+      if(bidPrice>BBUpperValue && RSIValue>80)
+        {
+         //Print(bidPrice,P,BBUpperValue,P,RSIValue);
+         if(!SendOnlyNotificationsNoTrades)
+           {
+            int res=OrderSend(symbolName,OP_SELLLIMIT,lot,priceSell,3,stoplossSell,takeprofitSell,comment,MagicNumber,0,clrRed);
+            if(res>=0)
+              {
+               lastgap=GapFromBlock;
+               lasttsl=TrailingStep;
+              }
+            else Alert(_Symbol," ","Failed to open Price:",priceSell," error ",GetLastError()," SL:",stoplossSell," TP:",takeprofitBuy," Lot:",lot);
+
+           }
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,"goldenGate");
+        }
+
+      if(askPrice<BBLowerValue && RSIValue<20)
+        {
+         if(!SendOnlyNotificationsNoTrades)
+           {
+            int res=OrderSend(symbolName,OP_BUYLIMIT,lot,priceBuy,3,stoplossBuy,takeprofitBuy,comment,MagicNumber,0,clrGreen);
+            if(res>=0)
+              {
+               lastgap=GapFromBlock;
+               lasttsl=TrailingStep;
+              }
+            else Alert(_Symbol," ","Failed to open Price:",priceSell," error ",GetLastError()," SL:",stoplossSell," TP:",takeprofitBuy," Lot:",lot);
+           }
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,"goldenGate");
+        }
+     }
+   if(pe>0)
+     {
+     }
   }
 //+------------------------------------------------------------------+
