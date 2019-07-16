@@ -2923,10 +2923,14 @@ void StrategyGoldenGate(string symbolName,int symbolTimeframe)
    double priceBuy=Nd(askPrice+GapFromBlock*Pt(symbolName),symbolName);
    double priceSell=Nd(bidPrice-GapFromBlock*Pt(symbolName),symbolName);
 //--- calculated SL and TP prices must be normalized 
-   double stoplossBuy=Nd(priceBuy-((minstoplevel+SL)*Pt(symbolName)),symbolName);
-   double takeprofitBuy=Nd(priceBuy+((minstoplevel+TP)*Pt(symbolName)),symbolName);
-   double stoplossSell=Nd(priceSell+((minstoplevel+SL)*Pt(symbolName)),symbolName);
-   double takeprofitSell=Nd(priceSell-((minstoplevel+TP)*Pt(symbolName)),symbolName);
+   double stoplossBuy=0;
+   if(SL>0)stoplossBuy=Nd(priceBuy-((minstoplevel+SL)*Pt(symbolName)),symbolName);
+   double takeprofitBuy=0;
+   if(TP>0)takeprofitBuy=Nd(priceBuy+((minstoplevel+TP)*Pt(symbolName)),symbolName);
+   double stoplossSell=0;
+   if(SL>0)stoplossSell=Nd(priceSell+((minstoplevel+SL)*Pt(symbolName)),symbolName);
+   double takeprofitSell=0;
+   if(TP>0)takeprofitSell=Nd(priceSell-((minstoplevel+TP)*Pt(symbolName)),symbolName);
    string additionalText="";
    int trades=0,pe=0,ngolden=0;
    double gapStep=3;
