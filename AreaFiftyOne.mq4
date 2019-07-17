@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2019 VBApps::Valeri Balachnin"
-#property version   "5.7"
+#property version   "5.8"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
