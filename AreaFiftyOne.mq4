@@ -25,13 +25,13 @@ string ndtDef(double _text,int n){string text=(string)NormalizeDouble(_text,n),r
 #define nd0(_val) MathRound(_val)
 #define P         " "
 #include <Area51_Lib.mqh>
-#define INDPATH "Indicators\\1\\"
+#define INDPATH "Indicators\\"
 #resource "\\"+INDPATH+"AreaFiftyOneIndicator.ex4"
 #resource "\\"+INDPATH+"AreaFiftyOne_Trend.ex4"
 #resource "\\"+INDPATH+"MagicTrend.ex4"
 #resource "\\"+INDPATH+"HMA_Color.ex4"
 #resource "\\"+INDPATH+"Heiken_Ashi_Smoothed.ex4"
-#resource "\\"+INDPATH+"Improved_CCI.ex4"
+//#resource "\\"+INDPATH+"Improved_CCI.ex4"
 
 #define   SIGNAL_BUY          1
 #define   SIGNAL_SELL         -1
@@ -61,16 +61,17 @@ extern static string Positions="Handle positions params";
 extern int      TrailingStep=15;
 extern int      DistanceStep=15;
 extern int      TakeProfit=750;
-extern int      StopLoss=0;
+extern int      StopLoss=10000;
 extern int      MinAmount=150;
 extern int      SetSLToMinAmountUnder=100;
 extern int      MaxSpread=25;
 extern static string Indicators="Choose strategies";
-extern static string GoldenGateStrategy="-------------------";
-extern bool     UseGoldenGateStrategy=true;
-input  bool     goldengateNew=true;                 //Golden Gate New strategy?
-extern int      BollingerCandelsAmount=23;
-extern int      RSICandlesAmount=18;
+static string GoldenGateStrategy="-------------------";
+bool     UseGoldenGateStrategy=false;
+input  bool     goldengateNew=false;                 //Golden Gate New strategy?
+int      BollingerCandelsAmount=23;
+int      RSICandlesAmount=18;
+int      RSILevel=20;
 extern static string TrendIndicatorStrategy="-------------------";
 extern bool     UseTrendIndicator=false;
 extern double   Smoothing=3.0;
@@ -78,7 +79,7 @@ extern bool     UseSMAOnTrendIndicator=true;
 extern int      UseOneOrTwoSMAOnTrendIndicator=1;
 extern bool     UseSMAsCrossingOnTrendIndicatorData=false;
 extern static string RSIBasedStrategy="-------------------";
-extern bool     UseRSIBasedIndicator=false;
+extern bool     UseRSIBasedIndicator=true;
 //extern bool     UseADXWithBaseLine=false;
 extern bool     UseCorridorCroosing=false;
 extern static string MACD_ADX_MA_Strategy="-------------------";
@@ -120,9 +121,9 @@ extern double   DistanceForPending=0.0;
 extern static string SimpleMAsStrategy="-------------------";
 extern bool     UseSimpleMAsStrategy=false;
 extern bool     UseCCIAverageFiltering=false;
-extern static string CCIAverageStrategy="-------------------";
-extern bool     UseCCIAverageStrategy=false;
-extern double   CCISignalValue=150.0;
+//extern static string CCIAverageStrategy="-------------------";
+bool     UseCCIAverageStrategy=false;
+double   CCISignalValue=150.0;
 //do not use this strategy!!! is garbage!
 //extern static string LongTermJourneyToSunriseStrategy="-------------------";
 bool     UseLongTermJourneyToSunriseStrategy=false;
@@ -395,7 +396,7 @@ void OnTick()
   {
 //---
    uint starting=GetTickCount();
-//setTradeVarsValues();
+   setTradeVarsValues();
    double TempLoss=getTempLoss();
 
    if(AccountBalance()>0)
@@ -2920,8 +2921,8 @@ void StrategyGoldenGate(string symbolName,int symbolTimeframe)
    double askPrice=MarketInfo(symbolName,MODE_ASK);
 //--- get minimum stop level 
    double minstoplevel=MarketInfo(symbolName,MODE_STOPLEVEL);
-   double priceBuy=Nd(askPrice+GapFromBlock*Pt(symbolName),symbolName);
-   double priceSell=Nd(bidPrice-GapFromBlock*Pt(symbolName),symbolName);
+   double priceBuy=Nd(askPrice+StopLoss*Pt(symbolName),symbolName);
+   double priceSell=Nd(bidPrice-StopLoss*Pt(symbolName),symbolName);
 //--- calculated SL and TP prices must be normalized 
    double stoplossBuy=Nd(priceBuy-((minstoplevel+SL)*Pt(symbolName)),symbolName);
    double takeprofitBuy=Nd(priceBuy+((minstoplevel+TP)*Pt(symbolName)),symbolName);
@@ -2930,7 +2931,7 @@ void StrategyGoldenGate(string symbolName,int symbolTimeframe)
    string additionalText="";
    int trades=0,pe=0,ngolden=0;
    double gapStep=3;
-   static double lastgap=GapFromBlock;
+   static double lastgap=StopLoss;
    static double lasttsl=TrailingStep;
 //bool checkgap=false;
 //bool checktsl=false;
@@ -2991,9 +2992,9 @@ void StrategyGoldenGate(string symbolName,int symbolTimeframe)
             pe++;
          if(OrderType()==OP_BUYSTOP)
            {
-            if(Nd(OrderOpenPrice()-askPrice,symbolName)>GapFromBlock*Pt(symbolName))
+            if(Nd(OrderOpenPrice()-askPrice,symbolName)>StopLoss*Pt(symbolName))
               {
-               double price=Nd(askPrice+(GapFromBlock)*Pt(symbolName),symbolName);
+               double price=Nd(askPrice+(StopLoss)*Pt(symbolName),symbolName);
                double sl=Nd(price-((minstoplevel+SL)*Pt(symbolName)),symbolName);
                double tp=Nd(price+((minstoplevel+TP)*Pt(symbolName)),symbolName);
                bool mod=OrderModify(OrderTicket(),price,sl,tp,OrderExpiration(),clrGreen);
@@ -3005,11 +3006,11 @@ void StrategyGoldenGate(string symbolName,int symbolTimeframe)
          //Print(OrderType(),P,OP_SELLLIMIT);
          if(OrderType()==OP_SELLSTOP)
            {
-            if(Nd(bidPrice-OrderOpenPrice(),symbolName)>GapFromBlock*Pt(symbolName))
+            if(Nd(bidPrice-OrderOpenPrice(),symbolName)>StopLoss*Pt(symbolName))
               {
                //Print(Nd(OrderOpenPrice()-bidPrice,symbolName)/Pt(symbolName),P,lastgap);
 
-               double price=Nd(bidPrice-(GapFromBlock)*Pt(symbolName),symbolName);
+               double price=Nd(bidPrice-(StopLoss)*Pt(symbolName),symbolName);
                double sl=Nd(price+((minstoplevel+SL)*Pt(symbolName)),symbolName);
                double tp=Nd(price-((minstoplevel+TP)*Pt(symbolName)),symbolName);
                bool mod=OrderModify(OrderTicket(),price,sl,tp,OrderExpiration(),clrRed);
@@ -3034,7 +3035,7 @@ void StrategyGoldenGate(string symbolName,int symbolTimeframe)
    double lot=getTradeDoubleValue(0,6);
    if(pe==0 && ngolden==0)
      {
-      if(bidPrice>BBUpperValue && RSIValue>80)
+      if(bidPrice>BBUpperValue && RSIValue>100-RSILevel)
         {
          //Print(bidPrice,P,BBUpperValue,P,RSIValue);
          if(!SendOnlyNotificationsNoTrades)
@@ -3051,7 +3052,7 @@ void StrategyGoldenGate(string symbolName,int symbolTimeframe)
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,"goldenGate");
         }
 
-      if(askPrice<BBLowerValue && RSIValue<20)
+      if(askPrice<BBLowerValue && RSIValue<RSILevel)
         {
          if(!SendOnlyNotificationsNoTrades)
            {
