@@ -4,8 +4,8 @@
 //|                                                 http://vbapps.co |
 //+------------------------------------------------------------------+
 
-#property copyright "Copyright © 2019 VBApps::Valeri Balachnin"
-#property version   "5.8"
+#property copyright "Copyright © 2020 VBApps::Valeri Balachnin"
+#property version   "5.93"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
@@ -121,6 +121,11 @@ extern double   DistanceForPending=0.0;
 extern static string SimpleMAsStrategy="-------------------";
 extern bool     UseSimpleMAsStrategy=false;
 extern bool     UseCCIAverageFiltering=false;
+extern static string TrendMagicStrategy="-------------------";
+extern bool     UseTrendMagicStrategy=false;
+extern bool     ASignals=true;
+extern bool     BSignals=false;
+extern bool     ACrossing=false;
 //extern static string CCIAverageStrategy="-------------------";
 bool     UseCCIAverageStrategy=false;
 double   CCISignalValue=150.0;
@@ -180,9 +185,9 @@ bool DebugTrace=false;
 bool trial_lic=false;
 datetime expiryDate=D'2018.12.01 00:00';
 bool rent_lic=false;
-datetime rentExpiryDate=D'2020.01.01 00:00';
-int rentAccountNumber=0;
-string rentCustomerName="";
+datetime rentExpiryDate=D'2021.01.03 00:00';
+int rentAccountNumber=999007492;
+string rentCustomerName="Ronald Prinz";
 /*licence_end*/
 
 int RSI_Period=14;         //8-25
@@ -313,7 +318,7 @@ int OnInit()
            }
         }
      }
-//HideTestIndicators(true);
+   HideTestIndicators(true);
    if(UseRSIBasedIndicator)
      {
       handle_ind=0;
@@ -364,6 +369,7 @@ int OnInit()
          return(INIT_FAILED);
         }
      }
+    
 /*if(UseCCIAverageStrategy)
      {
       int handle_ind10=0;
@@ -374,7 +380,7 @@ int OnInit()
          return(INIT_FAILED);
         }
      }*/
-   HideTestIndicators(false);
+   //HideTestIndicators(false);
 //---
    return(INIT_SUCCEEDED);
   }
@@ -429,7 +435,7 @@ void OnTick()
    if(HandleOnCandleOpenOnly==false && CurrentCandleHasNoOpenedTrades(Symbol())) {CheckForSignal=true;}
 
 //double TempTDIGreen=0,TempTDIRed=0;
-   HideTestIndicators(true);
+   //HideTestIndicators(true);
    string strategyName="";
    BuyFlag=false;SellFlag=false;
    if(TradingAllowed==true && (CheckForSignal==true || UseGoldenGateStrategy))
@@ -753,6 +759,23 @@ void OnTick()
          if(UseMagicSymphonieStrategy)
            {
             strategyName="magicSymphonie";
+            if(TradeOnAllSymbols)
+              {
+               generateSignalsAndPositions(strategyName);
+                 } else {
+               string signalStr=getSignalForCurrencyAndStrategy(Symbol(),0,strategyName);
+               if(signalStr=="Sell")
+                 {
+                  SellFlag=true;
+                    } else if(signalStr=="Buy"){
+                  BuyFlag=true;
+                 }
+              }
+           }
+      if(!BuyFlag && !SellFlag)
+         if(UseTrendMagicStrategy)
+           {
+            strategyName="trendMagic";
             if(TradeOnAllSymbols)
               {
                generateSignalsAndPositions(strategyName);
@@ -1699,9 +1722,32 @@ Sell
            }
         }
      }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+   if(strategyName=="trendMagic")
+     {
+      double signal_value=0.0;double signal_value_1=0.0;double main_value=0.0;double main_value_1=0.0;
+      signal_value=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_SIGNAL,1),digits);
+      signal_value_1=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_SIGNAL,2),digits);
+      main_value=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_MAIN,1),digits);
+      main_value_1=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_MAIN,2),digits);
+      
+      if(ACrossing==true && main_value<signal_value && signal_value>80 && main_value_1>signal_value_1) {
+        if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+      }
+      if(ACrossing==true && main_value>signal_value && signal_value<20 && main_value_1<signal_value_1) {
+      if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+      }
+      
+      if((ASignals==true && (signal_value>10.0 && signal_value_1<10.0)) || (BSignals==true && (signal_value>20.0 && signal_value_1<20.0))) {
+         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+      }
+      if((ASignals==true && (signal_value<90.0 && signal_value_1>90.0)) || (BSignals==true && (signal_value<80.0 && signal_value_1>80.0))) {
+         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+      }
+     } 
    if(strategyName=="stochCroosingRSI")
      {
       int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=0;
@@ -2286,8 +2332,8 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
    if(CurProfit>=0.0)
      {
-      ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
-        }else{ObjectSetText("CurProfit","EA Profit: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+      ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
+        }else{ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
 
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
@@ -2913,7 +2959,7 @@ bool hasAlreadyPending(string symbolName,double openPrice,int orderNumber)
 //+------------------------------------------------------------------+
 void StrategyGoldenGate(string symbolName,int symbolTimeframe)
   {
-   HideTestIndicators(false);
+   //HideTestIndicators(false);
    double RSIValue=iRSI(symbolName,symbolTimeframe,RSICandlesAmount,PRICE_CLOSE,0);
    double BBLowerValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_LOWER,0);
    double BBUpperValue = iBands(symbolName,symbolTimeframe,BollingerCandelsAmount,2,0,PRICE_CLOSE,MODE_UPPER,0);

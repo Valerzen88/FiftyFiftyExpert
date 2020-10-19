@@ -102,6 +102,7 @@ extern int Trade_Signal_Line2=0;
 extern bool UseAlerts=true;
 extern double LotSize=0.05;
 extern int CentMultiplicator=9;
+extern int IndicatorBars=200;
 
 double RSIBuf[],UpZone[],MdZone[],DnZone[],MaBuf[],MbBuf[],McBuf[];
 double CrossPosStart,CrossPosEnd;
@@ -152,8 +153,12 @@ int start()
   {
    double MA,RSI[];
    ArrayResize(RSI,Volatility_Band);
-   int counted_bars=IndicatorCounted();
-   int limit=Bars-counted_bars-1;
+   int counted_bars=0;
+   int bars=0;
+   if(IndicatorBars>100){counted_bars=IndicatorBars;}else
+   {counted_bars=IndicatorCounted();}
+   if(Bars>1000&&IndicatorBars>100){bars=1000;}else{bars=Bars;}
+   int limit=bars-counted_bars-1;
    for(int i=limit; i>=0; i--)
      {
       RSIBuf[i]=(iRSI(NULL,0,RSI_Period,RSI_Price,i));
