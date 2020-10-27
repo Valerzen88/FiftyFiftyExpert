@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2020 VBApps::Valeri Balachnin"
-#property version   "5.93"
+#property version   "5.98"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
@@ -68,7 +68,7 @@ extern int      MaxSpread=25;
 extern static string Indicators="Choose strategies";
 static string GoldenGateStrategy="-------------------";
 bool     UseGoldenGateStrategy=false;
-input  bool     goldengateNew=false;                 //Golden Gate New strategy?
+bool     goldengateNew=false;                 //Golden Gate New strategy?
 int      BollingerCandelsAmount=23;
 int      RSICandlesAmount=18;
 int      RSILevel=20;
@@ -91,21 +91,21 @@ extern bool     Use5050Strategy=false;
 extern bool     UseMAOn5050Strategy=false;
 extern static string StochastiCroosingRSIStrategy="-------------------";
 extern bool     UseStochRSICroosingStrategy=true;
-extern static string UseNightAsianBlockStrategy="-------------------";;
-extern bool     UseNightAsianBlock=false;
-extern int      GapFromBlock=60;
-extern int      CandleCountInBlock=12;
-extern int      MaxBlockSizeInPoints=300;
-extern static string IchimokuClouds="-------------------";
-extern bool     UseIchimokuClouds=false;
+static string UseNightAsianBlockStrategy="-------------------";;
+bool     UseNightAsianBlock=false;
+int      GapFromBlock=60;
+int      CandleCountInBlock=12;
+int      MaxBlockSizeInPoints=300;
+static string IchimokuClouds="-------------------";
+bool     UseIchimokuClouds=false;
 int      Tenkan=24; // Tenkan line period. The fast "moving average".
 int      Kijun=48; // Kijun line period. The slow "moving average".
 int      Senkou=240;  // Senkou period. Used for Kumo (Cloud) spans.
-extern int      IchimokuMAPeriod=12;
-extern int      IchimokuMAShift=9;
-extern bool     UseIchimokuCrossing=true;
-extern bool     UseIchimokuMACrossing=true;
-extern bool     UseIchimokuADXMA=false;
+int      IchimokuMAPeriod=12;
+int      IchimokuMAShift=9;
+bool     UseIchimokuCrossing=true;
+bool     UseIchimokuMACrossing=true;
+bool     UseIchimokuADXMA=false;
 extern static string UseADX50PlusStrategy="-------------------";
 extern bool     UseADX50Plus=false;
 extern int      ADX50PlusPeriod=34;
@@ -118,14 +118,14 @@ extern static string SmoothedStrategy="-------------------";
 extern bool     UseSmoothedStrategy=false;
 extern bool     SmoothedWithADX=false;
 extern double   DistanceForPending=0.0;
-extern static string SimpleMAsStrategy="-------------------";
-extern bool     UseSimpleMAsStrategy=false;
-extern bool     UseCCIAverageFiltering=false;
+static string SimpleMAsStrategy="-------------------";
+bool     UseSimpleMAsStrategy=false;
+bool     UseCCIAverageFiltering=false;
 extern static string TrendMagicStrategy="-------------------";
 extern bool     UseTrendMagicStrategy=false;
 extern bool     ASignals=true;
 extern bool     BSignals=false;
-extern bool     ACrossing=false;
+bool     ACrossing=false;
 //extern static string CCIAverageStrategy="-------------------";
 bool     UseCCIAverageStrategy=false;
 double   CCISignalValue=150.0;
