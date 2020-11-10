@@ -1724,30 +1724,45 @@ Sell
      }
    if(strategyName=="trendMagic")
      {
-      double signal_value=0.0;double signal_value_1=0.0;double main_value=0.0;double main_value_1=0.0;
+      double signal_value=0.0,signal_value_1=0.0,main_value=0.0,main_value_1=0.0;
       signal_value=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_SIGNAL,1),digits);
       signal_value_1=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_SIGNAL,2),digits);
       main_value=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_MAIN,1),digits);
       main_value_1=NormalizeDouble(iStochastic(symbolName,symbolTimeframe,21,6,2,MODE_EMA,1,MODE_MAIN,2),digits);
-      
-      if(ACrossing==true && main_value<signal_value && signal_value>80 && main_value_1>signal_value_1) {
-        if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+
+      if(ACrossing==true && main_value<signal_value && signal_value>80.0 && main_value_1>signal_value_1)
+        {
+         if(!SendOnlyNotificationsNoTrades){SellFlag=true;SellOpened=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-      }
-      if(ACrossing==true && main_value>signal_value && signal_value<20 && main_value_1<signal_value_1) {
-      if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+        }
+      if(ACrossing==true && main_value>signal_value && signal_value<20.0 && main_value_1<signal_value_1)
+        {
+         if(!SendOnlyNotificationsNoTrades){BuyFlag=true;BuyOpened=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
-      }
-      
-      if((ASignals==true && (signal_value>10.0 && signal_value_1<10.0)) || (BSignals==true && (signal_value>20.0 && signal_value_1<20.0))) {
-         if(!SendOnlyNotificationsNoTrades) {BuyFlag=true;BuyOpened=true;}
+        }
+
+      if((ASignals==true && (signal_value>10.0 && signal_value_1<10.0)) || (BSignals==true && (signal_value>20.0 && signal_value_1<20.0)))
+        {
+         if(!SendOnlyNotificationsNoTrades){BuyFlag=true;BuyOpened=true;}
          createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
-      }
-      if((ASignals==true && (signal_value<90.0 && signal_value_1>90.0)) || (BSignals==true && (signal_value<80.0 && signal_value_1>80.0))) {
-         if(!SendOnlyNotificationsNoTrades) {SellFlag=true;SellOpened=true;}
+        }
+      if((ASignals==true && (signal_value<90.0 && signal_value_1>90.0)) || (BSignals==true && (signal_value<80.0 && signal_value_1>80.0)))
+        {
+         if(!SendOnlyNotificationsNoTrades){SellFlag=true;SellOpened=true;}
          createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
-      }
-     } 
+        }
+
+      if(DipSignals==true && signal_value_1>20.0 && signal_value<20.0)
+        {
+         if(!SendOnlyNotificationsNoTrades){SellFlag=true;SellOpened=true;}
+         createNotifications(symbolName,"SELL",symbolTimeframe,additionalText,strategyName);
+        }
+      if(DipSignals==true && signal_value_1<80.0 && signal_value>80.0)
+        {
+         if(!SendOnlyNotificationsNoTrades){BuyFlag=true;BuyOpened=true;}
+         createNotifications(symbolName,"BUY",symbolTimeframe,additionalText,strategyName);
+        }
+     }
    if(strategyName=="stochCroosingRSI")
      {
       int i=0,KPeriod2=21,DPeriod2=7,Slowing2=7,MAMethod2=MODE_SMA,PriceField2=0;
@@ -2332,47 +2347,56 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
    if(CurProfit>=0.0)
      {
-      ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
-        }else{ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+      ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),10,"Calibri",clrDeepSkyBlue);
+     }
+   else
+     {
+      ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),10,"Calibri",clrOrange);
 
      }
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
-   ObjectSet("CurProfit",OBJPROP_YDISTANCE,40);
+   ObjectSet("CurProfit",OBJPROP_YDISTANCE,45);
    if(HandleUserPositions)
      {
       ObjectCreate("CurProfitOfManualPlacedUserPositions",OBJ_LABEL,0,0,0);
       if(CurProfitOfUserPosis>=0.0)
         {
          ObjectSetText("CurProfitOfManualPlacedUserPositions",
-                       "Profit(user positions): "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),11,"Calibri",clrLime);
-           }else{ObjectSetText("CurProfitOfManualPlacedUserPositions",
-                                 "Profit(user positions): "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),11,"Calibri",clrOrangeRed);
+                       "User P/L: "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),10,"Calibri",clrDeepSkyBlue);
+        }
+      else
+        {
+         ObjectSetText("CurProfitOfManualPlacedUserPositions",
+                       "User P/L: "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),10,"Calibri",clrOrange);
         }
       ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_CORNER,1);
       ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_XDISTANCE,5);
-      ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_YDISTANCE,120);
+      ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_YDISTANCE,65);
      }
 
    ObjectCreate("MagicNumber",OBJ_LABEL,0,0,0);
-   ObjectSetText("MagicNumber","MagicNumber: "+IntegerToString(MagicNumber),11,"Calibri",clrMediumVioletRed);
+   ObjectSetText("MagicNumber","MagicNumber: "+IntegerToString(MagicNumber),10,"Calibri",clrMediumVioletRed);
    ObjectSet("MagicNumber",OBJPROP_CORNER,1);
    ObjectSet("MagicNumber",OBJPROP_XDISTANCE,5);
-   ObjectSet("MagicNumber",OBJPROP_YDISTANCE,60);
+   ObjectSet("MagicNumber",OBJPROP_YDISTANCE,30);
    if(!TradeOnAllSymbols)
      {
       ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
       if(tradeDoubleVarsValues[0][5]>0.0)
-        {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][5],2),11,"Calibri",clrLightYellow);}
-      else {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][6],2),11,"Calibri",clrLightYellow);}
+        {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][5],2),10,"Calibri",clrYellow);}
+      else
+        {
+         ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][6],2),10,"Calibri",clrYellow);
+        }
       ObjectSet("NextLotSize",OBJPROP_CORNER,1);
       ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
       ObjectSet("NextLotSize",OBJPROP_YDISTANCE,80);
-/*ObjectCreate("EAName",OBJ_LABEL,0,0,0);
-   ObjectSetText("EAName","EAName: "+EAName,11,"Calibri",clrGold);
-   ObjectSet("EAName",OBJPROP_CORNER,1);
-   ObjectSet("EAName",OBJPROP_XDISTANCE,5);
-   ObjectSet("EAName",OBJPROP_YDISTANCE,75);*/
+      /*ObjectCreate("EAName",OBJ_LABEL,0,0,0);
+         ObjectSetText("EAName","EAName: "+EAName,11,"Calibri",clrGold);
+         ObjectSet("EAName",OBJPROP_CORNER,1);
+         ObjectSet("EAName",OBJPROP_XDISTANCE,5);
+         ObjectSet("EAName",OBJPROP_YDISTANCE,75);*/
      }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -2380,16 +2404,104 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    if(CurrentLoss<0.0)
      {
       ObjectCreate("CurrentLoss",OBJ_LABEL,0,0,0);
-      ObjectSetText("CurrentLoss","Current loss in %: "+DoubleToString(CurrentLoss,2),11,"Calibri",clrDeepPink);
+      ObjectSetText("CurrentLoss","Current loss in %: "+DoubleToString(CurrentLoss,2),10,"Calibri",clrDeepPink);
       ObjectSet("CurrentLoss",OBJPROP_CORNER,1);
       ObjectSet("CurrentLoss",OBJPROP_XDISTANCE,5);
-      ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,100);
-        } else {ObjectDelete("CurrentLoss");
-
+      ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,95);
+      //add breakeven info
+      //for buy
+      ObjectCreate("BreakEvenInfo_BUY",OBJ_LABEL,0,0,0);
+      if(HandleLostPositions){
+      ObjectSetText("BreakEvenInfo_BUY","BE BUY & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
+      else {ObjectSetText("BreakEvenInfo_BUY","BE BUY: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
+      ObjectSet("BreakEvenInfo_BUY",OBJPROP_CORNER,1);
+      ObjectSet("BreakEvenInfo_BUY",OBJPROP_XDISTANCE,5);
+      ObjectSet("BreakEvenInfo_BUY",OBJPROP_YDISTANCE,110);
+   
+      ObjectCreate("LotSize_BUY",OBJ_LABEL,0,0,0);
+      ObjectSetText("LotSize_BUY","LotSize BUY: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,true),10,"Calibri",clrDarkTurquoise);
+      ObjectSet("LotSize_BUY",OBJPROP_CORNER,1);
+      ObjectSet("LotSize_BUY",OBJPROP_XDISTANCE,5);
+      ObjectSet("LotSize_BUY",OBJPROP_YDISTANCE,125);
+      //for sell
+      ObjectCreate("BreakEvenInfo_SELL",OBJ_LABEL,0,0,0);
+      if(HandleLostPositions){
+      ObjectSetText("BreakEvenInfo_SELL","BE SELL & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
+      else {ObjectSetText("BreakEvenInfo_SELL","BE SELL: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
+      ObjectSet("BreakEvenInfo_SELL",OBJPROP_CORNER,1);
+      ObjectSet("BreakEvenInfo_SELL",OBJPROP_XDISTANCE,5);
+      ObjectSet("BreakEvenInfo_SELL",OBJPROP_YDISTANCE,140);
+      
+      ObjectCreate("LotSize_SELL",OBJ_LABEL,0,0,0);
+      ObjectSetText("LotSize_SELL","LotSize SELL: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,true),10,"Calibri",clrDarkTurquoise);
+      ObjectSet("LotSize_SELL",OBJPROP_CORNER,1);
+      ObjectSet("LotSize_SELL",OBJPROP_XDISTANCE,5);
+      ObjectSet("LotSize_SELL",OBJPROP_YDISTANCE,155);
+     }
+   else
+     {
+      ObjectDelete("CurrentLoss");
+      ObjectDelete("BreakEvenInfo_SELL");
+      ObjectDelete("BreakEvenInfo_BUY");
+      ObjectDelete("LotSize_SELL");
+      ObjectDelete("LotSize_BUY");
      }
 
    if(!IsTesting() && trial_lic && TimeCurrent()>expiryDate) {ExpertRemove();}
    if(!IsTesting() && rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
+  }
+//+------------------------------------------------------------------+
+string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool getSymbolLotSize)
+  {
+   int cnt=0,PosCount_S=0,PosCount_B=0;
+   double AvgPrice_S=0.0,SymbolLotSize_S=0.0,PriceSum_S=0.0,AvgPrice_B=0.0,SymbolLotSize_B=0.0,PriceSum_B=0.0;
+   double BreakEven_BUY=0.0,BreakEven_SELL=0.0;
+   for(cnt=0; cnt<OrdersTotal(); cnt++)
+     {
+      if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true && OrderSymbol()==symbolName /*&& OrderMagicNumber()==MagicNumber*/)
+        {
+         if(OrderType()==OP_BUY && buyDirection==true)
+           {
+            PriceSum_B+=OrderLots()*OrderOpenPrice();
+            SymbolLotSize_B+=OrderLots();
+            PosCount_B++;
+           }
+
+         if(OrderType()==OP_SELL && buyDirection==false)
+           {
+            PriceSum_S+=OrderLots()*OrderOpenPrice();
+            SymbolLotSize_S+=OrderLots();
+            PosCount_S++;
+           }
+        }
+     }
+//to do add swap and commision as point
+   if(getSymbolLotSize==true)
+     {
+      if(buyDirection=true)
+        {
+         return DoubleToString(SymbolLotSize_B,2);
+        }
+      else
+        {
+         return DoubleToString(SymbolLotSize_S,2);
+        }
+     }
+   else
+     {
+      if(buyDirection==true)
+        {
+         BreakEven_BUY=(PriceSum_B/SymbolLotSize_B);
+         if(HandleLostPositions) {BreakEven_BUY+=PointsToTake*_Point;}
+         return DoubleToString(BreakEven_BUY,_Digits);
+        }
+      else
+        {
+         BreakEven_SELL=(PriceSum_S/SymbolLotSize_S);
+         if(HandleLostPositions) {BreakEven_SELL-=PointsToTake*_Point;}
+         return DoubleToString(BreakEven_SELL,_Digits);
+        }
+     }
   }
 //+------------------------------------------------------------------+  
 int getContractProfitCalcMode(string symbolName)
