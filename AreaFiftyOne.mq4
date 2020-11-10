@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 
 #property copyright "Copyright © 2020 VBApps::Valeri Balachnin"
-#property version   "5.98"
+#property version   "6.00"
 #property description "Collection of approved strategies with advanced money management, notifications and user positions handling."
 #property strict
 
@@ -125,6 +125,7 @@ extern static string TrendMagicStrategy="-------------------";
 extern bool     UseTrendMagicStrategy=false;
 extern bool     ASignals=true;
 extern bool     BSignals=false;
+extern bool     DipSignals=false;
 bool     ACrossing=false;
 //extern static string CCIAverageStrategy="-------------------";
 bool     UseCCIAverageStrategy=false;
@@ -266,18 +267,17 @@ int OnInit()
 
    numBars=Bars;
 
-   if(Debug)
-     {
-      Print("****Main ChartWindowDebugValues*****");
-      Print("AccountNumber="+IntegerToString(AccountNumber()));
-      Print("AccountCompany="+AccountCompany());
-      Print("AccountName=",AccountName());
-      Print("AccountServer=",AccountServer());
-      Print("MODE_LOTSIZE=",MarketInfo(Symbol(),MODE_LOTSIZE),", Symbol=",Symbol());
-      Print("MODE_MINLOT=",MarketInfo(Symbol(),MODE_MINLOT),", Symbol=",Symbol());
-      Print("MODE_LOTSTEP=",MarketInfo(Symbol(),MODE_LOTSTEP),", Symbol=",Symbol());
-      Print("MODE_MAXLOT=",MarketInfo(Symbol(),MODE_MAXLOT),", Symbol=",Symbol());
-     }
+   Print("****Main ChartWindowDebugValues*****");
+   Print("AccountNumber="+IntegerToString(AccountNumber()));
+   Print("AccountCompany="+AccountCompany());
+   Print("AccountName=",AccountName());
+   Print("AccountServer=",AccountServer());
+   Print("AccountLeverage=",AccountLeverage());
+   Print("MODE_LOTSIZE=",MarketInfo(Symbol(),MODE_LOTSIZE),", Symbol=",Symbol());
+   Print("MODE_MINLOT=",MarketInfo(Symbol(),MODE_MINLOT),", Symbol=",Symbol());
+   Print("MODE_LOTSTEP=",MarketInfo(Symbol(),MODE_LOTSTEP),", Symbol=",Symbol());
+   Print("MODE_MAXLOT=",MarketInfo(Symbol(),MODE_MAXLOT),", Symbol=",Symbol());
+       
    if(trial_lic)
      {
       if(!IsTesting() && TimeCurrent()>expiryDate)
@@ -394,6 +394,10 @@ void OnDeinit(const int reason)
    ObjectDelete("CurrentLoss");
    ObjectDelete("CurProfitOfManualPlacedUserPositions");
    ObjectDelete("MagicNumber");
+   ObjectDelete("BreakEvenInfo_SELL");
+   ObjectDelete("BreakEvenInfo_BUY");
+   ObjectDelete("LotSize_SELL");
+   ObjectDelete("LotSize_BUY");
   }
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
@@ -2209,151 +2213,13 @@ Sell
 // HideTestIndicators(true); //<- reactivate before publish!
    return res;
   }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-/*bool PositionCanBeOpened()
-  {
-   bool positionCanBeOpened=false;
-   if(HandleOnCandleOpenOnly==false && MaxOpenedPositionsOnCandle>0 && (OrdersHistoryTotal()>0 || OrdersTotal()>0))
-     {
-      int currentAlreadyOpenedPositions=0;
-      for(int cnt=0;cnt<OrdersTotal();cnt++)
-        {
-         if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true)
-           {
-            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
-              {
-               if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
-                 {
-                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
-                    {
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        //positionCanBeOpened=true;
-                       }
-                    }
-                 }
-               if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
-                 {
-                  if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
-                    {
-                    Print(TimeHour(Time[0])+"=="+TimeHour(OrderOpenTime()));
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     Print("currentAlreadyOpenedPositions="+currentAlreadyOpenedPositions);
-                     Print("MaxOpenedPositionsOnCandle="+MaxOpenedPositionsOnCandle);
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        positionCanBeOpened=true;
-                          } else {
-                        positionCanBeOpened=false;
-                       }
-                    }
-                 }
-               if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
-                 {
-                  if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
-                    {
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        //positionCanBeOpened=true;
-                       }
-                    }
-                 }
-               if(Period()==PERIOD_MN1)
-                 {
-                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
-                    {
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        //positionCanBeOpened=true;
-                       }
-                    }
-                 }
-              }
-           }
-        }
-      for(int cnt=0;cnt<OrdersHistoryTotal();cnt++)
-        {
-         if(OrderSelect(cnt,SELECT_BY_POS,MODE_HISTORY)==true)
-           {
-            if((OrderType()==OP_SELL || OrderType()==OP_BUY) && OrderSymbol()==Symbol() && ((OrderMagicNumber()==MagicNumber)))
-              {
-               if(Period()==PERIOD_M1 || Period()==PERIOD_M5 || Period()==PERIOD_M15 || Period()==PERIOD_M30)
-                 {
-                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
-                    {
-                     Print(TimeMinute(Time[0])+"=="+TimeMinute(OrderOpenTime()));
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        //positionCanBeOpened=true;
-                       }
-                    }
-                 }
-               if(Period()==PERIOD_H1 || Period()==PERIOD_H4)
-                 {
-                  if(TimeHour(Time[0])==TimeHour(OrderOpenTime()))
-                    {
-                     Print(TimeHour(Time[0])+"=="+TimeHour(OrderOpenTime()));
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     Print("currentAlreadyOpenedPositions="+currentAlreadyOpenedPositions);
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        positionCanBeOpened=true;
-                          } else {
-                        positionCanBeOpened=false;
-                       }
-                    }
-                 }
-               if(Period()==PERIOD_D1 || Period()==PERIOD_W1)
-                 {
-                  if(TimeDay(Time[0])==TimeDay(OrderOpenTime()))
-                    {
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        //positionCanBeOpened=true;
-                       }
-                    }
-                 }
-               if(Period()==PERIOD_MN1)
-                 {
-                  if(TimeMinute(Time[0])==TimeMinute(OrderOpenTime()))
-                    {
-                     currentAlreadyOpenedPositions=currentAlreadyOpenedPositions+1;
-                     if(currentAlreadyOpenedPositions<MaxOpenedPositionsOnCandle)
-                       {
-                        //positionCanBeOpened=true;
-                       }
-                    }
-                 }
-              }
-           }
-        }
-        } else {
-      positionCanBeOpened=true;
-     }
-   return positionCanBeOpened;
-  }*/
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
+
 void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
   {
    ObjectCreate("CurProfit",OBJ_LABEL,0,0,0);
    if(CurProfit>=0.0)
-     {
-      ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),10,"Calibri",clrDeepSkyBlue);
-     }
-   else
-     {
-      ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),10,"Calibri",clrOrange);
-
-     }
+     {ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),10,"Calibri",clrDeepSkyBlue);}
+   else{ObjectSetText("CurProfit","EA P/L: "+DoubleToString(CurProfit,2)+" "+AccountCurrency(),10,"Calibri",clrOrange);}
    ObjectSet("CurProfit",OBJPROP_CORNER,1);
    ObjectSet("CurProfit",OBJPROP_XDISTANCE,5);
    ObjectSet("CurProfit",OBJPROP_YDISTANCE,45);
@@ -2361,15 +2227,8 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
      {
       ObjectCreate("CurProfitOfManualPlacedUserPositions",OBJ_LABEL,0,0,0);
       if(CurProfitOfUserPosis>=0.0)
-        {
-         ObjectSetText("CurProfitOfManualPlacedUserPositions",
-                       "User P/L: "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),10,"Calibri",clrDeepSkyBlue);
-        }
-      else
-        {
-         ObjectSetText("CurProfitOfManualPlacedUserPositions",
-                       "User P/L: "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),10,"Calibri",clrOrange);
-        }
+        {ObjectSetText("CurProfitOfManualPlacedUserPositions","User P/L: "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),10,"Calibri",clrDeepSkyBlue);}
+      else {ObjectSetText("CurProfitOfManualPlacedUserPositions","User P/L: "+DoubleToString(CurProfitOfUserPosis,2)+" "+AccountCurrency(),10,"Calibri",clrOrange);}
       ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_CORNER,1);
       ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_XDISTANCE,5);
       ObjectSet("CurProfitOfManualPlacedUserPositions",OBJPROP_YDISTANCE,65);
@@ -2385,10 +2244,7 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectCreate("NextLotSize",OBJ_LABEL,0,0,0);
       if(tradeDoubleVarsValues[0][5]>0.0)
         {ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][5],2),10,"Calibri",clrYellow);}
-      else
-        {
-         ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][6],2),10,"Calibri",clrYellow);
-        }
+      else{ObjectSetText("NextLotSize","NextLotSize: "+DoubleToString(tradeDoubleVarsValues[0][6],2),10,"Calibri",clrYellow);}
       ObjectSet("NextLotSize",OBJPROP_CORNER,1);
       ObjectSet("NextLotSize",OBJPROP_XDISTANCE,5);
       ObjectSet("NextLotSize",OBJPROP_YDISTANCE,80);
@@ -2398,9 +2254,6 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
          ObjectSet("EAName",OBJPROP_XDISTANCE,5);
          ObjectSet("EAName",OBJPROP_YDISTANCE,75);*/
      }
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
    if(CurrentLoss<0.0)
      {
       ObjectCreate("CurrentLoss",OBJ_LABEL,0,0,0);
@@ -2410,8 +2263,9 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectSet("CurrentLoss",OBJPROP_YDISTANCE,95);
       //add breakeven info
       //for buy
+      if(getBreakEvenForSymbolOrLotSize(Symbol(),true,false)!="none"){
       ObjectCreate("BreakEvenInfo_BUY",OBJ_LABEL,0,0,0);
-      if(HandleLostPositions){
+      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),true,false)=="none"){
       ObjectSetText("BreakEvenInfo_BUY","BE BUY & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
       else {ObjectSetText("BreakEvenInfo_BUY","BE BUY: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
       ObjectSet("BreakEvenInfo_BUY",OBJPROP_CORNER,1);
@@ -2423,9 +2277,11 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectSet("LotSize_BUY",OBJPROP_CORNER,1);
       ObjectSet("LotSize_BUY",OBJPROP_XDISTANCE,5);
       ObjectSet("LotSize_BUY",OBJPROP_YDISTANCE,125);
+      }
       //for sell
+      if(getBreakEvenForSymbolOrLotSize(Symbol(),false,false)!="none"){
       ObjectCreate("BreakEvenInfo_SELL",OBJ_LABEL,0,0,0);
-      if(HandleLostPositions){
+      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),false,false)=="none"){
       ObjectSetText("BreakEvenInfo_SELL","BE SELL & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
       else {ObjectSetText("BreakEvenInfo_SELL","BE SELL: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
       ObjectSet("BreakEvenInfo_SELL",OBJPROP_CORNER,1);
@@ -2437,9 +2293,8 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectSet("LotSize_SELL",OBJPROP_CORNER,1);
       ObjectSet("LotSize_SELL",OBJPROP_XDISTANCE,5);
       ObjectSet("LotSize_SELL",OBJPROP_YDISTANCE,155);
-     }
-   else
-     {
+      }
+     }else{
       ObjectDelete("CurrentLoss");
       ObjectDelete("BreakEvenInfo_SELL");
       ObjectDelete("BreakEvenInfo_BUY");
@@ -2455,7 +2310,7 @@ string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool g
   {
    int cnt=0,PosCount_S=0,PosCount_B=0;
    double AvgPrice_S=0.0,SymbolLotSize_S=0.0,PriceSum_S=0.0,AvgPrice_B=0.0,SymbolLotSize_B=0.0,PriceSum_B=0.0;
-   double BreakEven_BUY=0.0,BreakEven_SELL=0.0;
+   double BreakEven_BUY=0.0,BreakEven_SELL=0.0,OrderSwaps_B=0.0,OrderSwaps_S=0.0;
    for(cnt=0; cnt<OrdersTotal(); cnt++)
      {
       if(OrderSelect(cnt,SELECT_BY_POS,MODE_TRADES)==true && OrderSymbol()==symbolName /*&& OrderMagicNumber()==MagicNumber*/)
@@ -2464,6 +2319,7 @@ string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool g
            {
             PriceSum_B+=OrderLots()*OrderOpenPrice();
             SymbolLotSize_B+=OrderLots();
+            OrderSwaps_B+=OrderSwap()+OrderCommission();
             PosCount_B++;
            }
 
@@ -2471,14 +2327,30 @@ string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool g
            {
             PriceSum_S+=OrderLots()*OrderOpenPrice();
             SymbolLotSize_S+=OrderLots();
+            OrderSwaps_S+=OrderSwap()+OrderCommission();
             PosCount_S++;
            }
         }
      }
-//to do add swap and commision as point
+     if((PosCount_B==0 && buyDirection==true) || (PosCount_S==0 && buyDirection==false)) {
+     return "none";
+   }
+   double commissionsInPips=0.0;
+   double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
+   if(Debug) {Print("tickValue="+DoubleToStr(tickValue,5));}
+   if(tickValue==0) {tickValue=0.9;}
+   double spread=MarketInfo(symbolName,MODE_ASK)-MarketInfo(symbolName,MODE_BID);
+   double tickSize=MarketInfo(symbolName,MODE_TICKSIZE);
+   if(Debug) {Print("commissions_B="+DoubleToStr(OrderSwaps_B,8)+";commissions_S="+DoubleToStr(OrderSwaps_S,8));}
+   if(buyDirection==false&&SymbolLotSize_S>0.0){
+   commissionsInPips=((OrderSwaps_S/SymbolLotSize_S/tickValue)*tickSize)+(spread*2);}
+   else if(buyDirection==true&&SymbolLotSize_B>0.0){commissionsInPips=((OrderSwaps_B/SymbolLotSize_B/tickValue)*tickSize)+(spread*2);}
+   if(Debug){Print("commissionsInPips="+DoubleToStr(commissionsInPips));}
+   if(commissionsInPips<0){commissionsInPips=commissionsInPips-(commissionsInPips*2);}
+
    if(getSymbolLotSize==true)
      {
-      if(buyDirection=true)
+      if(buyDirection==true)
         {
          return DoubleToString(SymbolLotSize_B,2);
         }
@@ -2491,14 +2363,18 @@ string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool g
      {
       if(buyDirection==true)
         {
-         BreakEven_BUY=(PriceSum_B/SymbolLotSize_B);
-         if(HandleLostPositions) {BreakEven_BUY+=PointsToTake*_Point;}
+         if(PriceSum_B>0.0&&SymbolLotSize_B>0.0){
+         BreakEven_BUY=(PriceSum_B/SymbolLotSize_B)+commissionsInPips;
+         if(HandleLostPositions&&PosCount_B>1) {BreakEven_BUY+=PointsToTake*_Point;}
+         }
          return DoubleToString(BreakEven_BUY,_Digits);
         }
       else
         {
-         BreakEven_SELL=(PriceSum_S/SymbolLotSize_S);
-         if(HandleLostPositions) {BreakEven_SELL-=PointsToTake*_Point;}
+         if(PriceSum_S>0.0&&SymbolLotSize_S>0.0){
+         BreakEven_SELL=(PriceSum_S/SymbolLotSize_S)-commissionsInPips;
+         if(HandleLostPositions&&PosCount_S>1) {BreakEven_SELL-=PointsToTake*_Point;}
+         }
          return DoubleToString(BreakEven_SELL,_Digits);
         }
      }
