@@ -2265,7 +2265,7 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       //for buy
       if(getBreakEvenForSymbolOrLotSize(Symbol(),true,false)!="none"){
       ObjectCreate("BreakEvenInfo_BUY",OBJ_LABEL,0,0,0);
-      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),true,false)=="none"){
+      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),true,false)=="notLostPos"){
       ObjectSetText("BreakEvenInfo_BUY","BE BUY & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
       else {ObjectSetText("BreakEvenInfo_BUY","BE BUY: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
       ObjectSet("BreakEvenInfo_BUY",OBJPROP_CORNER,1);
@@ -2281,7 +2281,7 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       //for sell
       if(getBreakEvenForSymbolOrLotSize(Symbol(),false,false)!="none"){
       ObjectCreate("BreakEvenInfo_SELL",OBJ_LABEL,0,0,0);
-      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),false,false)=="none"){
+      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),false,false)=="notLostPos"){
       ObjectSetText("BreakEvenInfo_SELL","BE SELL & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
       else {ObjectSetText("BreakEvenInfo_SELL","BE SELL: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
       ObjectSet("BreakEvenInfo_SELL",OBJPROP_CORNER,1);
@@ -2334,7 +2334,10 @@ string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool g
      }
      if((PosCount_B==0 && buyDirection==true) || (PosCount_S==0 && buyDirection==false)) {
      return "none";
-   }
+     }
+     if((PosCount_B==1 && buyDirection==true) || (PosCount_S==1 && buyDirection==false)) {
+     return "notLostPos";
+     }
    double commissionsInPips=0.0;
    double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
    if(Debug) {Print("tickValue="+DoubleToStr(tickValue,5));}
@@ -2860,7 +2863,7 @@ void openPendingsForWrongDirectionTrades(string symbolName)
      }
   }
 //+------------------------------------------------------------------+
-void handleWrongDirectionTrades(string symbolName)
+void handleWrongDirectionTrades(string symbolName_)
   {
    double currentProfit=0.0;
    double bprice=0,sprice=0,bavgprice=0,savgprice=0,
@@ -2913,7 +2916,7 @@ void handleWrongDirectionTrades(string symbolName)
       beprice=Ask+pips-PointsToTake*_Point;
      }
 
-   double tickValue=MarketInfo(symbolName,MODE_TICKVALUE);
+   double tickValue=MarketInfo(symbolName_,MODE_TICKVALUE);
    if(tickValue==0) {tickValue=0.9;}
    double pointsToTakeInMoney=NormalizeDouble(tickValue*getTradeDoubleValue(0,6)*PointsToTake,2);
 
@@ -2926,14 +2929,14 @@ void handleWrongDirectionTrades(string symbolName)
      }
   }
 //+------------------------------------------------------------------+
-bool hasAlreadyPending(string symbolName,double openPrice,int orderNumber)
+bool hasAlreadyPending(string symbolName_,double openPrice,int orderNumber)
   {
    bool res=false;
    for(int z=0;z<OrdersTotal();z++)
      {
       if(OrderSelect(z,SELECT_BY_POS,MODE_TRADES))
         {
-         if(OrderSymbol()==symbolName && OrderMagicNumber()==MagicNumber
+         if(OrderSymbol()==symbolName_ && OrderMagicNumber()==MagicNumber
             && StringFind(OrderComment(),EAName+"_"+IntegerToString(orderNumber))>-1
             && NormalizeDouble(OrderOpenPrice(),5)==NormalizeDouble(openPrice,5))
            {
