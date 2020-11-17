@@ -183,8 +183,8 @@ bool Debug=false;
 bool DebugTrace=false;
 
 /*licence*/
-bool trial_lic=false;
-datetime expiryDate=D'2018.12.01 00:00';
+bool trial_lic=true;
+datetime expiryDate=D'2021.02.01 00:00';
 bool rent_lic=false;
 datetime rentExpiryDate=D'2021.01.03 00:00';
 int rentAccountNumber=999007492;
@@ -2265,7 +2265,7 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       //for buy
       if(getBreakEvenForSymbolOrLotSize(Symbol(),true,false)!="none"){
       ObjectCreate("BreakEvenInfo_BUY",OBJ_LABEL,0,0,0);
-      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),true,false)=="notLostPos"){
+      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),true,false,true)=="notLostPos"){
       ObjectSetText("BreakEvenInfo_BUY","BE BUY & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
       else {ObjectSetText("BreakEvenInfo_BUY","BE BUY: "+getBreakEvenForSymbolOrLotSize(Symbol(),true,false),10,"Calibri",clrDarkTurquoise);}
       ObjectSet("BreakEvenInfo_BUY",OBJPROP_CORNER,1);
@@ -2277,11 +2277,16 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectSet("LotSize_BUY",OBJPROP_CORNER,1);
       ObjectSet("LotSize_BUY",OBJPROP_XDISTANCE,5);
       ObjectSet("LotSize_BUY",OBJPROP_YDISTANCE,125);
+      }else{
+      if(ObjectFind(0,"BreakEvenInfo_BUY")>0){      
+      ObjectDelete("BreakEvenInfo_BUY");
+      ObjectDelete("LotSize_BUY");            
+      }
       }
       //for sell
       if(getBreakEvenForSymbolOrLotSize(Symbol(),false,false)!="none"){
       ObjectCreate("BreakEvenInfo_SELL",OBJ_LABEL,0,0,0);
-      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),false,false)=="notLostPos"){
+      if(HandleLostPositions&&getBreakEvenForSymbolOrLotSize(Symbol(),false,false,true)=="notLostPos"){
       ObjectSetText("BreakEvenInfo_SELL","BE SELL & PTT: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
       else {ObjectSetText("BreakEvenInfo_SELL","BE SELL: "+getBreakEvenForSymbolOrLotSize(Symbol(),false,false),10,"Calibri",clrDarkTurquoise);}
       ObjectSet("BreakEvenInfo_SELL",OBJPROP_CORNER,1);
@@ -2293,6 +2298,11 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
       ObjectSet("LotSize_SELL",OBJPROP_CORNER,1);
       ObjectSet("LotSize_SELL",OBJPROP_XDISTANCE,5);
       ObjectSet("LotSize_SELL",OBJPROP_YDISTANCE,155);
+      }else{
+      if(ObjectFind(0,"BreakEvenInfo_SELL")>0){      
+      ObjectDelete("BreakEvenInfo_SELL");
+      ObjectDelete("LotSize_SELL");            
+      }
       }
      }else{
       ObjectDelete("CurrentLoss");
@@ -2306,7 +2316,7 @@ void CurrentProfit(double CurProfit,double CurProfitOfUserPosis)
    if(!IsTesting() && rent_lic && TimeCurrent()>rentExpiryDate) {ExpertRemove();}
   }
 //+------------------------------------------------------------------+
-string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool getSymbolLotSize)
+string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool getSymbolLotSize,bool textCheck=false)
   {
    int cnt=0,PosCount_S=0,PosCount_B=0;
    double AvgPrice_S=0.0,SymbolLotSize_S=0.0,PriceSum_S=0.0,AvgPrice_B=0.0,SymbolLotSize_B=0.0,PriceSum_B=0.0;
@@ -2335,7 +2345,7 @@ string getBreakEvenForSymbolOrLotSize(string symbolName,bool buyDirection,bool g
      if((PosCount_B==0 && buyDirection==true) || (PosCount_S==0 && buyDirection==false)) {
      return "none";
      }
-     if((PosCount_B==1 && buyDirection==true) || (PosCount_S==1 && buyDirection==false)) {
+     if((PosCount_B>1 && buyDirection==true && textCheck==true) || (PosCount_S>1 && buyDirection==false && textCheck==true)) {
      return "notLostPos";
      }
    double commissionsInPips=0.0;
